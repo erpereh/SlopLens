@@ -1,0 +1,23 @@
+# Environment files
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.output/
+.wxt/
+.turbo/
+
+# Logs
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Local Supabase state is ignored by supabase/.gitignore.
