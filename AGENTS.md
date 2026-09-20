@@ -73,6 +73,7 @@ Cambios puramente internos que no alteren producto, arquitectura ni diseño no n
 - No inventar arquitectura, componentes o patrones si ya existe una solución equivalente.
 - No implementar funcionalidades fuera del alcance definido en `docs/PRODUCT.md` salvo que se solicite explícitamente.
 - Respetar la filosofía local-first, open-source-first y provider-agnostic descrita en `docs/ARCHITECTURE.md`.
+- No hardcodear proveedores o modelos concretos en lógica de dominio; deben vivir en adapters, defaults o configuración.
 
 ## Regla de UI: beUI-first
 
@@ -107,6 +108,7 @@ Para el MVP están cerradas, entre otras, estas decisiones:
 - Sin GitHub Actions en el MVP.
 - Jev como clasificador/router inicial.
 - Proveedores de IA, embeddings, búsqueda y multimodal desacoplados mediante interfaces.
+- Ningún proveedor concreto es obligatorio: los `.env` son solo defaults de bootstrap y la configuración debe poder evolucionar/operar desde la propia app.
 
 Si una tarea requiere cambiar una de estas decisiones, hacerlo solo si el usuario lo pide o si existe una incompatibilidad técnica demostrable. En ese caso, actualizar `docs/ARCHITECTURE.md`.
 

@@ -155,6 +155,43 @@ Puede:
 - añadir detectores;
 - contribuir al proyecto.
 
+## Configuración de proveedores
+
+SlopLens no debe estar atado a ningún proveedor de IA, embeddings, búsqueda, visión o razonamiento.
+
+Durante el desarrollo inicial los proveedores y modelos pueden definirse mediante variables de entorno para facilitar el bootstrap local, pero esa no será la experiencia final del producto.
+
+La aplicación deberá permitir configurar desde su propia interfaz:
+
+- proveedor de clasificación/decision;
+- modelo de clasificación;
+- proveedor de embeddings;
+- modelo de embeddings;
+- proveedor de búsqueda web;
+- proveedor de visión/multimodal;
+- modelo de visión;
+- proveedor de razonamiento;
+- modelo de razonamiento;
+- API keys o credenciales BYOK cuando sean necesarias;
+- endpoints/base URLs compatibles cuando el proveedor permita configurarlos;
+- modelos locales cuando exista soporte.
+
+El usuario deberá poder cambiar estas opciones sin editar manualmente archivos `.env`.
+
+Principios:
+
+- ningún proveedor debe convertirse en requisito funcional de SlopLens;
+- los proveedores configurados inicialmente son defaults de desarrollo, no dependencias permanentes;
+- cambiar de proveedor no debe obligar a reescribir la lógica de producto;
+- las credenciales introducidas por el usuario deben gestionarse como secretos y no exponerse en la UI ni en el bundle de la extensión;
+- cuando un proveedor no esté configurado, SlopLens debe degradar la funcionalidad de forma explícita en vez de fallar silenciosamente;
+- cuando sea posible, se deben soportar alternativas gratuitas, open source o locales;
+- la configuración debe distinguir entre proveedor y modelo para permitir cambiar ambos de forma independiente.
+
+La filosofía es:
+
+> **Bring your own provider. SlopLens aporta la capa de producto; el usuario decide qué modelos y servicios utiliza.**
+
 ## Acciones universales
 
 ### Analyze
@@ -574,6 +611,7 @@ En lugar de una única etiqueta, SlopLens puede mostrar componentes separados co
 - SlopLens no debe necesitar indexar Internet completo para funcionar.
 - No se debe exigir cuenta para el flujo básico del MVP.
 - Todas las funciones del repositorio son gratuitas y abiertas.
+- Los proveedores externos son intercambiables y deben poder configurarse desde la aplicación; los `.env` solo actúan como bootstrap/defaults durante el desarrollo inicial.
 
 ## Alcance actual del MVP
 
@@ -604,6 +642,7 @@ En lugar de una única etiqueta, SlopLens puede mostrar componentes separados co
 - backend local;
 - base de datos local;
 - BYOK para APIs externas;
+- configuración de proveedores preparada para evolucionar desde defaults de `.env` hacia ajustes gestionados desde la propia app;
 - sin dependencia cloud obligatoria.
 
 ## Fuera de alcance del MVP

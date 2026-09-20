@@ -45,11 +45,12 @@ Debe representar la arquitectura actual y las decisiones de implementación vige
 | Auth | Supabase Auth disponible, no obligatoria inicialmente |
 | Realtime | disponible, no obligatorio inicialmente |
 | Storage | disponible, usar solo si hace falta |
-| Clasificación | Jev inicialmente |
+| Clasificación | provider-agnostic; Jev como default inicial |
 | Embeddings | provider-agnostic |
 | Search | provider-agnostic |
 | Vision/multimodal | provider-agnostic |
 | LLM complejo | provider-agnostic |
+| Configuración providers | desde la app; `.env` solo como bootstrap/default local |
 | Tests unitarios | Vitest |
 | E2E | Playwright |
 | Lint/format | Biome |
@@ -442,6 +443,89 @@ interface ReasoningProvider {
 
 Jev es el `DecisionProvider` inicial, no una dependencia que deba filtrarse por todo el dominio.
 
+### Configuración dinámica de proveedores
+
+Los proveedores configurados actualmente mediante `.env` son únicamente **defaults de bootstrap para desarrollo local**.
+
+La arquitectura final debe permitir que el usuario seleccione y cambie proveedores desde SlopLens sin editar archivos del proyecto.
+
+La resolución de configuración debe seguir, conceptualmente, este orden:
+
+```text
+Configuración guardada por el usuario
+        ↓
+defaults locales / .env
+        ↓
+fallback seguro / provider no configurado
+```
+
+La configuración debe separar siempre:
+
+```text
+capability
+provider
+model
+base URL opcional
+credentials
+provider-specific options
+```
+
+Capabilities iniciales:
+
+```text
+decision
+embedding
+search
+vision
+reasoning
+```
+
+Ejemplo conceptual:
+
+```ts
+type ProviderCapability =
+  | "decision"
+  | "embedding"
+  | "search"
+  | "vision"
+  | "reasoning";
+
+interface ProviderSelection {
+  capability: ProviderCapability;
+  providerId: string;
+  modelId?: string;
+  baseUrl?: string;
+  options?: Record<string, unknown>;
+}
+```
+
+Las API keys no deben almacenarse como texto plano en tablas generales ni enviarse a la extensión.
+
+Mientras SlopLens sea local-first, las credenciales podrán persistirse mediante un mecanismo local seguro definido durante la implementación. La interfaz debe tratarlas siempre como secretos.
+
+Reglas:
+
+- no hardcodear OpenRouter, Vercel, Tavily, NVIDIA, Gemini, OpenAI u otro proveedor en la lógica de dominio;
+- no usar IDs de modelos concretos fuera de adapters, defaults o configuración;
+- cada integración debe implementar el contrato correspondiente;
+- la UI de settings debe descubrir únicamente providers soportados por el build actual;
+- cambiar provider/model no debe requerir recompilar la extensión cuando el backend ya soporte esa integración;
+- si un provider no está configurado, devolver un estado explícito como `provider_not_configured`;
+- los defaults del `.env` deben seguir siendo útiles para desarrollo, tests y primera ejecución;
+- las variables de entorno no constituyen la fuente de verdad permanente de las preferencias del usuario.
+
+Configuración inicial de desarrollo prevista:
+
+```text
+Decision     → configurable; Jev como default inicial
+Embedding    → configurable
+Search       → configurable
+Vision       → configurable
+Reasoning    → configurable
+```
+
+Los proveedores concretos elegidos durante el bootstrap pueden cambiar sin modificar esta arquitectura.
+
 ## Supabase Local
 
 Supabase se usa localmente principalmente como:
@@ -670,6 +754,8 @@ La caché debe evitar repetir verificaciones o embeddings idénticos cuando el c
 - Reducir permisos del manifest al mínimo necesario.
 - No almacenar contenido sensible si no es necesario.
 - BYOK debe mantenerse local y documentado.
+- La configuración desde la app no debe exponer secretos al bundle de la extensión.
+- Los `.env` son defaults de bootstrap, no el mecanismo definitivo de configuración del usuario.
 
 ## Estado frontend
 
