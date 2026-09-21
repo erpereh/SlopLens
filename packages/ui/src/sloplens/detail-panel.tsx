@@ -36,6 +36,7 @@ export function SlopLensDetailPanel({
   onRetryTrace,
   onOpenSettings,
   className,
+  embedded = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -53,6 +54,7 @@ export function SlopLensDetailPanel({
   onRetryTrace?: () => void;
   onOpenSettings?: () => void;
   className?: string;
+  embedded?: boolean;
 }) {
   const { t } = useSlopLensI18n();
   const body = (
@@ -91,6 +93,10 @@ export function SlopLensDetailPanel({
   }
 
   if (!open) return null;
+
+  if (embedded) {
+    return <div className={cn("max-h-[min(28rem,70vh)] overflow-y-auto", className)}>{body}</div>;
+  }
 
   return (
     <div

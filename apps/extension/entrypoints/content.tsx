@@ -7,7 +7,14 @@ import { LOCALE_STORAGE_KEY, resolveLocale } from "../lib/i18n";
 import { OverlayMountManager, type OverlayRuntimeState } from "../lib/mount-overlay";
 import { createScanScheduler } from "../lib/scan-scheduler";
 import { collectScanTargets } from "../lib/scan-targets";
-import { prefersReducedMotion, readThemePreference, THEME_STORAGE_KEY } from "../lib/theme";
+import { mutationsAreOnlySlopLens } from "../lib/slop-marker";
+import {
+  MOTION_STORAGE_KEY,
+  readMotionPreference,
+  readThemePreference,
+  resolveReducedMotion,
+  THEME_STORAGE_KEY,
+} from "../lib/theme";
 
 import "@sloplens/ui/styles.css";
 
@@ -30,7 +37,10 @@ export default defineContentScript({
 
     const scheduleScan = createScanScheduler(() => scanPage(manager, platform, runtime));
 
-    const observer = new MutationObserver(() => {
+    const observer = new MutationObserver((mutations) => {
+      if (mutationsAreOnlySlopLens(mutations)) {
+        return;
+      }
       scheduleScan();
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
@@ -46,7 +56,8 @@ export default defineContentScript({
       if (
         changes[THEME_STORAGE_KEY] ||
         changes[LOCALE_STORAGE_KEY] ||
-        changes[FEED_PREFS_STORAGE_KEY]
+        changes[FEED_PREFS_STORAGE_KEY] ||
+        changes[MOTION_STORAGE_KEY]
       ) {
         void reloadRuntime().then((next) => {
           runtime = next;
@@ -67,8 +78,9 @@ export default defineContentScript({
 async function loadRuntimeState(
   scheduler: OverlayRuntimeState["scheduler"],
 ): Promise<OverlayRuntimeState> {
-  const [themePreference, stored, feedPreferences] = await Promise.all([
+  const [themePreference, motionPreference, stored, feedPreferences] = await Promise.all([
     readThemePreference(),
+    readMotionPreference(),
     chrome.storage.local.get(LOCALE_STORAGE_KEY),
     readFeedPreferences(),
   ]);
@@ -76,7 +88,8 @@ async function loadRuntimeState(
   return {
     locale,
     themePreference,
-    reducedMotion: prefersReducedMotion(),
+    motionPreference,
+    reducedMotion: resolveReducedMotion(motionPreference),
     feedPreferences,
     scheduler,
   };

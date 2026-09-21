@@ -11,7 +11,7 @@ import {
   sloplensApiMessageSchema,
 } from "./api/operations";
 import { API_ROUTES } from "./api/routes";
-import { analyzeRequestSchema, healthResponseSchema } from "./api/schemas";
+import { analyzeRequestSchema, healthResponseSchema, metricsResponseSchema } from "./api/schemas";
 import { createHttpApiTransport } from "./api/transport";
 
 const content = {
@@ -32,6 +32,39 @@ describe("API schemas", () => {
 
   it("parses an analyze request wrapping NormalizedContent", () => {
     expect(analyzeRequestSchema.parse({ content }).content.platform).toBe("youtube");
+  });
+
+  it("parses aggregated metrics and rejects secrets or content", () => {
+    const parsed = metricsResponseSchema.parse({
+      status: "degraded",
+      checks: { database: true, pgvector: false },
+      counts: {
+        contentItems: 3,
+        cachedAnalyses: 2,
+        clusters: 0,
+        relations: 1,
+      },
+      lastActivityAt: "2026-09-21T12:00:00.000Z",
+    });
+    expect(parsed.counts.contentItems).toBe(3);
+    expect(() =>
+      metricsResponseSchema.parse({
+        ...parsed,
+        localToken: "secret",
+      }),
+    ).toThrow();
+    expect(() =>
+      metricsResponseSchema.parse({
+        ...parsed,
+        text: "tweet body",
+      }),
+    ).toThrow();
+    expect(() =>
+      metricsResponseSchema.parse({
+        ...parsed,
+        baseUrl: "https://api.example/secret",
+      }),
+    ).toThrow();
   });
 });
 

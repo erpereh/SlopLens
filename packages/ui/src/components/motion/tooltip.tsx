@@ -22,6 +22,7 @@ import { useDismiss } from "@/lib/hooks/use-dismiss";
 import { useHoverGesture } from "@/lib/hooks/use-hover-gesture";
 import { useTapGesture } from "@/lib/hooks/use-tap-gesture";
 import { cn } from "@/lib/utils";
+import { findPortalRoot } from "@/theme/apply";
 
 type Side = "top" | "right" | "bottom" | "left";
 
@@ -272,7 +273,7 @@ export function Tooltip({
                 </span>
               ) : null}
             </AnimatePresence>,
-            document.body,
+            findPortalRoot(anchorRef.current ?? wrapperRef.current),
           )
         : null}
     </>

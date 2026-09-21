@@ -1,3 +1,4 @@
+import { MotionConfig } from "motion/react";
 import {
   createContext,
   type ReactNode,
@@ -7,13 +8,22 @@ import {
   useMemo,
   useState,
 } from "react";
-import { type ResolvedTheme, resolveTheme, type ThemePreference } from "./types";
+import {
+  type MotionPreference,
+  type ResolvedTheme,
+  resolveReducedMotion,
+  resolveTheme,
+  type ThemePreference,
+} from "./types";
 
 type ThemeContextValue = {
   preference: ThemePreference;
   resolved: ResolvedTheme;
   setPreference: (next: ThemePreference) => void;
   cyclePreference: () => void;
+  motionPreference: MotionPreference;
+  reducedMotion: boolean;
+  setMotionPreference: (next: MotionPreference) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -21,10 +31,16 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 export function SlopLensThemeProvider({
   preference,
   onPreferenceChange,
+  motionPreference = "system",
+  onMotionPreferenceChange,
+  reducedMotion: reducedMotionOverride,
   children,
 }: {
   preference: ThemePreference;
   onPreferenceChange: (next: ThemePreference) => void;
+  motionPreference?: MotionPreference;
+  onMotionPreferenceChange?: (next: MotionPreference) => void;
+  reducedMotion?: boolean;
   children: ReactNode;
 }) {
   const [systemDark, setSystemDark] = useState(() =>
@@ -32,15 +48,28 @@ export function SlopLensThemeProvider({
       ? window.matchMedia("(prefers-color-scheme: dark)").matches
       : false,
   );
+  const [systemReduce, setSystemReduce] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false,
+  );
 
   useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => setSystemDark(media.matches);
-    media.addEventListener("change", onChange);
-    return () => media.removeEventListener("change", onChange);
+    const color = window.matchMedia("(prefers-color-scheme: dark)");
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onColor = () => setSystemDark(color.matches);
+    const onMotion = () => setSystemReduce(motion.matches);
+    color.addEventListener("change", onColor);
+    motion.addEventListener("change", onMotion);
+    return () => {
+      color.removeEventListener("change", onColor);
+      motion.removeEventListener("change", onMotion);
+    };
   }, []);
 
   const resolved = useMemo(() => resolveTheme(preference, systemDark), [preference, systemDark]);
+  const reducedMotion =
+    reducedMotionOverride ?? resolveReducedMotion(motionPreference, systemReduce);
 
   const cyclePreference = useCallback(() => {
     const order: ThemePreference[] = ["light", "dark", "system"];
@@ -49,17 +78,39 @@ export function SlopLensThemeProvider({
     onPreferenceChange(next);
   }, [onPreferenceChange, preference]);
 
+  const setMotionPreference = useCallback(
+    (next: MotionPreference) => {
+      onMotionPreferenceChange?.(next);
+    },
+    [onMotionPreferenceChange],
+  );
+
   const value = useMemo(
     () => ({
       preference,
       resolved,
       setPreference: onPreferenceChange,
       cyclePreference,
+      motionPreference,
+      reducedMotion,
+      setMotionPreference,
     }),
-    [cyclePreference, onPreferenceChange, preference, resolved],
+    [
+      cyclePreference,
+      motionPreference,
+      onPreferenceChange,
+      preference,
+      reducedMotion,
+      resolved,
+      setMotionPreference,
+    ],
   );
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>
+      <MotionConfig reducedMotion={reducedMotion ? "always" : "user"}>{children}</MotionConfig>
+    </ThemeContext.Provider>
+  );
 }
 
 export function useSlopLensTheme(): ThemeContextValue {

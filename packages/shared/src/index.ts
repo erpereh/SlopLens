@@ -26,6 +26,8 @@ export {
   analyzeWarningSchema,
   type HealthResponse,
   healthResponseSchema,
+  type MetricsResponse,
+  metricsResponseSchema,
   type ProvidersResponse,
   type PutProviderSelectionsRequest,
   providersResponseSchema,

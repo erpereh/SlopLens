@@ -91,6 +91,35 @@ export type MessageKey =
   | "popup.language"
   | "popup.langEn"
   | "popup.langEs"
+  | "popup.openDashboard"
+  | "popup.thresholdSummary"
+  | "dashboard.overview"
+  | "dashboard.feed"
+  | "dashboard.providers"
+  | "dashboard.appearance"
+  | "dashboard.diagnostics"
+  | "dashboard.version"
+  | "dashboard.unavailable"
+  | "dashboard.lastActivity"
+  | "dashboard.none"
+  | "dashboard.contentsAnalyzed"
+  | "dashboard.cachedAnalyses"
+  | "dashboard.clusters"
+  | "dashboard.relations"
+  | "dashboard.backendStatus"
+  | "dashboard.database"
+  | "dashboard.pgvector"
+  | "dashboard.providersConfigured"
+  | "dashboard.testHealth"
+  | "dashboard.degraded"
+  | "dashboard.openMenu"
+  | "dashboard.manage"
+  | "dashboard.theme"
+  | "dashboard.language"
+  | "dashboard.noPaidPings"
+  | "motion.label"
+  | "motion.system"
+  | "motion.reduce"
   | "settings.title"
   | "settings.capability"
   | "settings.provider"
@@ -198,6 +227,36 @@ const en: Record<MessageKey | ErrorMessageKey, string> = {
   "popup.language": "Language",
   "popup.langEn": "English",
   "popup.langEs": "Spanish",
+  "popup.openDashboard": "Open Dashboard",
+  "popup.thresholdSummary": "Slop threshold {percent}%",
+  "dashboard.overview": "Overview",
+  "dashboard.feed": "Feed",
+  "dashboard.providers": "Providers",
+  "dashboard.appearance": "Appearance",
+  "dashboard.diagnostics": "Diagnostics",
+  "dashboard.version": "Version",
+  "dashboard.unavailable": "Unavailable",
+  "dashboard.lastActivity": "Last activity",
+  "dashboard.none": "None yet",
+  "dashboard.contentsAnalyzed": "Contents analyzed",
+  "dashboard.cachedAnalyses": "Cached analyses",
+  "dashboard.clusters": "Clusters",
+  "dashboard.relations": "Related links",
+  "dashboard.backendStatus": "Backend",
+  "dashboard.database": "Database",
+  "dashboard.pgvector": "pgvector",
+  "dashboard.providersConfigured": "Providers configured",
+  "dashboard.testHealth": "Test backend",
+  "dashboard.degraded": "Degraded",
+  "dashboard.openMenu": "Open menu",
+  "dashboard.manage": "Manage",
+  "dashboard.theme": "Theme",
+  "dashboard.language": "Language",
+  "dashboard.noPaidPings":
+    "Diagnostics only check the local backend. Provider adapters are not pinged.",
+  "motion.label": "Motion",
+  "motion.system": "Match system",
+  "motion.reduce": "Reduce",
   "settings.title": "Provider settings",
   "settings.capability": "Capability",
   "settings.provider": "Provider",
@@ -311,6 +370,36 @@ const es: Record<MessageKey | ErrorMessageKey, string> = {
   "popup.language": "Idioma",
   "popup.langEn": "Inglés",
   "popup.langEs": "Español",
+  "popup.openDashboard": "Abrir panel",
+  "popup.thresholdSummary": "Umbral de slop {percent}%",
+  "dashboard.overview": "Resumen",
+  "dashboard.feed": "Feed",
+  "dashboard.providers": "Proveedores",
+  "dashboard.appearance": "Apariencia",
+  "dashboard.diagnostics": "Diagnóstico",
+  "dashboard.version": "Versión",
+  "dashboard.unavailable": "No disponible",
+  "dashboard.lastActivity": "Última actividad",
+  "dashboard.none": "Aún no hay datos",
+  "dashboard.contentsAnalyzed": "Contenidos analizados",
+  "dashboard.cachedAnalyses": "Análisis en caché",
+  "dashboard.clusters": "Clusters",
+  "dashboard.relations": "Relaciones",
+  "dashboard.backendStatus": "Backend",
+  "dashboard.database": "Base de datos",
+  "dashboard.pgvector": "pgvector",
+  "dashboard.providersConfigured": "Proveedores configurados",
+  "dashboard.testHealth": "Probar backend",
+  "dashboard.degraded": "Degradado",
+  "dashboard.openMenu": "Abrir menú",
+  "dashboard.manage": "Gestionar",
+  "dashboard.theme": "Tema",
+  "dashboard.language": "Idioma",
+  "dashboard.noPaidPings":
+    "El diagnóstico solo comprueba el backend local. No se hacen pings de pago a proveedores.",
+  "motion.label": "Movimiento",
+  "motion.system": "Seguir el sistema",
+  "motion.reduce": "Reducir",
   "settings.title": "Ajustes de proveedores",
   "settings.capability": "Capacidad",
   "settings.provider": "Proveedor",

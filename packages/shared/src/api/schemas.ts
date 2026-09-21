@@ -22,6 +22,27 @@ export const healthResponseSchema = z
   })
   .strict();
 
+export const metricsResponseSchema = z
+  .object({
+    status: z.enum(["ok", "degraded", "unavailable"]),
+    checks: z
+      .object({
+        database: z.boolean(),
+        pgvector: z.boolean(),
+      })
+      .strict(),
+    counts: z
+      .object({
+        contentItems: z.number().int().nonnegative().nullable(),
+        cachedAnalyses: z.number().int().nonnegative().nullable(),
+        clusters: z.number().int().nonnegative().nullable(),
+        relations: z.number().int().nonnegative().nullable(),
+      })
+      .strict(),
+    lastActivityAt: z.string().min(1).nullable(),
+  })
+  .strict();
+
 export const providerDescriptorSchema = z
   .object({
     providerId: z.string().min(1),
@@ -206,6 +227,7 @@ export const relatedResponseSchema = z
   .strict();
 
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
+export type MetricsResponse = z.infer<typeof metricsResponseSchema>;
 export type ProvidersResponse = z.infer<typeof providersResponseSchema>;
 export type SettingsResponse = z.infer<typeof settingsResponseSchema>;
 export type PutProviderSelectionsRequest = z.infer<typeof putProviderSelectionsRequestSchema>;

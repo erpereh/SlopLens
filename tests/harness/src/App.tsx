@@ -1,9 +1,13 @@
 import type { ContentDecision } from "@sloplens/core";
 import { deriveSlopSignal } from "@sloplens/core";
 import {
+  type DashboardSection,
   type FeatureViewState,
   formatAnalyzeSummary,
+  type MotionPreference,
   type RelatedItem,
+  SlopLensDashboardApp,
+  SlopLensPopupControl,
   SlopLensShell,
   SlopLensUiRoot,
   type ThemePreference,
@@ -53,11 +57,13 @@ const trace: TracePanelContent = {
   evidence: [{ summary: "Short evidence blurb.", sourceUrl: "https://example.com/origin" }],
 };
 
-type Scene = "tweet" | "youtube" | "states";
+type Scene = "tweet" | "youtube" | "states" | "popup" | "dashboard";
 
 function sceneFromLocation(): Scene {
   const value = new URLSearchParams(window.location.search).get("scene");
-  if (value === "youtube" || value === "states") return value;
+  if (value === "youtube" || value === "states" || value === "popup" || value === "dashboard") {
+    return value;
+  }
   return "tweet";
 }
 
@@ -67,9 +73,14 @@ function themeFromLocation(): ThemePreference {
   return "system";
 }
 
+function motionFromLocation(): MotionPreference {
+  return window.location.search.includes("motion=reduce") ? "reduce" : "system";
+}
+
 export function App() {
   const [scene, setScene] = useState<Scene>(sceneFromLocation);
   const [themePreference, setThemePreference] = useState<ThemePreference>(themeFromLocation);
+  const [motionPreference, setMotionPreference] = useState<MotionPreference>(motionFromLocation);
   const [detailOpen, setDetailOpen] = useState(false);
   const slopSignal = deriveSlopSignal(decision);
 
@@ -78,7 +89,10 @@ export function App() {
       <SlopLensUiRoot
         locale="en"
         themePreference={themePreference}
+        motionPreference={motionPreference}
         onThemePreferenceChange={setThemePreference}
+        onMotionPreferenceChange={setMotionPreference}
+        className="inline-flex w-fit bg-transparent"
       >
         <SlopLensShell
           signals={{ slopSignal, decision }}
@@ -90,11 +104,10 @@ export function App() {
           analyze={{ decision, summary: formatAnalyzeSummary("en", decision) }}
           verify={verify}
           trace={trace}
-          forceDrawer
         />
       </SlopLensUiRoot>
     ),
-    [detailOpen, slopSignal, themePreference],
+    [detailOpen, motionPreference, slopSignal, themePreference],
   );
 
   return (
@@ -110,6 +123,24 @@ export function App() {
         <a href="?scene=states" aria-current={scene === "states" ? "page" : undefined}>
           States
         </a>
+        <a href="?scene=popup" aria-current={scene === "popup" ? "page" : undefined}>
+          Popup
+        </a>
+        <a href="?scene=dashboard" aria-current={scene === "dashboard" ? "page" : undefined}>
+          Dashboard
+        </a>
+        <button type="button" onClick={() => setThemePreference("light")}>
+          Light
+        </button>
+        <button type="button" onClick={() => setThemePreference("dark")}>
+          Dark
+        </button>
+        <button type="button" onClick={() => setThemePreference("system")}>
+          System
+        </button>
+        <button type="button" onClick={() => setMotionPreference("reduce")}>
+          Reduce motion
+        </button>
         <button type="button" onClick={() => setScene(sceneFromLocation())}>
           Reload scene
         </button>
@@ -117,7 +148,26 @@ export function App() {
       {scene === "tweet" ? <TweetHost overlay={overlay} /> : null}
       {scene === "youtube" ? <YouTubeHost overlay={overlay} /> : null}
       {scene === "states" ? (
-        <StatesGallery themePreference={themePreference} onTheme={setThemePreference} />
+        <StatesGallery
+          themePreference={themePreference}
+          motionPreference={motionPreference}
+          onTheme={setThemePreference}
+        />
+      ) : null}
+      {scene === "popup" ? (
+        <PopupScene
+          themePreference={themePreference}
+          motionPreference={motionPreference}
+          onTheme={setThemePreference}
+        />
+      ) : null}
+      {scene === "dashboard" ? (
+        <DashboardScene
+          themePreference={themePreference}
+          motionPreference={motionPreference}
+          onTheme={setThemePreference}
+          onMotion={setMotionPreference}
+        />
       ) : null}
     </>
   );
@@ -155,9 +205,11 @@ function YouTubeHost({ overlay }: { overlay: ReactNode }) {
 
 function StatesGallery({
   themePreference,
+  motionPreference,
   onTheme,
 }: {
   themePreference: ThemePreference;
+  motionPreference: MotionPreference;
   onTheme: (next: ThemePreference) => void;
 }) {
   const error: FeatureViewState = {
@@ -172,6 +224,7 @@ function StatesGallery({
         <SlopLensUiRoot
           locale="en"
           themePreference={themePreference}
+          motionPreference={motionPreference}
           onThemePreferenceChange={onTheme}
         >
           <SlopLensShell signals={{}} analyzeState={loading} verifyState={idle} traceState={idle} />
@@ -182,6 +235,7 @@ function StatesGallery({
         <SlopLensUiRoot
           locale="en"
           themePreference={themePreference}
+          motionPreference={motionPreference}
           onThemePreferenceChange={onTheme}
         >
           <SlopLensShell
@@ -198,6 +252,7 @@ function StatesGallery({
         <SlopLensUiRoot
           locale="en"
           themePreference={themePreference}
+          motionPreference={motionPreference}
           onThemePreferenceChange={onTheme}
         >
           <SlopLensShell
@@ -207,10 +262,127 @@ function StatesGallery({
             traceState={{ phase: "empty" }}
             analyze={{ decision, summary: formatAnalyzeSummary("en", decision) }}
             verify={{ stance: "unverified", summary: "No corroborating sources yet." }}
-            forceDrawer
           />
         </SlopLensUiRoot>
       </section>
     </div>
+  );
+}
+
+function PopupScene({
+  themePreference,
+  motionPreference,
+  onTheme,
+}: {
+  themePreference: ThemePreference;
+  motionPreference: MotionPreference;
+  onTheme: (next: ThemePreference) => void;
+}) {
+  return (
+    <div className="states-grid">
+      <SlopLensUiRoot
+        locale="en"
+        themePreference={themePreference}
+        motionPreference={motionPreference}
+        onThemePreferenceChange={onTheme}
+      >
+        <SlopLensPopupControl
+          health="ok"
+          onRefreshHealth={() => undefined}
+          autoAnalyze
+          onAutoAnalyzeChange={() => undefined}
+          thresholdPercent={70}
+          onOpenDashboard={() => undefined}
+        />
+      </SlopLensUiRoot>
+    </div>
+  );
+}
+
+function DashboardScene({
+  themePreference,
+  motionPreference,
+  onTheme,
+  onMotion,
+}: {
+  themePreference: ThemePreference;
+  motionPreference: MotionPreference;
+  onTheme: (next: ThemePreference) => void;
+  onMotion: (next: MotionPreference) => void;
+}) {
+  const [section, setSection] = useState<DashboardSection>("overview");
+  const degraded = window.location.search.includes("metrics=unavailable");
+  return (
+    <SlopLensUiRoot
+      locale="en"
+      themePreference={themePreference}
+      motionPreference={motionPreference}
+      onThemePreferenceChange={onTheme}
+      onMotionPreferenceChange={onMotion}
+      className="min-h-svh"
+    >
+      <SlopLensDashboardApp
+        section={section}
+        onSectionChange={setSection}
+        version="0.0.0-harness"
+        health={degraded ? "unavailable" : "ok"}
+        metrics={
+          degraded
+            ? {
+                status: "unavailable",
+                checks: { database: false, pgvector: false },
+                counts: {
+                  contentItems: null,
+                  cachedAnalyses: null,
+                  clusters: null,
+                  relations: null,
+                },
+                lastActivityAt: null,
+              }
+            : {
+                status: "ok",
+                checks: { database: true, pgvector: true },
+                counts: {
+                  contentItems: 12,
+                  cachedAnalyses: 9,
+                  clusters: 3,
+                  relations: 4,
+                },
+                lastActivityAt: "2026-09-21T12:00:00.000Z",
+              }
+        }
+        feed={{
+          autoAnalyze: true,
+          dimHighSlop: true,
+          showSlopStamp: true,
+          slopThreshold: 0.7,
+        }}
+        onFeedChange={() => undefined}
+        locale="en"
+        onLocaleChange={() => undefined}
+        motionPreference={motionPreference}
+        onMotionPreferenceChange={onMotion}
+        formValues={{
+          capabilities: [
+            {
+              capability: "decision",
+              selection: { capability: "decision", providerId: "typesafe", modelId: "jev-latest" },
+              hasStoredKey: true,
+            },
+          ],
+        }}
+        providerOptions={{
+          decision: [{ id: "typesafe", label: "TypeSafe" }],
+          embedding: [],
+          search: [],
+          vision: [],
+          reasoning: [],
+        }}
+        onSubmitCapability={() => undefined}
+        settingsLoading={false}
+        settingsError={null}
+        onTestHealth={() => undefined}
+      />
+    </SlopLensUiRoot>
   );
 }

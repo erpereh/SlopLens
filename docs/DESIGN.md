@@ -24,21 +24,41 @@ La interfaz debe priorizar información y contexto sobre decoración.
 ## Estado actual de la UI
 
 - Kit beUI público en `packages/ui`, montado en la extensión dentro de `sloplens-root` (Shadow DOM).
-- Superficies: `SlopLensUiRoot` → `SlopLensShell` (chip compacto `Slop · XX%` + drawer de detalle con tabs Analyze · Verify · Trace).
-- Options usa `SlopLensSettingsForm`; las keys se envían al API y no se persisten en la extensión.
-- El popup (`SlopLensPopupControl`) es un centro de control compacto: backend, Auto Analyze, dim, sello, umbral, tema, idioma, resumen de providers y CTA a Options. No incluye el formulario de API keys.
-- En Shadow DOM el control de tema es `SlopLensThemeToggleButton` (el Theme Toggle de beUI opera sobre `document.documentElement` y no sirve aislado).
-- Sustitutos locales porque el registry público devolvió 404: `button-base`, `number-ticker`, `agent-progress`. El resto del kit se instaló desde `@beui` (incluidos `range-slider` y `bouncy-accordion`).
-- i18n en/es. Light / dark / system persistido en `chrome.storage.local`. Preferencias de feed (auto analyze, dim, stamp, umbral) también en `chrome.storage.local`.
-- El detalle del overlay se abre siempre como drawer (`forceDrawer`) para no competir con el layout de X/YouTube.
+- Superficies: `SlopLensUiRoot` → `SlopLensShell` (chip compacto `Slop · XX%` + panel anclado hacia arriba con tabs Analyze · Verify · Trace).
+- El dashboard de la extensión (página Options a pestaña completa) usa Animated Sidebar + cards: Overview, Feed, Providers, Appearance y Diagnostics. `SlopLensSettingsForm` vive por card de provider; las keys se envían al API y no se persisten en la extensión.
+- El popup (`SlopLensPopupControl`) es mínimo: badge de backend, Auto Analyze, umbral resumido, theme toggle y CTA al dashboard. Feed avanzado, idioma, motion y providers viven en el dashboard.
+- En Shadow DOM el control de tema es `SlopLensThemeToggleButton`. El tema resuelto se aplica al cascade root real (`html` en popup/dashboard, host `sloplens-root` en overlay) para que `:host(.dark)` y `html.dark` pinten.
+- Instalable desde `@beui`: `animated-sidebar`, `popover` (lenguaje Morph; el panel del chip no porta a `document.body`), `range-slider`, `bouncy-accordion`, tabs, switch, tooltip, toast, select, loader, theme-toggle. El panel del overlay es un shell local con `SPRING_PANEL` porque Morph/Gooey del popover público escapa al `body`.
+- i18n en/es. Light / dark / system persistido en `chrome.storage.local`. Preferencia de motion `system | reduce`. Preferencias de feed (auto analyze, dim, stamp, umbral) también en `chrome.storage.local`.
+- El chip abre un panel out-of-flow anclado (`side` preferido `top`, flip a `bottom` si no cabe). No hay drawer de detalle del post. El host `sloplens-root` permanece tamaño-chip; el panel no desplaza el feed ni bloquea el scroll de X/YouTube.
 - El overlay compacto muestra loading/error de Analyze (no un vacío falso). Sources viven dentro de Verify; Related dentro de Trace.
 - Verify muestra una señal de evidencia (`Backed by sources` / `Unverified` / etc.), nunca un veredicto absoluto.
-- El drawer del overlay no bloquea el scroll de la página anfitriona y usa un scrim ligero (`lightBackdrop`) para no atrapar la atención en el host.
-- El chip compacto muestra `Slop · XX%` (accesible: `Slop signal · XX%`) y abre el detalle al clic. No hay atajos Analyze/Verify/Trace en el chip.
+- Cierre del panel: Escape, clic fuera y segundo clic en el chip. Foco inicial razonable; al cerrar vuelve al chip.
+- El chip compacto muestra `Slop · XX%` (accesible: `Slop signal · XX%`). No hay atajos Analyze/Verify/Trace en el chip.
 - `sloplens-root` se limita a ~16rem de ancho para no empujar el layout del host.
-- El atenuado de contenido marcado usa opacidad 0.55 (rango legible 0.45–0.65). Hover/focus/tap restauran 1 y bajan el sello SLOP a ~0.12. El sello es HTML/CSS sobre el host, `pointer-events: none`, con animación de stamp y `prefers-reduced-motion`.
+- El atenuado de contenido marcado usa opacidad 0.55 (rango legible 0.45–0.65). Hover/focus/tap restauran 1 y bajan el sello SLOP a ~0.12. El sello es HTML/CSS sobre el host, `pointer-events: none`.
+- Reduced motion real: `MotionConfig` (`always` si la preferencia resuelta es reduce) y `data-reduce-motion` en el cascade root. `reduce` gana al OS; `system` sigue `prefers-reduced-motion` en vivo. El sello degrada a fade.
 
-No existe `apps/web` ni dashboard.
+No existe `apps/web`. El dashboard es la página Options de la extensión, no un producto web aparte.
+
+### Panel Morph / anclado (overlay)
+
+Receta vigente:
+
+- Portal **dentro del ShadowRoot** (tooltips/selects también vía `getRootNode()`).
+- Preferencia `top`, `transformOrigin` inferior; flip a `bottom` si no hay espacio superior; recálculo en resize/scroll.
+- Sin lock de `overflow` en `body`/`html` del host.
+- Sin Morphing Modal (bloquearía el feed).
+- Reduced motion: fade/instant, no spring.
+
+### Dashboard (estilo Folio / beUI)
+
+- Sidebar izquierda clara, item activo como pill suave, logo + nav + footer (versión / backend).
+- Canvas con aire: título de sección a la izquierda; CTA o theme toggle a la derecha.
+- Hero card ancha (backend + última actividad) y cards de apoyo. Cifras grandes con Number Ticker **solo** si el dato es real; si `/metrics` falla, copy “Unavailable”, nunca un número inventado.
+- Cards `bg-card`, radio generoso, borde sutil, sombra mínima. Fondo de página `background`.
+- Sidebar fija ≥1280px; sheet/collapsible bajo 1280 (p. ej. 1024×768).
+- Primitive local `DashboardCard` (no Tilt Card).
 
 ## Sistema visual: beUI
 
@@ -165,15 +185,11 @@ SlopLens tendrá desde el MVP:
 
 La preferencia debe persistirse.
 
-En superficies propias debe utilizarse como base el Theme Toggle público de beUI y su transición animada cuando sea compatible.
+`applyResolvedTheme` escribe `dark`, `color-scheme` y `data-reduce-motion` en el cascade root (`document.documentElement` o el host Shadow). System reacciona a `matchMedia` en vivo.
 
-Requisitos:
+Reduced motion persistido: `"system" | "reduce"`. `reduce` fuerza motion reducida aunque el OS no lo pida.
 
-- transición coherente con beUI;
-- respetar `prefers-reduced-motion`;
-- contraste correcto en ambos temas;
-- no depender solo del color;
-- no producir flashes de tema incorrecto al cargar.
+En superficies propias debe utilizarse como base el Theme Toggle público de beUI y su transición animada cuando sea compatible. En Shadow se usa `SlopLensThemeToggleButton`.
 
 ## Shadow DOM y aislamiento
 
@@ -459,7 +475,7 @@ SlopLens debe funcionar en distintos tamaños de viewport.
 - Mantener touch targets adecuados.
 - Evitar overflow horizontal.
 - Replantear jerarquía cuando el espacio sea pequeño.
-- El overlay debe poder transformarse en drawer/panel si el ancho es insuficiente.
+- El overlay usa un panel anclado al chip; si no cabe arriba, hace flip. No bloquea el scroll del host.
 
 ## Accesibilidad
 

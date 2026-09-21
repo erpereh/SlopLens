@@ -64,7 +64,7 @@ El monorepo pnpm + Turborepo está operativo. Los contratos compartidos están c
 **Backend local (Hono):**
 
 - Servidor en `http://127.0.0.1:3001` (`apps/api`).
-- Rutas reales: `GET /health`, `GET /providers`, `GET /settings`, `PUT /settings/providers`, `POST /analyze`, `POST /verify`, `POST /trace`, `POST /related`.
+- Rutas reales: `GET /health`, `GET /metrics`, `GET /providers`, `GET /settings`, `PUT /settings/providers`, `POST /analyze`, `POST /verify`, `POST /trace`, `POST /related`.
 - Cliente PostgreSQL vía `DATABASE_URL` (`postgres`).
 - Caché por `content_hash` + `decision_provider_id` + `decision_model_id` para análisis; embeddings por `content_item_id` + `model_id` del vector devuelto por el provider.
 - CORS: loopback HTTP y orígenes `chrome-extension://` (MV3); no se abre a `*`.
@@ -90,15 +90,16 @@ El monorepo pnpm + Turborepo está operativo. Los contratos compartidos están c
 **Extensión:**
 
 - WXT MV3, content scripts en X e YouTube, custom element `sloplens-root` + Shadow DOM.
-- Overlay con `@sloplens/ui` (`SlopLensUiRoot` + `SlopLensShell`).
-- Options: `SlopLensSettingsForm` → `PUT /settings/providers`. Keys nunca se guardan en la extensión ni se loguean.
-- Transporte: content, popup y options **no** hacen fetch a localhost. Envían `chrome.runtime` messaging (`type: sloplens.api`, operations cerradas). El service worker valida `sender.id === chrome.runtime.id`, rechaza URL/path/headers arbitrarios y llama a Hono con `createHttpApiTransport`.
+- Overlay con `@sloplens/ui` (`SlopLensUiRoot` + `SlopLensShell`). El sello del host es idempotente (`applySlopMarker` reutiliza el mismo `HTMLElement`; el observer ignora mutaciones propias de SlopLens).
+- Dashboard (Options `open_in_tab`): `SlopLensDashboardApp` + `SlopLensSettingsForm` por capability → `PUT /settings/providers`. Keys nunca se guardan en la extensión ni se loguean. Deep-link de sección vía `chrome.storage.local` (`sloplens.dashboardSection`).
+- Transporte: content, popup y dashboard **no** hacen fetch a localhost. Envían `chrome.runtime` messaging (`type: sloplens.api`, operations cerradas). El service worker valida `sender.id === chrome.runtime.id`, rechaza URL/path/headers arbitrarios y llama a Hono con `createHttpApiTransport`.
 - Env de la extensión: solo `WXT_API_BASE_URL` (usado por el SW).
 - `@sloplens/shared` y `@sloplens/config/browser` no arrastran Node (`fs`, keyring, `child_process`) al bundle.
 
 **UI:**
 
-- Kit beUI público en `packages/ui`. Sustitutos locales donde el registry devolvió 404: `button-base`, `number-ticker`, `agent-progress`.
+- Kit beUI público en `packages/ui` (`animated-sidebar`, `popover`, tabs, switch, etc.).
+- Tema de cascade root via `applyResolvedTheme` (`html` / `:host(.dark)`). Reduced motion con `MotionConfig` y `data-reduce-motion`.
 - En Shadow DOM se usa `SlopLensThemeToggleButton` (no el ThemeToggle de documento).
 
 No implementado / fuera del MVP:
@@ -275,15 +276,17 @@ La extensión utilizará Manifest V3.
 
 - content scripts;
 - background/service worker;
-- popup compacto (salud, preferencias de feed, tema, idioma, resumen de providers);
-- options/settings para edición avanzada de proveedores y secretos;
+- popup mínimo (salud, Auto Analyze, umbral, tema, CTA dashboard);
+- dashboard/options a pestaña completa (Overview, Feed, Providers, Appearance, Diagnostics);
 - side panel cuando sea útil.
 
 No crear superficies por defecto si no aportan valor.
 
 ## Overlay y feed
 
-El content script serializa los scans del MutationObserver (un pase en vuelo + uno en cola) y el `OverlayMountManager` encadena mounts por host. Sin eso, el propio insert del overlay dispara otro scan y duplica `sloplens-root`.
+El content script serializa los scans del MutationObserver (un pase en vuelo + uno en cola) y el `OverlayMountManager` encadena mounts por host. El observer ignora batches cuyas mutaciones son solo nodos SlopLens (`sloplens-root`, `data-sloplens-*`, estilo del marker). Si `contentKey` y el runtime (locale/theme/feed/motion) no cambian, `OverlayMountManager` no vuelve a `render()`.
+
+`applySlopMarker` compara un snapshot (`contentKey`, `slopScore`, `threshold`, `dim`, `showStamp`, `revealed`/reduce). Si coincide, no escribe. El sello reutiliza el mismo nodo; la animación de entrada solo ocurre en el primer insert (`animationend` retira la clase). Tras 20 rescans con los mismos inputs, el `HTMLElement` del stamp es el mismo (`===`).
 
 Auto Analyze no dispara una llamada por cada nodo del feed. `createAnalyzeScheduler` encola solo hosts visibles o con `rootMargin` de 320px, limita la concurrencia a 2, reutiliza in-flight y cache por `contentKey`/`content_hash`, y cancela o ignora jobs cuyo host se desconectó.
 
@@ -365,6 +368,7 @@ Endpoints:
 
 ```text
 GET  /health
+GET  /metrics
 GET  /providers
 GET  /settings
 PUT  /settings/providers
@@ -375,6 +379,14 @@ POST /related
 ```
 
 El cliente tipado vive en `packages/shared` (`createSlopLensApiClient`). La extensión solo puede usar `WXT_API_BASE_URL`; cero secrets en su env.
+
+### `/metrics`
+
+- GET, read-only, sin token de emparejamiento.
+- Responde siempre 200: si PostgreSQL/pgvector falla, `status` degradado/unavailable y conteos `null`.
+- Contrato: solo `status`, checks (`database`, `pgvector`), conteos agregados (`contentItems`, `cachedAnalyses`, `clusters`, `relations`) y `lastActivityAt`.
+- No devuelve `localToken`, API keys, URLs sensibles, texto de posts, hashes, SQL ni filas.
+- Un fallo de métricas no tumba `/health` ni el dashboard Overview.
 
 ### `/analyze`
 
@@ -881,11 +893,11 @@ Playwright con el **Chromium empaquetado** (`launchPersistentContext` + `--load-
 
 La extensión se construye primero (`apps/extension/.output/chrome-mv3`). Los tests usan páginas HTML de fixture que imitan un tweet de X (`article[data-testid=tweet]`) y un watch de YouTube; no dependen de X/YouTube en vivo.
 
-El API local se intercepta con `browserContext.route` (mock de Analyze/Verify/Related/Trace). El fetch lo hace el **service worker**, no el document. Los tests auditan `request.serviceWorker()`: page→localhost = 0; SW→localhost = rutas esperadas. Analyze se dispara al montar el overlay (salvo Auto Analyze desactivado) y el mock cubre ese POST. Un modo offline aborta `http://127.0.0.1:3001` para el error `backend_unavailable`. Playwright cubre el chip `Slop signal`, el drawer de 3 tabs, Sources anidadas en Verify, Related en Trace, el sello/dimming y el popup compacto.
+El API local se intercepta con `browserContext.route` (mock de Analyze/Verify/Related/Trace/Health/Metrics). El fetch lo hace el **service worker**, no el document. Los tests auditan `request.serviceWorker()`: page→localhost = 0; SW→localhost = rutas esperadas. Analyze se dispara al montar el overlay (salvo Auto Analyze desactivado) y el mock cubre ese POST. Un modo offline aborta `http://127.0.0.1:3001` para el error `backend_unavailable`. Playwright cubre el chip `Slop signal`, el panel anclado de 3 tabs, Sources anidadas en Verify, Related en Trace, el sello/dimming, tema/reduced-motion, el popup mínimo y el dashboard.
 
 Comando: `pnpm test:e2e` (requiere `pnpm exec playwright install chromium` la primera vez).
 
-Harness visual sin MV3: `pnpm harness` (`tests/harness`, puerto 4177).
+Harness visual sin MV3: `pnpm harness` (`tests/harness`, puerto 4177). El navegador embebido de Cursor no carga la extensión MV3 unpacked; X/YouTube reales se validan con Playwright empaquetado y el harness.
 
 ## Formato y calidad
 

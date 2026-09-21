@@ -17,6 +17,7 @@ export function SlopLensCompactSurface({
   onOpenSettings,
   onAnalyze,
   className,
+  expanded = false,
 }: {
   signals: CompactSignals;
   analyzeState?: FeatureViewState;
@@ -25,6 +26,7 @@ export function SlopLensCompactSurface({
   onOpenSettings?: () => void;
   onAnalyze?: () => void;
   className?: string;
+  expanded?: boolean;
 }) {
   const { t } = useSlopLensI18n();
   const slopSignal = signals.slopSignal;
@@ -108,6 +110,7 @@ export function SlopLensCompactSurface({
           className="inline-flex min-w-0 items-center gap-1 rounded-full px-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={onOpenDetail}
           aria-label={accessibleLabel}
+          aria-expanded={expanded}
           data-sloplens-slop-chip="true"
         >
           {analyzeState.phase === "loading" ? (

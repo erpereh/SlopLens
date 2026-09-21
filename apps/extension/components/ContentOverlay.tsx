@@ -19,11 +19,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { createAnalyzeScheduler } from "../lib/analyze-scheduler";
 import { createExtensionApiClient } from "../lib/api-client";
 import { hashContentKey } from "../lib/content-key";
+import { writeDashboardSection } from "../lib/dashboard";
 import { toFeatureError } from "../lib/feature-error";
 import type { FeedPreferences } from "../lib/feed-preferences";
 import type { Locale } from "../lib/i18n";
+import { openDashboardPage } from "../lib/open-dashboard";
 import { applySlopMarker, clearSlopMarker } from "../lib/slop-marker";
-import type { ThemePreference } from "../lib/theme";
+import type { MotionPreference, ThemePreference } from "../lib/theme";
 
 export interface ContentOverlayProps {
   content: NormalizedContent;
@@ -32,6 +34,7 @@ export interface ContentOverlayProps {
   themePreference: ThemePreference;
   onThemePreferenceChange: (next: ThemePreference) => void;
   reducedMotion: boolean;
+  motionPreference: MotionPreference;
   feedPreferences: FeedPreferences;
   scheduler: ReturnType<typeof createAnalyzeScheduler>;
 }
@@ -44,7 +47,8 @@ export function ContentOverlay({
   locale,
   themePreference,
   onThemePreferenceChange,
-  reducedMotion: _reducedMotion,
+  reducedMotion,
+  motionPreference,
   feedPreferences,
   scheduler,
 }: ContentOverlayProps) {
@@ -68,14 +72,19 @@ export function ContentOverlay({
     ? deriveSlopSignal(decision)
     : undefined;
 
+  const slopValue = slopSignal?.value;
+  const dimHighSlop = feedPreferences.dimHighSlop;
+  const showSlopStamp = feedPreferences.showSlopStamp;
+  const slopThreshold = feedPreferences.slopThreshold;
+
   const applyMarker = useCallback(
     (signal: SlopPresentationSignal | undefined) => {
       const adapter = getPlatformAdapter(content.platform);
       const regions = adapter.findDimmableRegions(host);
       if (
         !signal ||
-        !slopSignalExceedsThreshold(signal, feedPreferences.slopThreshold) ||
-        !(feedPreferences.dimHighSlop || feedPreferences.showSlopStamp)
+        !slopSignalExceedsThreshold(signal, slopThreshold) ||
+        !(dimHighSlop || showSlopStamp)
       ) {
         clearSlopMarker(host);
         return;
@@ -83,11 +92,15 @@ export function ContentOverlay({
       applySlopMarker({
         host,
         regions,
-        dim: feedPreferences.dimHighSlop,
-        showStamp: feedPreferences.showSlopStamp,
+        dim: dimHighSlop,
+        showStamp: showSlopStamp,
+        contentKey,
+        slopScore: signal.value,
+        threshold: slopThreshold,
+        reduceMotion: reducedMotion,
       });
     },
-    [content.platform, feedPreferences, host],
+    [content.platform, contentKey, dimHighSlop, host, reducedMotion, showSlopStamp, slopThreshold],
   );
 
   const analyzeCallbacks = useMemo(
@@ -107,8 +120,12 @@ export function ContentOverlay({
   );
 
   useEffect(() => {
-    applyMarker(slopSignal);
-  }, [applyMarker, slopSignal]);
+    applyMarker(
+      typeof slopValue === "number"
+        ? { value: slopValue, label: "slop", source: "aiSlop" }
+        : undefined,
+    );
+  }, [applyMarker, slopValue]);
 
   useEffect(() => {
     if (!feedPreferences.autoAnalyze) {
@@ -226,15 +243,26 @@ export function ContentOverlay({
     }
   }, [detailOpen, runTrace, runVerify, tab, traceState.phase, verifyState.phase]);
 
+  const [localTheme, setLocalTheme] = useState(themePreference);
+  useEffect(() => {
+    setLocalTheme(themePreference);
+  }, [themePreference]);
+
   const openSettings = () => {
-    void chrome.runtime.openOptionsPage();
+    void writeDashboardSection("providers").then(() => openDashboardPage());
   };
 
   return (
     <SlopLensUiRoot
       locale={locale}
-      themePreference={themePreference}
-      onThemePreferenceChange={onThemePreferenceChange}
+      themePreference={localTheme}
+      motionPreference={motionPreference}
+      reducedMotion={reducedMotion}
+      onThemePreferenceChange={(next) => {
+        setLocalTheme(next);
+        onThemePreferenceChange(next);
+      }}
+      className="inline-flex w-fit bg-transparent"
     >
       <SlopLensShell
         signals={{ slopSignal, decision }}
@@ -256,7 +284,6 @@ export function ContentOverlay({
         onRetryVerify={() => void runVerify()}
         onRetryTrace={() => void runTrace()}
         onOpenSettings={openSettings}
-        forceDrawer
       />
     </SlopLensUiRoot>
   );

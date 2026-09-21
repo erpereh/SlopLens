@@ -21,7 +21,9 @@ export async function openDetails(page: Page): Promise<void> {
     name: /slop signal|analyzing|details|expand/i,
   });
   await opener.first().click();
-  await expect(page.getByRole("tab", { name: /analyze/i }).first()).toBeVisible();
+  await expect(
+    page.locator("[data-sloplens-panel]").getByRole("tab", { name: /analyze/i }),
+  ).toBeVisible();
 }
 
 export async function closeDetails(page: Page): Promise<void> {
@@ -30,5 +32,5 @@ export async function closeDetails(page: Page): Promise<void> {
 }
 
 export async function selectTab(page: Page, name: string | RegExp): Promise<void> {
-  await page.getByRole("tab", { name }).click();
+  await page.locator("[data-sloplens-panel]").getByRole("tab", { name }).click();
 }

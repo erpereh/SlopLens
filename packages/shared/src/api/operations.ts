@@ -4,6 +4,7 @@ import { API_ROUTES, type ApiRoute } from "./routes";
 
 export const API_OPERATIONS = [
   "health",
+  "metrics",
   "providers",
   "getSettings",
   "putSettingsProviders",
@@ -19,6 +20,7 @@ export const apiOperationSchema = z.enum(API_OPERATIONS);
 
 export const API_OPERATION_SPEC = {
   health: { method: "GET", route: API_ROUTES.health },
+  metrics: { method: "GET", route: API_ROUTES.metrics },
   providers: { method: "GET", route: API_ROUTES.providers },
   getSettings: { method: "GET", route: API_ROUTES.settings },
   putSettingsProviders: { method: "PUT", route: API_ROUTES.settingsProviders },

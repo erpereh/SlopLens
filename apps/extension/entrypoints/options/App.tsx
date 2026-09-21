@@ -1,21 +1,63 @@
 import { PROVIDER_CAPABILITIES, type ProviderCapability } from "@sloplens/config/browser";
-import type { ProvidersResponse, SettingsResponse } from "@sloplens/shared";
+import type {
+  HealthResponse,
+  MetricsResponse,
+  ProvidersResponse,
+  SettingsResponse,
+} from "@sloplens/shared";
 import {
+  type DashboardSection,
   type SettingsFormSubmitPayload,
   type SettingsFormValues,
-  SlopLensSettingsForm,
+  SlopLensDashboardApp,
   SlopLensUiRoot,
-  useSlopLensI18n,
 } from "@sloplens/ui";
 import { useCallback, useEffect, useState } from "react";
 
 import { createExtensionApiClient } from "../../lib/api-client";
+import {
+  DASHBOARD_SECTION_STORAGE_KEY,
+  parseDashboardSection,
+  readDashboardSection,
+  writeDashboardSection,
+} from "../../lib/dashboard";
+import {
+  DEFAULT_FEED_PREFERENCES,
+  type FeedPreferences,
+  readFeedPreferences,
+  writeFeedPreferences,
+} from "../../lib/feed-preferences";
 import { LOCALE_STORAGE_KEY, type Locale, resolveLocale } from "../../lib/i18n";
-import { readThemePreference, type ThemePreference, writeThemePreference } from "../../lib/theme";
+import {
+  type MotionPreference,
+  readMotionPreference,
+  readThemePreference,
+  type ThemePreference,
+  writeMotionPreference,
+  writeThemePreference,
+} from "../../lib/theme";
+
+const unavailableMetrics: MetricsResponse = {
+  status: "unavailable",
+  checks: { database: false, pgvector: false },
+  counts: {
+    contentItems: null,
+    cachedAnalyses: null,
+    clusters: null,
+    relations: null,
+  },
+  lastActivityAt: null,
+};
 
 export function OptionsApp() {
   const [locale, setLocale] = useState<Locale>("en");
   const [themePreference, setThemePreference] = useState<ThemePreference>("system");
+  const [motionPreference, setMotionPreference] = useState<MotionPreference>("system");
+  const [section, setSection] = useState<DashboardSection>("overview");
+  const [version, setVersion] = useState("0.0.0");
+  const [health, setHealth] = useState<HealthResponse["status"] | "checking">("checking");
+  const [metrics, setMetrics] = useState<MetricsResponse | null>(unavailableMetrics);
+  const [feed, setFeed] = useState<FeedPreferences>(DEFAULT_FEED_PREFERENCES);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formValues, setFormValues] = useState<SettingsFormValues | null>(null);
@@ -28,9 +70,39 @@ export function OptionsApp() {
       setLocale(resolveLocale(stored[LOCALE_STORAGE_KEY] as string | undefined));
     });
     void readThemePreference().then(setThemePreference);
+    void readMotionPreference().then(setMotionPreference);
+    void readFeedPreferences().then(setFeed);
+    void readDashboardSection().then(setSection);
+    setVersion(chrome.runtime.getManifest().version);
   }, []);
 
-  const load = useCallback(async () => {
+  useEffect(() => {
+    const onChange = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+      if (area !== "local" || !changes[DASHBOARD_SECTION_STORAGE_KEY]) {
+        return;
+      }
+      setSection(parseDashboardSection(changes[DASHBOARD_SECTION_STORAGE_KEY].newValue));
+    };
+    chrome.storage.onChanged.addListener(onChange);
+    return () => chrome.storage.onChanged.removeListener(onChange);
+  }, []);
+
+  const loadHealthAndMetrics = useCallback(async () => {
+    const client = createExtensionApiClient();
+    try {
+      const nextHealth = await client.health();
+      setHealth(nextHealth.status);
+    } catch {
+      setHealth("unavailable");
+    }
+    try {
+      setMetrics(await client.metrics());
+    } catch {
+      setMetrics(unavailableMetrics);
+    }
+  }, []);
+
+  const loadSettings = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -49,8 +121,9 @@ export function OptionsApp() {
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void loadHealthAndMetrics();
+    void loadSettings();
+  }, [loadHealthAndMetrics, loadSettings]);
 
   const onSubmitCapability = async (payload: SettingsFormSubmitPayload) => {
     const client = createExtensionApiClient();
@@ -82,54 +155,49 @@ export function OptionsApp() {
     <SlopLensUiRoot
       locale={locale}
       themePreference={themePreference}
+      motionPreference={motionPreference}
       onThemePreferenceChange={(next) => {
         setThemePreference(next);
         void writeThemePreference(next);
       }}
-      className="min-h-screen bg-background p-6"
+      onMotionPreferenceChange={(next) => {
+        setMotionPreference(next);
+        void writeMotionPreference(next);
+      }}
+      className="min-h-svh bg-background"
     >
-      <OptionsAppBody
-        loading={loading}
-        error={error}
+      <SlopLensDashboardApp
+        section={section}
+        onSectionChange={(next) => {
+          setSection(next);
+          void writeDashboardSection(next);
+        }}
+        version={version}
+        health={health}
+        metrics={metrics}
+        feed={feed}
+        onFeedChange={(next) => {
+          setFeed(next);
+          void writeFeedPreferences(next);
+        }}
+        locale={locale}
+        onLocaleChange={async (next) => {
+          setLocale(next);
+          await chrome.storage.local.set({ [LOCALE_STORAGE_KEY]: next });
+        }}
+        motionPreference={motionPreference}
+        onMotionPreferenceChange={(next) => {
+          setMotionPreference(next);
+          void writeMotionPreference(next);
+        }}
         formValues={formValues}
         providerOptions={providerOptions}
         onSubmitCapability={onSubmitCapability}
+        settingsLoading={loading}
+        settingsError={error}
+        onTestHealth={() => void loadHealthAndMetrics()}
       />
     </SlopLensUiRoot>
-  );
-}
-
-function OptionsAppBody({
-  loading,
-  error,
-  formValues,
-  providerOptions,
-  onSubmitCapability,
-}: {
-  loading: boolean;
-  error: string | null;
-  formValues: SettingsFormValues | null;
-  providerOptions: Record<ProviderCapability, { id: string; label: string }[]>;
-  onSubmitCapability: (payload: SettingsFormSubmitPayload) => Promise<void>;
-}) {
-  const { t } = useSlopLensI18n();
-
-  return (
-    <div className="mx-auto w-full max-w-lg">
-      {loading ? <p className="text-sm text-muted-foreground">{t("settings.loading")}</p> : null}
-      {error ? (
-        <p role="alert" className="text-sm text-destructive">
-          {t("settings.loadError")}
-        </p>
-      ) : null}
-      {!loading && !error && formValues ? (
-        <SlopLensSettingsForm
-          initialValues={formValues}
-          providerOptions={providerOptions}
-          onSubmitCapability={onSubmitCapability}
-        />
-      ) : null}
-    </div>
   );
 }
 

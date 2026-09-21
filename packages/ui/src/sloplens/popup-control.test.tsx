@@ -18,40 +18,27 @@ function wrap(ui: ReactNode) {
 describe("SlopLensPopupControl", () => {
   afterEach(() => cleanup());
 
-  it("keeps the popup compact and sends advanced provider editing elsewhere", () => {
-    const onManageProviders = vi.fn();
+  it("stays compact and sends configuration to the dashboard", () => {
+    const onOpenDashboard = vi.fn();
     render(
       wrap(
         <SlopLensPopupControl
           health="ok"
           onRefreshHealth={() => undefined}
-          feed={{
-            autoAnalyze: true,
-            dimHighSlop: true,
-            showSlopStamp: true,
-            slopThreshold: 0.7,
-          }}
-          onFeedChange={() => undefined}
-          locale="en"
-          onLocaleChange={() => undefined}
-          providers={[
-            { capability: "decision", configured: true },
-            { capability: "search", configured: false },
-          ]}
-          onManageProviders={onManageProviders}
+          autoAnalyze
+          onAutoAnalyzeChange={() => undefined}
+          thresholdPercent={70}
+          onOpenDashboard={onOpenDashboard}
         />,
       ),
     );
 
     expect(screen.getByRole("switch", { name: /auto analyze/i })).toBeInTheDocument();
-    expect(screen.getByRole("switch", { name: /dim high-slop/i })).toBeInTheDocument();
-    expect(screen.getByRole("switch", { name: /show slop stamp/i })).toBeInTheDocument();
-    expect(screen.getByText(/slop threshold/i)).toBeInTheDocument();
-    expect(screen.getByText(/language/i)).toBeInTheDocument();
-    expect(screen.getByText(/decision/i)).toBeInTheDocument();
+    expect(screen.getByText(/slop threshold 70%/i)).toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: /dim high-slop/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/language/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/api key/i)).not.toBeInTheDocument();
-    expect(screen.queryByPlaceholderText(/enter a new key/i)).not.toBeInTheDocument();
-    screen.getByRole("button", { name: /manage providers/i }).click();
-    expect(onManageProviders).toHaveBeenCalledOnce();
+    screen.getByRole("button", { name: /open dashboard/i }).click();
+    expect(onOpenDashboard).toHaveBeenCalledOnce();
   });
 });

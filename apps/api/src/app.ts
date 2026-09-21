@@ -14,6 +14,7 @@ import {
   postVerifyHandler,
 } from "./routes/features";
 import { getHealthHandler } from "./routes/health";
+import { getMetricsHandler } from "./routes/metrics";
 import { getProvidersHandler } from "./routes/providers";
 import { getSettingsHandler, putSettingsProvidersHandler } from "./routes/settings";
 import { createSecretStore } from "./secret-store/create-secret-store";
@@ -86,6 +87,7 @@ export function createApp(env: ApiEnv, options: CreateAppOptions = {}): Hono {
   registerErrorHandler(app);
 
   app.get(API_ROUTES.health, getHealthHandler(deps));
+  app.get(API_ROUTES.metrics, getMetricsHandler(deps));
   app.get(API_ROUTES.providers, getProvidersHandler(deps));
   app.get(API_ROUTES.settings, getSettingsHandler(deps));
   app.put(API_ROUTES.settingsProviders, putSettingsProvidersHandler(deps));

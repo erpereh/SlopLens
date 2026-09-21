@@ -12,7 +12,7 @@ import type { FeedPreferences } from "./feed-preferences";
 import type { Locale } from "./i18n";
 import { OverlayHostRegistry } from "./overlay-registry";
 import type { ScanTarget } from "./scan-targets";
-import type { ThemePreference } from "./theme";
+import type { MotionPreference, ThemePreference } from "./theme";
 import { writeThemePreference } from "./theme";
 
 export type OverlayUiHandle = {
@@ -25,11 +25,13 @@ type MountedRecord = {
   host: HTMLElement;
   contentKey: string;
   content: NormalizedContent;
+  runtimeKey: string;
 };
 
 export interface OverlayRuntimeState {
   locale: Locale;
   themePreference: ThemePreference;
+  motionPreference: MotionPreference;
   reducedMotion: boolean;
   feedPreferences: FeedPreferences;
   scheduler: ReturnType<typeof createAnalyzeScheduler>;
@@ -77,8 +79,13 @@ export class OverlayMountManager {
     ]);
 
     const existing = this.mounted.get(target.host);
+    const runtimeKey = fingerprintRuntime(runtime);
     if (existing?.contentKey === contentKey) {
+      if (existing.runtimeKey === runtimeKey) {
+        return;
+      }
       this.render(existing.root, existing.host, existing.content, runtime);
+      existing.runtimeKey = runtimeKey;
       return;
     }
 
@@ -125,6 +132,7 @@ export class OverlayMountManager {
         locale: runtime.locale,
         themePreference: runtime.themePreference,
         reducedMotion: runtime.reducedMotion,
+        motionPreference: runtime.motionPreference,
         feedPreferences: runtime.feedPreferences,
         scheduler: runtime.scheduler,
         onThemePreferenceChange: (next) => {
@@ -150,9 +158,10 @@ export class OverlayMountManager {
       onMount: (container) => {
         const rootNode = container.getRootNode();
         if (rootNode instanceof ShadowRoot && rootNode.host instanceof HTMLElement) {
-          rootNode.host.style.display = "block";
+          rootNode.host.style.display = "inline-block";
+          rootNode.host.style.width = "fit-content";
           rootNode.host.style.maxWidth = "16rem";
-          rootNode.host.style.marginBlock = "0.5rem";
+          rootNode.host.style.overflow = "visible";
         }
         reactRoot = createRoot(container);
         this.render(reactRoot, host, content, runtime);
@@ -179,6 +188,17 @@ export class OverlayMountManager {
       host,
       contentKey,
       content,
+      runtimeKey: fingerprintRuntime(runtime),
     };
   }
+}
+
+function fingerprintRuntime(runtime: OverlayRuntimeState): string {
+  return JSON.stringify({
+    locale: runtime.locale,
+    themePreference: runtime.themePreference,
+    motionPreference: runtime.motionPreference,
+    reducedMotion: runtime.reducedMotion,
+    feedPreferences: runtime.feedPreferences,
+  });
 }

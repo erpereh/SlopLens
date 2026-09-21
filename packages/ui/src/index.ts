@@ -20,9 +20,11 @@ export { SlopLensI18nProvider, useSlopLensI18n } from "./i18n/context";
 export { type Locale, messages, t } from "./i18n/messages";
 export { compactSignalLabel, formatAnalyzeSummary } from "./sloplens/analyze-summary";
 export { SlopLensCompactSurface } from "./sloplens/compact-surface";
+export { type DashboardSection, SlopLensDashboardApp } from "./sloplens/dashboard-app";
+export { DashboardCard } from "./sloplens/dashboard-card";
 export { SlopLensDetailPanel } from "./sloplens/detail-panel";
 export { FeatureErrorPanel, FeatureStatePanel } from "./sloplens/feature-state";
-export type { PopupFeedPreferences, PopupHealth, PopupProviderRow } from "./sloplens/popup-control";
+export type { PopupHealth } from "./sloplens/popup-control";
 export { SlopLensPopupControl } from "./sloplens/popup-control";
 export {
   ScorePercentSignal,
@@ -56,7 +58,9 @@ export { MARKED_CONTENT_OPACITY, NARROW_LAYOUT_MAX_WIDTH } from "./sloplens/type
 export { useNarrowLayout } from "./sloplens/use-narrow-layout";
 export { SlopLensThemeProvider, useSlopLensTheme } from "./theme/context";
 export {
+  type MotionPreference,
   type ResolvedTheme,
+  resolveReducedMotion,
   resolveTheme,
   type ThemePreference,
 } from "./theme/types";

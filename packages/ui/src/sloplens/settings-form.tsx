@@ -27,14 +27,20 @@ export function SlopLensSettingsForm({
   providerOptions,
   onSubmitCapability,
   className,
+  lockedCapability,
+  hideTitle = false,
 }: {
   initialValues: SettingsFormValues;
   providerOptions: Record<ProviderCapability, { id: string; label: string }[]>;
   onSubmitCapability: (payload: SettingsFormSubmitPayload) => Promise<void> | void;
   className?: string;
+  lockedCapability?: ProviderCapability;
+  hideTitle?: boolean;
 }) {
   const { t } = useSlopLensI18n();
-  const [activeCapability, setActiveCapability] = useState<ProviderCapability>("decision");
+  const [activeCapability, setActiveCapability] = useState<ProviderCapability>(
+    lockedCapability ?? "decision",
+  );
   const [drafts, setDrafts] = useState<SettingsCapabilityDraft[]>(initialValues.capabilities);
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [saving, setSaving] = useState(false);
@@ -88,28 +94,30 @@ export function SlopLensSettingsForm({
         void handleSave();
       }}
     >
-      <h2 className="text-lg font-semibold">{t("settings.title")}</h2>
+      {hideTitle ? null : <h2 className="text-lg font-semibold">{t("settings.title")}</h2>}
 
-      <div className="space-y-2">
-        <span id="sloplens-capability-label" className="text-sm font-medium text-foreground">
-          {t("settings.capability")}
-        </span>
-        <Select
-          value={activeCapability}
-          onValueChange={(v) => setActiveCapability(v as ProviderCapability)}
-        >
-          <SelectTrigger aria-labelledby="sloplens-capability-label">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {PROVIDER_CAPABILITIES.map((cap) => (
-              <SelectItem key={cap} value={cap}>
-                {cap}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {lockedCapability ? null : (
+        <div className="space-y-2">
+          <span id="sloplens-capability-label" className="text-sm font-medium text-foreground">
+            {t("settings.capability")}
+          </span>
+          <Select
+            value={activeCapability}
+            onValueChange={(v) => setActiveCapability(v as ProviderCapability)}
+          >
+            <SelectTrigger aria-labelledby="sloplens-capability-label">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PROVIDER_CAPABILITIES.map((cap) => (
+                <SelectItem key={cap} value={cap}>
+                  {cap}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div className="space-y-2">
         <span id="sloplens-provider-label" className="text-sm font-medium">

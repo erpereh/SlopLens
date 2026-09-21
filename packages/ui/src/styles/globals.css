@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @source "../**/*.{ts,tsx}";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark, .dark *));
 
 @theme inline {
   --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
@@ -34,7 +34,8 @@
  * when the host page uses a different root font-size.
  */
 :host {
-  display: block;
+  display: inline-block;
+  width: fit-content;
   max-width: 20rem;
   margin-block: 0.5rem;
 }
@@ -45,6 +46,14 @@
   font-family: var(--font-sans);
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 :root,
@@ -100,4 +109,19 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+[data-reduce-motion="true"] *,
+[data-reduce-motion="true"] *::before,
+[data-reduce-motion="true"] *::after,
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after,
+:host([data-reduce-motion="true"]) *,
+:host([data-reduce-motion="true"]) *::before,
+:host([data-reduce-motion="true"]) *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }

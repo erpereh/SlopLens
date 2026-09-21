@@ -91,8 +91,12 @@ export function useDismiss(
       if (dismissOnEscape && event.key === "Escape") onDismiss();
     };
     const onPointer = (event: PointerEvent) => {
-      const target = event.target as Element | null;
-      if (!target || inside(target)) return;
+      const path = event.composedPath();
+      const target = (path[0] instanceof Element ? path[0] : event.target) as Element | null;
+      const inSelf = Boolean(
+        (ref?.current && path.includes(ref.current)) || (target && inside(target)),
+      );
+      if (!target || inSelf) return;
       // Outside this overlay, but inside one that is also open: the gesture is
       // that overlay's to answer, and swallowing its click from behind would
       // cost the user the control they actually aimed at.

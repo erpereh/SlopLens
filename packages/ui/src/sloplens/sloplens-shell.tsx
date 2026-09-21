@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { SlopLensAnchoredPanel } from "./anchored-panel";
 import { SlopLensCompactSurface } from "./compact-surface";
 import { SlopLensDetailPanel } from "./detail-panel";
 import type {
@@ -9,7 +10,6 @@ import type {
   TracePanelContent,
   VerifyPanelContent,
 } from "./types";
-import { useNarrowLayout } from "./use-narrow-layout";
 
 export type SlopLensShellProps = {
   signals: CompactSignals;
@@ -28,6 +28,7 @@ export type SlopLensShellProps = {
   onRetryTrace?: () => void;
   onAnalyze?: () => void;
   onOpenSettings?: () => void;
+  /** @deprecated Overlay no longer uses a host drawer. Kept for tests. */
   forceDrawer?: boolean;
 };
 
@@ -48,34 +49,35 @@ export function SlopLensShell({
   onRetryTrace,
   onAnalyze,
   onOpenSettings,
-  forceDrawer,
 }: SlopLensShellProps) {
-  const narrow = useNarrowLayout();
-  const asDrawer = forceDrawer ?? narrow;
   const [internalOpen, setInternalOpen] = useState(false);
   const [internalTab, setInternalTab] = useState<SlopLensPanelTab>("analyze");
   const open = detailOpen ?? internalOpen;
   const setOpen = onDetailOpenChange ?? setInternalOpen;
   const tab = activeTab ?? internalTab;
   const setTab = onTabChange ?? setInternalTab;
+  const toggle = useCallback(() => setOpen(!open), [open, setOpen]);
 
   return (
-    <div className="relative inline-flex flex-col items-start gap-2">
-      {!open || asDrawer ? (
+    <SlopLensAnchoredPanel
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
         <SlopLensCompactSurface
           signals={signals}
           analyzeState={analyzeState}
-          onOpenDetail={() => setOpen(true)}
+          onOpenDetail={toggle}
           onRetryAnalyze={onRetryAnalyze}
           onOpenSettings={onOpenSettings}
           onAnalyze={onAnalyze}
+          expanded={open}
         />
-      ) : null}
-
+      }
+    >
       <SlopLensDetailPanel
         open={open}
         onOpenChange={setOpen}
-        asDrawer={asDrawer}
+        asDrawer={false}
         activeTab={tab}
         onTabChange={setTab}
         analyzeState={analyzeState}
@@ -88,7 +90,8 @@ export function SlopLensShell({
         onRetryVerify={onRetryVerify}
         onRetryTrace={onRetryTrace}
         onOpenSettings={onOpenSettings}
+        embedded
       />
-    </div>
+    </SlopLensAnchoredPanel>
   );
 }

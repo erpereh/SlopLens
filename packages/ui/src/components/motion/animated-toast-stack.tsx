@@ -7,6 +7,7 @@ import { memo, type ReactNode, useCallback, useEffect, useMemo, useRef, useState
 import { createPortal } from "react-dom";
 import { EASE_OUT } from "@/lib/ease";
 import { cn } from "@/lib/utils";
+import { findPortalRoot, type PortalRoot } from "@/theme/apply";
 
 export type ToastStatus = "neutral" | "info" | "loading" | "success" | "error";
 export type ToastPosition =
@@ -58,7 +59,7 @@ export interface AnimatedToastStackProps {
   placement?: "static" | "fixed" | "absolute";
   fixed?: boolean;
   portal?: boolean;
-  portalRoot?: Element | null;
+  portalRoot?: PortalRoot | null;
   maxVisible?: number;
   className?: string;
   classNames?: ToastClassNames;
@@ -248,14 +249,18 @@ export function AnimatedToastStack({
   icons,
   renderToast,
 }: AnimatedToastStackProps) {
-  const [portalTarget, setPortalTarget] = useState<Element | null>(null);
+  const [portalTarget, setPortalTarget] = useState<PortalRoot | null>(null);
   const visibleToasts = toasts.slice(-maxVisible);
   const isBottom = position.startsWith("bottom");
   const resolvedPlacement = placement ?? (fixed ? "fixed" : "static");
   const shouldPortal = portal ?? resolvedPlacement === "fixed";
 
   useEffect(() => {
-    setPortalTarget(shouldPortal ? (portalRoot ?? document.body) : null);
+    setPortalTarget(
+      shouldPortal
+        ? (portalRoot ?? findPortalRoot(document.querySelector("[data-sloplens-root]")))
+        : null,
+    );
   }, [portalRoot, shouldPortal]);
 
   const stack = (

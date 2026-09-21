@@ -1,5 +1,6 @@
 export const API_ROUTES = {
   health: "/health",
+  metrics: "/metrics",
   providers: "/providers",
   settings: "/settings",
   settingsProviders: "/settings/providers",

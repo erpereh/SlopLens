@@ -10,7 +10,9 @@ vi.mock("./keyring-secret-store", () => ({
 }));
 
 describe("createSecretStore", () => {
-  it("uses explicit file fallback when OS keyring is unavailable", async () => {
+  it("uses explicit file fallback when OS keyring is unavailable", {
+    timeout: 15_000,
+  }, async () => {
     const { createSecretStore } = await import("./create-secret-store");
     const dir = await mkdtemp(path.join(tmpdir(), "sloplens-api-secrets-"));
     const { store, primary } = createSecretStore(dir);

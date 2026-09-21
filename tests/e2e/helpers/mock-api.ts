@@ -2,7 +2,7 @@ import type { BrowserContext, Route } from "@playwright/test";
 
 import { MOCK_ANALYZE, MOCK_RELATED, MOCK_TRACE, MOCK_VERIFY } from "./payloads";
 
-export type ApiMockMode = "ok" | "offline" | "delayed-analyze";
+export type ApiMockMode = "ok" | "offline" | "delayed-analyze" | "metrics-unavailable";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -27,11 +27,34 @@ function payloadFor(pathname: string): unknown {
   if (pathname.endsWith("/health")) {
     return { status: "ok", checks: { database: true, pgvector: true } };
   }
+  if (pathname.endsWith("/metrics")) {
+    return {
+      status: "ok",
+      checks: { database: true, pgvector: true },
+      counts: {
+        contentItems: 3,
+        cachedAnalyses: 2,
+        clusters: 0,
+        relations: 1,
+      },
+      lastActivityAt: "2026-09-21T12:00:00.000Z",
+    };
+  }
   if (pathname.endsWith("/settings")) {
-    return { selections: [], secrets: [] };
+    return {
+      selections: [{ capability: "decision", providerId: "typesafe", modelId: "jev-latest" }],
+      secrets: [{ capability: "decision", providerId: "typesafe", configured: true }],
+    };
   }
   if (pathname.endsWith("/providers")) {
-    return { capabilities: [] };
+    return {
+      capabilities: [
+        {
+          capability: "decision",
+          providers: [{ providerId: "typesafe", configured: true, models: ["jev-latest"] }],
+        },
+      ],
+    };
   }
   return null;
 }
@@ -55,6 +78,23 @@ export async function installApiMock(
     const { pathname } = new URL(request.url());
     if (mode === "delayed-analyze" && pathname.endsWith("/analyze")) {
       await new Promise((resolve) => setTimeout(resolve, 450));
+    }
+
+    if (mode === "metrics-unavailable" && pathname.endsWith("/metrics")) {
+      await route.fulfill(
+        json(200, {
+          status: "unavailable",
+          checks: { database: false, pgvector: false },
+          counts: {
+            contentItems: null,
+            cachedAnalyses: null,
+            clusters: null,
+            relations: null,
+          },
+          lastActivityAt: null,
+        }),
+      );
+      return;
     }
 
     const payload = payloadFor(pathname);

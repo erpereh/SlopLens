@@ -8,16 +8,15 @@ import {
 import { overlayHosts, waitForOverlay } from "../helpers/overlay";
 
 test.describe("popup control center", () => {
-  test("stays compact and keeps advanced provider editing in Options", async ({ context }) => {
+  test("stays compact and sends configuration to the dashboard", async ({ context }) => {
     const popup = await context.newPage();
     await openExtensionPopup(context, popup);
 
     await expect(popup.getByRole("switch", { name: /auto analyze/i })).toBeVisible();
-    await expect(popup.getByRole("switch", { name: /dim high-slop/i })).toBeVisible();
-    await expect(popup.getByRole("switch", { name: /show slop stamp/i })).toBeVisible();
-    await expect(popup.getByText(/slop threshold/i)).toBeVisible();
-    await expect(popup.getByText(/language/i)).toBeVisible();
-    await expect(popup.getByRole("button", { name: /manage providers/i })).toBeVisible();
+    await expect(popup.getByText(/slop threshold 70%/i)).toBeVisible();
+    await expect(popup.getByRole("button", { name: /open dashboard/i })).toBeVisible();
+    await expect(popup.getByRole("switch", { name: /dim high-slop/i })).toHaveCount(0);
+    await expect(popup.getByText(/language/i)).toHaveCount(0);
     await expect(popup.getByPlaceholder(/enter a new key/i)).toHaveCount(0);
     await expect(popup.getByLabel(/api key/i)).toHaveCount(0);
   });
