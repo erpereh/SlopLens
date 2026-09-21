@@ -17,6 +17,8 @@
       "!**/.data",
       "!**/coverage",
       "!**/pnpm-lock.yaml",
+      "!**/test-results",
+      "!**/playwright-report",
       "!**/supabase/.temp",
       "!**/supabase/.branches"
     ]

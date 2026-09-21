@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>YouTube watch fixture</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, sans-serif;
+        background: #0f0f0f;
+        color: #f1f1f1;
+      }
+      #page {
+        display: flex;
+        gap: 24px;
+        padding: 24px;
+      }
+      #primary {
+        flex: 1;
+        min-width: 0;
+      }
+      #player-mock {
+        aspect-ratio: 16 / 9;
+        max-width: 840px;
+        background: #222;
+        border-radius: 12px;
+      }
+      #primary-inner {
+        max-width: 840px;
+      }
+      h1.ytd-watch-metadata {
+        font-size: 1.25rem;
+        margin: 16px 0 8px;
+      }
+      #owner a {
+        color: #fff;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      #description-inline-expander {
+        margin-top: 12px;
+        color: #aaa;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="page">
+      <div id="primary">
+        <div id="player-mock" aria-hidden="true"></div>
+        <div id="primary-inner">
+          <h1 class="ytd-watch-metadata">
+            <yt-formatted-string>Clickbait title</yt-formatted-string>
+          </h1>
+          <div id="owner">
+            <div id="channel-name">
+              <a href="/channel/x">Creator Channel</a>
+            </div>
+          </div>
+          <div id="description-inline-expander">
+            <yt-formatted-string>Visible description of the video.</yt-formatted-string>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      window.__sloplensFixtures = {
+        switchVideo() {
+          history.pushState({}, "", "/watch?v=otherVideo99");
+          const title = document.querySelector("h1.ytd-watch-metadata yt-formatted-string");
+          if (title) title.textContent = "Another video title";
+          window.dispatchEvent(new PopStateEvent("popstate"));
+        },
+      };
+    </script>
+  </body>
+</html>

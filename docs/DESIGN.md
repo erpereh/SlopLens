@@ -30,6 +30,11 @@ La interfaz debe priorizar información y contexto sobre decoración.
 - Sustitutos locales porque el registry público devolvió 404: `button-base`, `number-ticker`, `agent-progress`. El resto del kit se instaló desde `@beui`.
 - i18n en/es. Light / dark / system persistido en `chrome.storage.local`.
 - Viewport estrecho (≤1024): el detalle pasa a drawer.
+- El overlay compacto muestra loading/error de Analyze (no un vacío falso). Primary source y similares solo aparecen cuando Verify/Related han corrido.
+- Verify muestra una señal de evidencia (`Backed by sources` / `Unverified` / etc.), nunca un veredicto absoluto.
+- El panel de detalle en viewport ancho es un diálogo no modal (`aria-modal=false`) para no bloquear la página; a ≤1024 usa drawer.
+- El drawer del overlay no bloquea el scroll de la página anfitriona.
+- `sloplens-root` se limita a ~20rem de ancho para no empujar el layout del host.
 
 No existe `apps/web` ni dashboard.
 

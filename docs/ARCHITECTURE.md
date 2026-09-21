@@ -251,6 +251,8 @@ Error envelope, schemas Zod de la API y cliente HTTP tipado extensión ↔ API. 
 
 WXT es el framework oficial de la extensión.
 
+WXT reserva el alias `@` para el root de la extensión. `packages/ui` sigue el convenio beUI (`@/…`). El build de WXT reescribe esas importaciones (plugin `sloplens-ui-at` en `apps/extension/wxt.config.ts`) para que Vite 8 / Rolldown no las resuelva contra `apps/extension`.
+
 Objetivos iniciales:
 
 - Chrome;
@@ -272,6 +274,8 @@ La extensión utilizará Manifest V3.
 No crear superficies por defecto si no aportan valor.
 
 ## Shadow DOM
+
+El content script serializa los scans del MutationObserver (un pase en vuelo + uno en cola) y el `OverlayMountManager` encadena mounts por host. Sin eso, el propio insert del overlay dispara otro scan y duplica `sloplens-root`.
 
 La UI inyectada en páginas externas debe vivir dentro de Shadow DOM siempre que sea compatible con el caso de uso.
 
@@ -841,17 +845,15 @@ Priorizar tests de:
 
 ### E2E
 
-Playwright.
+Playwright con el **Chromium empaquetado** (`launchPersistentContext` + `--load-extension`), no Chrome stable.
 
-Casos iniciales:
+La extensión se construye primero (`apps/extension/.output/chrome-mv3`). Los tests usan páginas HTML de fixture que imitan un tweet de X (`article[data-testid=tweet]`) y un watch de YouTube; no dependen de X/YouTube en vivo.
 
-- inyección en X;
-- inyección en YouTube;
-- Shadow DOM;
-- apertura/cierre de panel;
-- cambio de tema;
-- llamada al backend local;
-- estados de error.
+El API local se intercepta (mock de Analyze/Verify/Related/Trace). Analyze se dispara al montar el overlay y el mock cubre ese POST. Un modo offline aborta `http://127.0.0.1:3001` para el error `backend_unavailable`.
+
+Comando: `pnpm test:e2e` (requiere `pnpm exec playwright install chromium` la primera vez).
+
+Harness visual sin MV3: `pnpm harness` (`tests/harness`, puerto 4177).
 
 ## Formato y calidad
 

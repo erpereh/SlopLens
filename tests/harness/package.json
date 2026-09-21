@@ -1,0 +1,26 @@
+{
+  "name": "@sloplens/harness",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 4177 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --port 4177 --strictPort"
+  },
+  "dependencies": {
+    "@sloplens/core": "workspace:*",
+    "@sloplens/ui": "workspace:*",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2",
+    "tailwindcss": "^4.1.13",
+    "typescript": "catalog:",
+    "vite": "^7.1.5"
+  }
+}

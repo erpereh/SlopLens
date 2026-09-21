@@ -1,0 +1,95 @@
+:root {
+  color-scheme: light dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.harness-chrome {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid #d4d4d4;
+  background: #fff;
+}
+
+.harness-chrome a,
+.harness-chrome button {
+  font: inherit;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #d4d4d4;
+  background: #fafafa;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.harness-chrome a[aria-current="page"] {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.host-x {
+  min-height: 100vh;
+  background: #000;
+  color: #e7e9ea;
+  padding: 24px 16px 80px;
+}
+
+.host-x .timeline {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.host-x article {
+  border: 1px solid #2f3336;
+  border-radius: 16px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+
+.host-yt {
+  min-height: 100vh;
+  background: #0f0f0f;
+  color: #f1f1f1;
+  padding: 24px;
+}
+
+.host-yt .player {
+  aspect-ratio: 16 / 9;
+  max-width: 840px;
+  background: #222;
+  border-radius: 12px;
+}
+
+.host-yt h1 {
+  font-size: 1.25rem;
+  margin: 16px 0 8px;
+}
+
+.states-grid {
+  display: grid;
+  gap: 24px;
+  padding: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  background: #f4f4f5;
+}
+
+.states-grid h2 {
+  font-size: 0.85rem;
+  margin: 0 0 8px;
+  color: #52525b;
+}

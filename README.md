@@ -23,6 +23,8 @@ pnpm install
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm test:e2e   # Playwright: build MV3 + Chromium empaquetado + fixtures
+pnpm harness    # UI de overlay sin cargar la extensión (http://127.0.0.1:4177)
 ```
 
 Copiar `apps/api/.env.example` → `apps/api/.env` y `apps/extension/.env.example` → `apps/extension/.env`. La extensión solo admite `WXT_API_BASE_URL`; nunca secrets.
