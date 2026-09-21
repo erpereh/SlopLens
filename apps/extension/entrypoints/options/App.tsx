@@ -5,6 +5,7 @@ import {
   type SettingsFormValues,
   SlopLensSettingsForm,
   SlopLensUiRoot,
+  useSlopLensI18n,
 } from "@sloplens/ui";
 import { useCallback, useEffect, useState } from "react";
 
@@ -87,22 +88,48 @@ export function OptionsApp() {
       }}
       className="min-h-screen bg-background p-6"
     >
-      <div className="mx-auto w-full max-w-lg">
-        {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
-        {error ? (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        ) : null}
-        {!loading && !error && formValues ? (
-          <SlopLensSettingsForm
-            initialValues={formValues}
-            providerOptions={providerOptions}
-            onSubmitCapability={onSubmitCapability}
-          />
-        ) : null}
-      </div>
+      <OptionsAppBody
+        loading={loading}
+        error={error}
+        formValues={formValues}
+        providerOptions={providerOptions}
+        onSubmitCapability={onSubmitCapability}
+      />
     </SlopLensUiRoot>
+  );
+}
+
+function OptionsAppBody({
+  loading,
+  error,
+  formValues,
+  providerOptions,
+  onSubmitCapability,
+}: {
+  loading: boolean;
+  error: string | null;
+  formValues: SettingsFormValues | null;
+  providerOptions: Record<ProviderCapability, { id: string; label: string }[]>;
+  onSubmitCapability: (payload: SettingsFormSubmitPayload) => Promise<void>;
+}) {
+  const { t } = useSlopLensI18n();
+
+  return (
+    <div className="mx-auto w-full max-w-lg">
+      {loading ? <p className="text-sm text-muted-foreground">{t("settings.loading")}</p> : null}
+      {error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {t("settings.loadError")}
+        </p>
+      ) : null}
+      {!loading && !error && formValues ? (
+        <SlopLensSettingsForm
+          initialValues={formValues}
+          providerOptions={providerOptions}
+          onSubmitCapability={onSubmitCapability}
+        />
+      ) : null}
+    </div>
   );
 }
 

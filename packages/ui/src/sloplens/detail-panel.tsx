@@ -104,6 +104,8 @@ export function SlopLensDetailPanel({
         onOpenChange={onOpenChange}
         side="right"
         ariaLabel={t("app.name")}
+        closeAriaLabel={t("overlay.close")}
+        lightBackdrop
         lockBodyScroll={false}
         className={cn("w-[min(24rem,85vw)] overflow-hidden", className)}
       >
@@ -196,7 +198,7 @@ function PanelBody({
         variant="segment"
         className="flex min-h-0 flex-1 flex-col"
       >
-        <TabsList>
+        <TabsList className="max-w-full flex-nowrap overflow-x-auto">
           <TabsTrigger value="analyze">{t("tab.analyze")}</TabsTrigger>
           <TabsTrigger value="verify">{t("tab.verify")}</TabsTrigger>
           <TabsTrigger value="trace">{t("tab.trace")}</TabsTrigger>
@@ -208,8 +210,12 @@ function PanelBody({
           value="analyze"
           className="mt-3 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
         >
+          {analyzeState.phase === "success" && analyze?.summary ? (
+            <p className="mb-3 text-sm leading-relaxed text-foreground">{analyze.summary}</p>
+          ) : null}
           {analyzeState.phase === "success" && analyze?.decision ? (
-            <div className="mb-3 space-y-1.5">
+            <div className="space-y-1.5">
+              <p className="text-[11px] text-muted-foreground">{t("signal.scoreHint")}</p>
               <ScorePercentSignal label={t("signal.aiSlop")} score={analyze.decision.aiSlop} />
               <ScorePercentSignal
                 label={t("signal.clickbait")}
@@ -219,11 +225,17 @@ function PanelBody({
                 label={t("signal.engagementBait")}
                 score={analyze.decision.engagementBait}
               />
+              <ScoreTextSignal
+                label={t("signal.claim")}
+                value={
+                  analyze.decision.containsClaim
+                    ? t("signal.claim.detected")
+                    : t("signal.claim.none")
+                }
+                tone={analyze.decision.containsClaim ? "info" : "neutral"}
+              />
             </div>
-          ) : null}
-          {analyzeState.phase === "success" && analyze?.summary ? (
-            <p className="text-sm leading-relaxed text-foreground">{analyze.summary}</p>
-          ) : (
+          ) : analyzeState.phase !== "success" ? (
             <FeatureStatePanel
               state={analyzeState}
               emptyMessage={t("empty.analyze")}
@@ -231,7 +243,7 @@ function PanelBody({
               onRetry={onRetryAnalyze}
               onOpenSettings={onOpenSettings}
             />
-          )}
+          ) : null}
         </TabsContent>
 
         <TabsContent
@@ -239,7 +251,7 @@ function PanelBody({
           className="mt-3 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
         >
           {verifyState.phase === "success" ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {verify?.stance ? (
                 <ScoreTextSignal
                   label={t("signal.evidence")}
@@ -248,11 +260,25 @@ function PanelBody({
                 />
               ) : null}
               {verify?.summary ? <p className="text-sm leading-relaxed">{verify.summary}</p> : null}
+              {sources && sources.length > 0 ? (
+                <Citations
+                  title={t("tab.sources")}
+                  citations={sources.map((s) => ({
+                    id: s.id,
+                    title: s.title,
+                    url: s.url,
+                    domain: s.url,
+                  }))}
+                  defaultOpen
+                />
+              ) : null}
             </div>
           ) : (
             <FeatureStatePanel
               state={verifyState}
               emptyMessage={t("empty.verify")}
+              emptyIdleMessage={t("empty.verify")}
+              emptyResultMessage={t("empty.verify.insufficient")}
               loadingLabel={t("loading.verifying")}
               onRetry={onRetryVerify}
               onOpenSettings={onOpenSettings}
@@ -277,6 +303,8 @@ function PanelBody({
             <FeatureStatePanel
               state={traceState}
               emptyMessage={t("empty.trace")}
+              emptyIdleMessage={t("empty.trace")}
+              emptyResultMessage={t("empty.trace.insufficient")}
               loadingLabel={t("loading.tracing")}
               onRetry={onRetryTrace}
               onOpenSettings={onOpenSettings}
@@ -318,11 +346,11 @@ function PanelBody({
               {related.map((item) => {
                 const href = safeExternalHttpUrl(item.url);
                 return (
-                <li key={item.id} className="rounded-md border border-border p-2">
+                <li key={item.id} className="overflow-hidden rounded-md border border-border p-2">
                   {href ? (
                     <a
                       href={href}
-                      className="font-medium text-primary underline-offset-2 hover:underline"
+                      className="break-words font-medium text-primary underline-offset-2 hover:underline"
                       target="_blank"
                       rel="noopener noreferrer"
                     >

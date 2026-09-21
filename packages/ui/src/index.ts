@@ -6,6 +6,7 @@ export { Loader } from "./components/motion/loader";
 export { ThemeToggle } from "./components/motion/theme-toggle";
 export { SlopLensI18nProvider, useSlopLensI18n } from "./i18n/context";
 export { type Locale, messages, t } from "./i18n/messages";
+export { compactSignalLabel, formatAnalyzeSummary } from "./sloplens/analyze-summary";
 export { SlopLensCompactSurface } from "./sloplens/compact-surface";
 export { SlopLensDetailPanel } from "./sloplens/detail-panel";
 export { FeatureErrorPanel, FeatureStatePanel } from "./sloplens/feature-state";

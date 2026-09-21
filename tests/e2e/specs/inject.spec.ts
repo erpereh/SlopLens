@@ -11,7 +11,7 @@ test.describe("extension injection", () => {
     await expect.poll(async () => host.evaluate((el) => Boolean(el.shadowRoot))).toBe(true);
 
     await expect(page.getByRole("button", { name: /details/i })).toBeVisible();
-    await expect(page.getByText("Signal strength, not a verdict")).toBeVisible();
+    await expect(page.getByText(/verifiable claim/i)).toBeVisible();
   });
 
   test("opens and closes the detail panel without duplicating overlays", async ({ page }) => {

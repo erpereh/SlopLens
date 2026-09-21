@@ -1,15 +1,17 @@
+import { LoaderCircle } from "lucide-react";
+import { AnimatedBadge } from "@/components/motion/animated-badge";
 import { Button } from "@/components/motion/button/base";
 import { useSlopLensI18n } from "@/i18n/context";
 import { cn } from "@/lib/utils";
-import { FeatureErrorPanel, FeatureStatePanel } from "./feature-state";
-import { ScorePercentSignal, ScoreTextSignal } from "./score-signal";
-import { SlopLensThemeToggleButton } from "./theme-toggle-button";
-import type { CompactSignals, FeatureViewState } from "./types";
+import { compactSignalLabel } from "./analyze-summary";
+import { FeatureErrorPanel } from "./feature-state";
+import type { CompactSignals, FeatureViewState, SlopLensPanelTab } from "./types";
 
 export function SlopLensCompactSurface({
   signals,
   analyzeState = { phase: "idle" },
   onOpenDetail,
+  onOpenDetailTab,
   onRetryAnalyze,
   onOpenSettings,
   className,
@@ -17,86 +19,99 @@ export function SlopLensCompactSurface({
   signals: CompactSignals;
   analyzeState?: FeatureViewState;
   onOpenDetail: () => void;
+  onOpenDetailTab?: (tab: SlopLensPanelTab) => void;
   onRetryAnalyze?: () => void;
   onOpenSettings?: () => void;
   className?: string;
 }) {
-  const { t } = useSlopLensI18n();
+  const { locale, t } = useSlopLensI18n();
   const decision = signals.decision;
   const analyzeReady = analyzeState.phase === "success" && Boolean(decision);
-  const showPrimary = signals.primarySourceLabel !== undefined;
-  const showSimilar = signals.similarCount != null;
+
+  if (analyzeState.phase === "error") {
+    return (
+      <div
+        className={cn("inline-flex max-w-[min(100%,20rem)] flex-col gap-1.5", className)}
+        data-sloplens-compact="true"
+      >
+        <FeatureErrorPanel
+          code={analyzeState.error.code}
+          message={analyzeState.error.message}
+          retryable={analyzeState.error.retryable ?? false}
+          onRetry={onRetryAnalyze}
+          onOpenSettings={onOpenSettings}
+        />
+        <Button type="button" size="sm" variant="outline" className="self-end" onClick={onOpenDetail}>
+          {t("overlay.expand")}
+        </Button>
+      </div>
+    );
+  }
+
+  const chipLabel =
+    analyzeReady && decision
+      ? compactSignalLabel(locale, decision)
+      : analyzeState.phase === "loading"
+        ? t("overlay.loading")
+        : t("status.empty");
+
+  const chipStatus =
+    analyzeState.phase === "loading"
+      ? "loading"
+      : analyzeReady && decision && decision.containsClaim
+        ? "info"
+        : "neutral";
 
   return (
-    <section
+    <div
       className={cn(
-        "w-[min(100%,20rem)] rounded-xl border border-border bg-card p-3 shadow-lg",
+        "inline-flex max-w-[min(100%,20rem)] flex-col items-stretch gap-1.5",
         className,
       )}
       aria-label={t("app.name")}
       data-sloplens-compact="true"
     >
-      <header className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-sm font-semibold tracking-tight">{t("app.name")}</span>
-        <SlopLensThemeToggleButton />
-      </header>
-
-      <div className="space-y-1.5">
-        {analyzeReady && decision ? (
-          <>
-            <ScorePercentSignal label={t("signal.aiSlop")} score={decision.aiSlop} />
-            <ScorePercentSignal label={t("signal.clickbait")} score={decision.clickbait} />
-            <ScoreTextSignal
-              label={t("signal.claim")}
-              value={decision.containsClaim ? t("signal.claim.detected") : t("signal.claim.none")}
-              tone={decision.containsClaim ? "info" : "neutral"}
-            />
-          </>
-        ) : analyzeState.phase === "error" ? (
-          <FeatureErrorPanel
-            code={analyzeState.error.code}
-            message={analyzeState.error.message}
-            retryable={analyzeState.error.retryable ?? false}
-            onRetry={onRetryAnalyze}
-            onOpenSettings={onOpenSettings}
-          />
-        ) : analyzeState.phase === "loading" ? (
-          <FeatureStatePanel
-            state={analyzeState}
-            emptyMessage={t("status.empty")}
-            loadingLabel={t("loading.analyzing")}
-          />
-        ) : (
-          <p className="text-sm text-muted-foreground">{t("status.empty")}</p>
-        )}
-
-        {showPrimary ? (
-          <ScoreTextSignal
-            label={t("signal.primarySource")}
-            value={signals.primarySourceLabel ?? t("signal.primarySource.none")}
-            tone={signals.primarySourceLabel ? "positive" : "unknown"}
-          />
+      <div className="inline-flex min-w-0 items-center gap-1 rounded-full border border-border bg-card/95 p-0.5 pl-2 shadow-md backdrop-blur-sm">
+        {analyzeState.phase === "loading" ? (
+          <LoaderCircle className="size-3.5 shrink-0 animate-spin text-primary" aria-hidden />
         ) : null}
-        {showSimilar ? (
-          <ScoreTextSignal
-            label={t("signal.similar")}
-            value={
-              signals.similarCount != null && signals.similarCount > 0
-                ? String(signals.similarCount)
-                : t("signal.similar.none")
-            }
-            tone={signals.similarCount ? "info" : "neutral"}
-          />
-        ) : null}
-      </div>
-
-      <p className="mt-2 text-[11px] leading-snug text-muted-foreground">{t("signal.scoreHint")}</p>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Button type="button" size="sm" variant="primary" onClick={onOpenDetail}>
+        <AnimatedBadge
+          status={chipStatus}
+          size="sm"
+          showIcon={analyzeState.phase !== "loading"}
+          className="min-w-0 max-w-[14rem] border-0 bg-transparent px-1 shadow-none"
+        >
+          <span className="truncate" role="status" aria-live="polite">
+            {chipLabel}
+          </span>
+        </AnimatedBadge>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-7 shrink-0 rounded-full px-2.5 text-xs"
+          onClick={onOpenDetail}
+        >
           {t("overlay.expand")}
         </Button>
       </div>
-    </section>
+
+      {onOpenDetailTab ? (
+        <div className="flex flex-wrap justify-end gap-1 px-0.5">
+          {(["analyze", "verify", "trace"] as const).map((tab) => (
+            <Button
+              key={tab}
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-6 rounded-full px-2 text-[11px]"
+              onClick={() => onOpenDetailTab(tab)}
+            >
+              {t(`tab.${tab}`)}
+            </Button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }

@@ -19,6 +19,10 @@ export interface DrawerProps {
   ariaLabel?: string;
   /** Close when the backdrop is clicked. Default true. */
   dismissable?: boolean;
+  /** Accessible label for the backdrop dismiss control. */
+  closeAriaLabel?: string;
+  /** When true, use a lighter scrim that does not trap attention on the host page. */
+  lightBackdrop?: boolean;
   /**
    * Lock `document.body` scroll while open. Overlay drawers must keep this
    * false so the host page (X/YouTube) is not mutated.
@@ -35,6 +39,8 @@ export function Drawer({
   backdropClassName,
   ariaLabel,
   dismissable = true,
+  closeAriaLabel = "Close",
+  lightBackdrop = false,
   lockBodyScroll = true,
 }: DrawerProps) {
   const reduce = useReducedMotion();
@@ -71,7 +77,7 @@ export function Drawer({
           {({ gate }) => (
             <motion.button
               type="button"
-              aria-label="Close"
+              aria-label={closeAriaLabel}
               tabIndex={dismissable ? 0 : -1}
               onClick={() => dismissable && onOpenChange(false)}
               initial={{ opacity: 0 }}
@@ -80,7 +86,9 @@ export function Drawer({
               transition={{ duration: 0.25, ease: EASE_OUT }}
               {...gate}
               className={cn(
-                "fixed inset-0 z-50 h-full w-full cursor-default bg-black/40 backdrop-blur-sm",
+                lightBackdrop
+                  ? "fixed inset-0 z-50 h-full w-full cursor-default bg-black/10"
+                  : "fixed inset-0 z-50 h-full w-full cursor-default bg-black/40 backdrop-blur-sm",
                 backdropClassName,
               )}
             />
@@ -92,7 +100,7 @@ export function Drawer({
           {({ gate }) => (
             <motion.aside
               role="dialog"
-              aria-modal="true"
+              aria-modal={lightBackdrop ? "false" : "true"}
               aria-label={ariaLabel}
               initial={reduce ? { opacity: 0 } : { x: offscreen }}
               animate={reduce ? { opacity: 1 } : { x: 0 }}

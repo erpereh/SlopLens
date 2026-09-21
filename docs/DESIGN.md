@@ -24,7 +24,7 @@ La interfaz debe priorizar información y contexto sobre decoración.
 ## Estado actual de la UI
 
 - Kit beUI público en `packages/ui`, montado en la extensión dentro de `sloplens-root` (Shadow DOM).
-- Superficies: `SlopLensUiRoot` → `SlopLensShell` (badge compacto + panel/drawer con tabs Analyze · Verify · Trace · Sources · Related).
+- Superficies: `SlopLensUiRoot` → `SlopLensShell` (chip/badge compacto por defecto + panel/drawer bajo demanda con tabs Analyze · Verify · Trace · Sources · Related).
 - Options usa `SlopLensSettingsForm`; las keys se envían al API y no se persisten en la extensión.
 - En Shadow DOM el control de tema es `SlopLensThemeToggleButton` (el Theme Toggle de beUI opera sobre `document.documentElement` y no sirve aislado).
 - Sustitutos locales porque el registry público devolvió 404: `button-base`, `number-ticker`, `agent-progress`. El resto del kit se instaló desde `@beui`.
@@ -33,7 +33,8 @@ La interfaz debe priorizar información y contexto sobre decoración.
 - El overlay compacto muestra loading/error de Analyze (no un vacío falso). Primary source y similares solo aparecen cuando Verify/Related han corrido.
 - Verify muestra una señal de evidencia (`Backed by sources` / `Unverified` / etc.), nunca un veredicto absoluto.
 - El panel de detalle en viewport ancho es un diálogo no modal (`aria-modal=false`) para no bloquear la página; a ≤1024 usa drawer.
-- El drawer del overlay no bloquea el scroll de la página anfitriona.
+- El drawer del overlay no bloquea el scroll de la página anfitriona y usa un scrim ligero (`lightBackdrop`) para no atrapar la atención en el host.
+- El chip compacto muestra una sola señal resumida y accesos rápidos Analyze · Verify · Trace; las métricas y el resumen “qué estás viendo” viven en el panel expandido.
 - `sloplens-root` se limita a ~20rem de ancho para no empujar el layout del host.
 
 No existe `apps/web` ni dashboard.
@@ -282,23 +283,14 @@ Analyze · Verify · Trace
 
 ## Superficie compacta
 
-Ejemplo conceptual:
+Por defecto, una sola fila tipo chip (no una card de ~20rem con todas las métricas):
 
 ```text
-┌──────────────────────────────┐
-│ SlopLens                     │
-│                              │
-│ AI/Slop            82%       │
-│ Clickbait           91%       │
-│ Claim               detected  │
-│ Primary source      none      │
-│ Similar             37        │
-│                              │
-│ Analyze · Verify · Trace      │
-└──────────────────────────────┘
+[ Verifiable claim ]  [ Details ]
+Analyze · Verify · Trace   (atajos opcionales debajo del chip)
 ```
 
-No tomar estos números como estilo definitivo; ilustran jerarquía.
+El panel expandido muestra el resumen localizado (“qué estás viendo”), las señales numéricas como secundarias y Verify incluye fuentes visibles cuando existen.
 
 ## Componentes beUI prioritarios
 

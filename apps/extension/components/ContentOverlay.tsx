@@ -9,6 +9,7 @@ import {
   type SourceItem,
   type TracePanelContent,
   type VerifyPanelContent,
+  formatAnalyzeSummary,
 } from "@sloplens/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -188,9 +189,7 @@ export function ContentOverlay({
         relatedState={relatedState}
         analyze={{
           decision,
-          summary: decision
-            ? `${decision.contentType}${decision.containsClaim ? " · claim" : ""}`
-            : undefined,
+          summary: decision ? formatAnalyzeSummary(locale, decision) : undefined,
         }}
         verify={verify}
         trace={trace}

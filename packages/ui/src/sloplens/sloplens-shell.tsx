@@ -72,6 +72,10 @@ export function SlopLensShell({
           signals={signals}
           analyzeState={analyzeState}
           onOpenDetail={() => setOpen(true)}
+          onOpenDetailTab={(tab) => {
+            onTabChange?.(tab);
+            setOpen(true);
+          }}
           onRetryAnalyze={onRetryAnalyze}
           onOpenSettings={onOpenSettings}
         />

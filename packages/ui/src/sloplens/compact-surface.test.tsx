@@ -28,7 +28,7 @@ describe("SlopLensCompactSurface", () => {
         />,
       ),
     );
-    expect(screen.getByRole("status")).toHaveTextContent(/analyzing/i);
+    expect(screen.getByText(/analyzing/i)).toBeInTheDocument();
     expect(screen.queryByText("No data yet")).not.toBeInTheDocument();
   });
 

@@ -152,11 +152,12 @@ export function SlopLensSettingsForm({
         type="password"
         value={apiKeyInput}
         onChange={setApiKeyInput}
-        placeholder={
-          current.hasStoredKey ? t("settings.apiKey.placeholder") : t("settings.apiKey.placeholder")
-        }
+        placeholder={t("settings.apiKey.placeholder")}
         autoComplete="new-password"
       />
+      {current.hasStoredKey ? (
+        <p className="text-xs text-muted-foreground">{t("settings.apiKey.stored")}</p>
+      ) : null}
 
       <div className="flex items-center gap-3">
         <Button type="submit" variant="primary" disabled={saving}>

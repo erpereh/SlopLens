@@ -48,9 +48,12 @@ export function ScorePercentSignal({
       <span className="min-w-0 truncate text-muted-foreground">{label}</span>
       <AnimatedBadge
         status={toneStatus[resolvedTone]}
-        className="max-w-[11rem] shrink-0 truncate tabular-nums font-medium"
+        size="sm"
+        className="shrink-0 tabular-nums font-medium"
       >
-        <NumberTicker value={percent} suffix="%" duration={0.5} startOnView={false} />
+        <span className="inline-flex max-h-[1.1em] overflow-hidden leading-none">
+          <NumberTicker value={percent} suffix="%" duration={0.5} startOnView={false} />
+        </span>
       </AnimatedBadge>
     </div>
   );
@@ -72,10 +75,11 @@ export function ScoreTextSignal({
       <span className="min-w-0 truncate text-muted-foreground">{label}</span>
       <AnimatedBadge
         status={toneStatus[tone]}
-        className="max-w-[11rem] min-w-0 truncate font-medium"
+        size="sm"
+        className="max-w-none shrink-0 whitespace-normal font-medium"
         title={typeof value === "string" ? value : undefined}
       >
-        {value}
+        <span className="text-left leading-snug">{value}</span>
       </AnimatedBadge>
     </div>
   );

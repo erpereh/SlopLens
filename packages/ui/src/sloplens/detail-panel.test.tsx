@@ -47,6 +47,26 @@ describe("SlopLensDetailPanel", () => {
     expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
   });
 
+  it("shows insufficient-evidence copy after verify completes empty", () => {
+    render(
+      wrap(
+        <SlopLensDetailPanel
+          open
+          onOpenChange={() => undefined}
+          asDrawer={false}
+          activeTab="verify"
+          analyzeState={success}
+          verifyState={{ phase: "empty" }}
+          traceState={idle}
+          sourcesState={idle}
+          relatedState={idle}
+        />,
+      ),
+    );
+    expect(screen.getByText(/wasn't enough evidence/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Run Verify/i)).not.toBeInTheDocument();
+  });
+
   it("does not render javascript: links in related items", () => {
     render(
       wrap(

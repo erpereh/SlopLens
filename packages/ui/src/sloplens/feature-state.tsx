@@ -8,20 +8,34 @@ import type { FeatureViewState } from "./types";
 export function FeatureStatePanel({
   state,
   emptyMessage,
+  emptyIdleMessage,
+  emptyResultMessage,
   loadingLabel,
   onRetry,
   onOpenSettings,
 }: {
   state: FeatureViewState;
   emptyMessage: string;
+  emptyIdleMessage?: string;
+  emptyResultMessage?: string;
   loadingLabel: string;
   onRetry?: () => void;
   onOpenSettings?: () => void;
 }) {
-  const { t } = useSlopLensI18n();
+  if (state.phase === "idle") {
+    return (
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        {emptyIdleMessage ?? emptyMessage}
+      </p>
+    );
+  }
 
-  if (state.phase === "idle" || state.phase === "empty") {
-    return <p className="text-sm text-muted-foreground leading-relaxed">{emptyMessage}</p>;
+  if (state.phase === "empty") {
+    return (
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        {emptyResultMessage ?? emptyMessage}
+      </p>
+    );
   }
 
   if (state.phase === "loading") {

@@ -109,7 +109,7 @@ No debe usar otros posts como única evidencia cuando exista una fuente primaria
 
 ### 4. Análisis bajo demanda y no intrusivo
 
-La extensión debe mostrar la mínima señal necesaria y permitir profundizar cuando el usuario lo pida.
+La extensión debe mostrar la mínima señal necesaria y permitir profundizar cuando el usuario lo pida. En el overlay compacto eso se traduce en un chip con una sola señal resumida (no una card con todas las métricas); el resumen “qué estás viendo” y las puntuaciones viven en el panel expandido. Verify muestra fuentes en el propio tab cuando existen.
 
 ### 5. Gratuito y abierto
 

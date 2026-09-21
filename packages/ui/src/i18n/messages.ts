@@ -7,6 +7,23 @@ export type MessageKey =
   | "overlay.open"
   | "overlay.close"
   | "overlay.expand"
+  | "overlay.loading"
+  | "analyze.look"
+  | "analyze.look.withClaim"
+  | "contentType.news"
+  | "contentType.opinion"
+  | "contentType.meme"
+  | "contentType.advertisement"
+  | "contentType.personal"
+  | "contentType.spam"
+  | "contentType.unknown"
+  | "signal.compact.verifiableClaim"
+  | "signal.compact.highSlop"
+  | "signal.compact.highClickbait"
+  | "signal.compact.highEngagement"
+  | "settings.loading"
+  | "settings.loadError"
+  | "settings.apiKey.stored"
   | "tab.analyze"
   | "tab.verify"
   | "tab.trace"
@@ -39,7 +56,9 @@ export type MessageKey =
   | "loading.searchingSources"
   | "empty.analyze"
   | "empty.verify"
+  | "empty.verify.insufficient"
   | "empty.trace"
+  | "empty.trace.insufficient"
   | "empty.sources"
   | "empty.related"
   | "settings.title"
@@ -63,6 +82,23 @@ const en: Record<MessageKey | ErrorMessageKey, string> = {
   "overlay.open": "Open",
   "overlay.close": "Close",
   "overlay.expand": "Details",
+  "overlay.loading": "Analyzing…",
+  "analyze.look": "You're looking at {type}.",
+  "analyze.look.withClaim": "You're looking at {type} with a verifiable claim.",
+  "contentType.news": "news-style content",
+  "contentType.opinion": "opinion or commentary",
+  "contentType.meme": "meme or humor",
+  "contentType.advertisement": "promotional content",
+  "contentType.personal": "personal update",
+  "contentType.spam": "possible spam",
+  "contentType.unknown": "content",
+  "signal.compact.verifiableClaim": "Verifiable claim",
+  "signal.compact.highSlop": "High AI / slop signal",
+  "signal.compact.highClickbait": "High clickbait signal",
+  "signal.compact.highEngagement": "High engagement bait",
+  "settings.loading": "Loading settings…",
+  "settings.loadError": "Could not load settings.",
+  "settings.apiKey.stored": "A key is stored. Enter a new one to replace it.",
   "tab.analyze": "Analyze",
   "tab.verify": "Verify",
   "tab.trace": "Trace",
@@ -95,7 +131,9 @@ const en: Record<MessageKey | ErrorMessageKey, string> = {
   "loading.searchingSources": "Searching sources…",
   "empty.analyze": "Run Analyze to summarize what you are viewing.",
   "empty.verify": "Run Verify to look for supporting or conflicting evidence.",
+  "empty.verify.insufficient": "Verify finished, but there wasn't enough evidence to assess this claim.",
   "empty.trace": "Run Trace to explore possible origins and derivatives.",
+  "empty.trace.insufficient": "Trace finished, but there wasn't enough evidence to suggest an origin.",
   "empty.sources": "No sources to show yet.",
   "empty.related": "No related items yet.",
   "settings.title": "Provider settings",
@@ -125,6 +163,23 @@ const es: Record<MessageKey | ErrorMessageKey, string> = {
   "overlay.open": "Abrir",
   "overlay.close": "Cerrar",
   "overlay.expand": "Detalle",
+  "overlay.loading": "Analizando…",
+  "analyze.look": "Estás viendo {type}.",
+  "analyze.look.withClaim": "Estás viendo {type} con una afirmación verificable.",
+  "contentType.news": "contenido tipo noticia",
+  "contentType.opinion": "opinión o comentario",
+  "contentType.meme": "meme u humor",
+  "contentType.advertisement": "contenido promocional",
+  "contentType.personal": "actualización personal",
+  "contentType.spam": "posible spam",
+  "contentType.unknown": "contenido",
+  "signal.compact.verifiableClaim": "Afirmación verificable",
+  "signal.compact.highSlop": "Alta señal IA / slop",
+  "signal.compact.highClickbait": "Alta señal clickbait",
+  "signal.compact.highEngagement": "Alto cebo de engagement",
+  "settings.loading": "Cargando ajustes…",
+  "settings.loadError": "No se pudieron cargar los ajustes.",
+  "settings.apiKey.stored": "Hay una clave guardada. Introduce otra para reemplazarla.",
   "tab.analyze": "Analizar",
   "tab.verify": "Verificar",
   "tab.trace": "Rastrear",
@@ -157,7 +212,9 @@ const es: Record<MessageKey | ErrorMessageKey, string> = {
   "loading.searchingSources": "Buscando fuentes…",
   "empty.analyze": "Ejecuta Analizar para resumir lo que estás viendo.",
   "empty.verify": "Ejecuta Verificar para buscar evidencia a favor o en contra.",
+  "empty.verify.insufficient": "Verificar terminó, pero no hubo evidencia suficiente para valorar la afirmación.",
   "empty.trace": "Ejecuta Rastrear para explorar posibles orígenes.",
+  "empty.trace.insufficient": "Rastrear terminó, pero no hubo evidencia suficiente para sugerir un origen.",
   "empty.sources": "Aún no hay fuentes.",
   "empty.related": "Aún no hay relacionados.",
   "settings.title": "Ajustes de proveedores",

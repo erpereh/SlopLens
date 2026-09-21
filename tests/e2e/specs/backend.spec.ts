@@ -32,6 +32,7 @@ test.describe("backend mock and offline UI", () => {
       await openHtmlFixture(page, "https://x.com/jane/status/1234567890", tweetFixture);
       await waitForOverlay(page);
       await expect(page.getByRole("status").first()).toContainText(/analyzing/i);
+      await openDetails(page);
       await expect(page.getByText("AI / slop signal").first()).toBeVisible({ timeout: 15_000 });
     } finally {
       await context.close();

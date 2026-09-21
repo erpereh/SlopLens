@@ -8,6 +8,7 @@ import {
   type ThemePreference,
   type TracePanelContent,
   type VerifyPanelContent,
+  formatAnalyzeSummary,
 } from "@sloplens/ui";
 import { type ReactNode, useMemo, useState } from "react";
 
@@ -87,7 +88,7 @@ export function App() {
           traceState={success}
           sourcesState={success}
           relatedState={success}
-          analyze={{ decision, summary: "news · claim" }}
+          analyze={{ decision, summary: formatAnalyzeSummary("en", decision) }}
           verify={verify}
           trace={trace}
           sources={sources}
@@ -217,7 +218,7 @@ function StatesGallery({
             traceState={{ phase: "empty" }}
             sourcesState={{ phase: "empty" }}
             relatedState={{ phase: "empty" }}
-            analyze={{ decision, summary: "news · claim" }}
+            analyze={{ decision, summary: formatAnalyzeSummary("en", decision) }}
             verify={{ stance: "unverified", summary: "No corroborating sources yet." }}
           />
         </SlopLensUiRoot>
