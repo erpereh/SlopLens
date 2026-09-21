@@ -1,4 +1,4 @@
-import type { ProviderCapability, ProviderSelection } from "@sloplens/config";
+import type { ProviderCapability, ProviderSelection } from "@sloplens/config/browser";
 import type { ContentDecision } from "@sloplens/core";
 import type { ErrorCode } from "@sloplens/shared";
 

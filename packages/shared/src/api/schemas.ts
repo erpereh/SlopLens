@@ -1,4 +1,4 @@
-import { providerCapabilitySchema, providerSelectionSchema } from "@sloplens/config";
+import { providerCapabilitySchema, providerSelectionSchema } from "@sloplens/config/browser";
 import {
   contentDecisionSchema,
   contentRelationTypeSchema,
@@ -188,6 +188,8 @@ export type PutProviderSelectionsRequest = z.infer<typeof putProviderSelectionsR
 export type AnalyzeRequest = z.infer<typeof analyzeRequestSchema>;
 export type AnalyzeResponse = z.infer<typeof analyzeResponseSchema>;
 export type VerifyRequest = z.infer<typeof verifyRequestSchema>;
+export type VerifySource = z.infer<typeof verifySourceSchema>;
+export type VerifyEvidence = z.infer<typeof verifyEvidenceSchema>;
 export type VerifyResponse = z.infer<typeof verifyResponseSchema>;
 export type TraceRequest = z.infer<typeof traceRequestSchema>;
 export type TraceResponse = z.infer<typeof traceResponseSchema>;

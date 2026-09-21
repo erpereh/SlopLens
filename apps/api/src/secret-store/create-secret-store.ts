@@ -1,10 +1,7 @@
 import path from "node:path";
 
-import {
-  FILE_SECRET_STORE_FALLBACK_RELATIVE_PATH,
-  FileSecretStore,
-  type SecretStore,
-} from "@sloplens/config";
+import { FILE_SECRET_STORE_FALLBACK_RELATIVE_PATH, type SecretStore } from "@sloplens/config";
+import { FileSecretStore } from "@sloplens/config/secrets/file";
 
 import { isKeyringAvailable, KeyringSecretStore } from "./keyring-secret-store";
 

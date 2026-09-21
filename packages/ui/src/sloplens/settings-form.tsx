@@ -1,4 +1,4 @@
-import { PROVIDER_CAPABILITIES, type ProviderCapability } from "@sloplens/config";
+import { PROVIDER_CAPABILITIES, type ProviderCapability } from "@sloplens/config/browser";
 import { useState } from "react";
 import { Button } from "@/components/motion/button/base";
 import { Input } from "@/components/motion/input";

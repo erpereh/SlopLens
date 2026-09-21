@@ -1,10 +1,16 @@
 export {
+  PROVIDER_CAPABILITIES,
+  type ProviderCapability,
+  type ProviderSelection,
+  providerCapabilitySchema,
+  providerSelectionSchema,
+} from "./browser";
+export {
   type EnvLookup as SecretEnvLookup,
   envSecretKeysForProvider,
   isProviderSecretConfiguredInEnv,
   readEnvSecretForProvider,
 } from "./env-secrets";
-export { FileSecretStore } from "./file-secret-store";
 export {
   CONFIG_SOURCES,
   type ConfigSource,
@@ -26,10 +32,4 @@ export {
   type SecretStoreKind,
   secretStoreKey,
 } from "./secrets";
-export {
-  PROVIDER_CAPABILITIES,
-  type ProviderCapability,
-  type ProviderSelection,
-  providerCapabilitySchema,
-  providerSelectionSchema,
-} from "./selection";
+// FileSecretStore is Node-only (fs/ACL). Import `@sloplens/config/secrets/file`.

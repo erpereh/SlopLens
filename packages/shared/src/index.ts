@@ -26,8 +26,10 @@ export {
   type TraceResponse,
   traceRequestSchema,
   traceResponseSchema,
+  type VerifyEvidence,
   type VerifyRequest,
   type VerifyResponse,
+  type VerifySource,
   verifyRequestSchema,
   verifyResponseSchema,
 } from "./api/schemas";

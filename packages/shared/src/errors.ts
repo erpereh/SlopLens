@@ -1,4 +1,4 @@
-import { providerCapabilitySchema } from "@sloplens/config";
+import { providerCapabilitySchema } from "@sloplens/config/browser";
 import { z } from "zod";
 
 export const ERROR_CODES = [
