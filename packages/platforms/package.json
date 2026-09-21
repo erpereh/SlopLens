@@ -13,12 +13,14 @@
     "build": "tsc --noEmit",
     "lint": "biome check .",
     "typecheck": "tsc --noEmit",
-    "test": "node --eval process.exit(0)"
+    "test": "vitest run"
   },
   "dependencies": {
     "@sloplens/core": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "catalog:"
+    "happy-dom": "^20.0.10",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

@@ -1,3 +1,3 @@
 export default defineBackground(() => {
-  // Gate 0 WXT shell only. No content scripts, overlays, or provider secrets.
+  // Content scripts call the local API directly. No secrets or provider keys in the extension.
 });
