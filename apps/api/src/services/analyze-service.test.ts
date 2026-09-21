@@ -21,7 +21,7 @@ describe("analyze service", () => {
       runtime: mockRuntime({
         requireDecision: async () => ({
           provider: mockDecisionProvider(analyze),
-          selection: { capability: "decision", providerId: "jev", modelId: "test-decision" },
+          selection: { capability: "decision", providerId: "typesafe", modelId: "test-decision" },
         }),
       }),
     });
@@ -50,7 +50,7 @@ describe("analyze service", () => {
       runtime: mockRuntime({
         requireDecision: async () => ({
           provider: mockDecisionProvider(analyze),
-          selection: { capability: "decision", providerId: "jev", modelId: "test-decision" },
+          selection: { capability: "decision", providerId: "typesafe", modelId: "test-decision" },
         }),
         optionalVision: async () => vision,
       }),
@@ -73,7 +73,7 @@ describe("analyze service", () => {
       runtime: mockRuntime({
         requireDecision: async () => ({
           provider: mockDecisionProvider(),
-          selection: { capability: "decision", providerId: "jev", modelId: "test-decision" },
+          selection: { capability: "decision", providerId: "typesafe", modelId: "test-decision" },
         }),
         optionalVision: async () => vision,
       }),

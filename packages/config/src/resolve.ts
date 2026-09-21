@@ -28,8 +28,8 @@ const ENV_KEYS: Record<
 > = {
   decision: {
     providerId: ["DECISION_PROVIDER"],
-    modelId: ["DECISION_MODEL", "JEV_MODEL"],
-    baseUrl: ["DECISION_BASE_URL"],
+    modelId: ["DECISION_MODEL"],
+    baseUrl: ["TYPESAFE_AI_BASE_URL", "DECISION_BASE_URL"],
   },
   embedding: {
     providerId: ["EMBEDDING_PROVIDER"],

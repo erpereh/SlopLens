@@ -92,7 +92,7 @@ export function mockReasoningProvider(text: string): ReasoningProvider {
 export function mockRuntime(overrides: Partial<ProviderRuntime> = {}): ProviderRuntime {
   const decisionSelection: ProviderSelection = {
     capability: "decision",
-    providerId: "jev",
+    providerId: "typesafe",
     modelId: "test-decision",
   };
   const embeddingSelection: ProviderSelection = {

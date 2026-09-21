@@ -45,7 +45,7 @@ Debe representar la arquitectura actual y las decisiones de implementación vige
 | Auth | Supabase Auth disponible, no obligatoria inicialmente |
 | Realtime | disponible, no obligatorio inicialmente |
 | Storage | disponible, usar solo si hace falta |
-| Clasificación | provider-agnostic; Jev como default inicial |
+| Clasificación | provider-agnostic; TypeSafe + Jev como default inicial |
 | Embeddings | provider-agnostic |
 | Search | provider-agnostic |
 | Vision/multimodal | provider-agnostic |
@@ -73,7 +73,8 @@ El monorepo pnpm + Turborepo está operativo. Los contratos compartidos están c
 
 **Proveedores (adapters, no dominio):**
 
-- Decision: Jev vía AI Gateway (`@ai-sdk/gateway`).
+- Decision: TypeSafe AI oficial (`@ai-sdk/typesafe-ai`, `providerId: typesafe`, modelo `jev-latest`). Jev clasifica; no se usa Vercel AI Gateway.
+- Una selección persistida `jev` o `typesafe-ai/jev` se normaliza a `typesafe` + `jev-latest` y se reescribe en `provider_selections`.
 - Embedding / vision / reasoning: OpenRouter.
 - Search: Tavily (`include_answer: false`; el campo answer nunca es un veredicto).
 - Registry por `providerId` (`packages/ai`); `apps/api` resuelve credenciales/settings y obtiene instancias vía `createDefaultProviderRegistry`, sin switches duplicados en dominio.
@@ -122,7 +123,7 @@ No implementado / fuera del MVP:
                            │
           ┌────────────────┼────────────────┐
           │                │                │
-         Jev          Embeddings          Search
+         TypeSafe/Jev  Embeddings          Search
           │                │                │
           └────────────────┼────────────────┘
                            │
@@ -150,7 +151,7 @@ sloplens/
 │
 ├── packages/
 │   ├── core/               # NormalizedContent, ContentDecision
-│   ├── ai/                 # interfaces + adapters Jev/OpenRouter/Tavily
+│   ├── ai/                 # interfaces + adapters TypeSafe/OpenRouter/Tavily
 │   ├── platforms/          # adapters X y YouTube
 │   ├── shared/             # error envelope, schemas API, cliente HTTP
 │   ├── config/             # ProviderSelection, resolución, SecretStore
@@ -207,7 +208,7 @@ Responsabilidades:
 - validar payloads;
 - proteger secretos;
 - llamar a proveedores;
-- orquestar Jev, embeddings, búsqueda y verificación;
+- orquestar TypeSafe/Jev, embeddings, búsqueda y verificación;
 - consultar/escribir en Supabase;
 - aplicar caché lógica;
 - normalizar respuestas.
@@ -234,7 +235,7 @@ La extensión solo puede importar `@sloplens/config/browser` (schemas). `FileSec
 
 ### `packages/ai`
 
-Contratos de providers e implementaciones adapter (Jev, OpenRouter, Tavily). IDs de modelo solo aquí y en defaults de bootstrap.
+Contratos de providers e implementaciones adapter (TypeSafe/Jev, OpenRouter, Tavily). IDs de modelo solo aquí y en defaults de bootstrap.
 
 ### `packages/platforms`
 
@@ -371,7 +372,7 @@ El cliente tipado vive en `packages/shared` (`createSlopLensApiClient`). La exte
 
 - recibe contenido normalizado;
 - reutiliza análisis por `content_hash` + provider/model de decisión salvo `forceRefresh`;
-- llama al `DecisionProvider` (Jev por defecto);
+- llama al `DecisionProvider` (TypeSafe + Jev por defecto);
 - en YouTube, o si `needsImageAnalysis`, analiza el thumbnail con `VisionProvider` cuando está configurado; si vision falla tras una decisión válida, la respuesta incluye `warnings` (p. ej. `capability: vision`) sin invalidar la decisión;
 - no descarga transcripciones: usa `NormalizedContent.text` solo si el adapter ya lo aportó;
 - persiste `content_items` + `content_analysis`.
@@ -502,7 +503,7 @@ interface ReasoningProvider {
 
 Los embeddings siempre llevan `modelId` y `dimensions`. El dominio no conoce un número mágico de dimensiones. Persistencia futura debe rechazar `values.length !== dim` verificada del modelo (`assertEmbeddingDimensions`).
 
-Jev es el `DecisionProvider` inicial previsto, no una dependencia que deba filtrarse por todo el dominio. El registry se indexa por `providerId`.
+Jev (vía TypeSafe AI) es el clasificador/router inicial, no una dependencia que deba filtrarse por todo el dominio. El registry se indexa por `providerId` (`typesafe` para decisión).
 
 ### Configuración dinámica de proveedores
 
@@ -595,7 +596,7 @@ Reglas:
 Configuración inicial de desarrollo prevista:
 
 ```text
-Decision     → configurable; Jev como default inicial
+Decision     → configurable; TypeSafe + Jev (`jev-latest`) como default inicial
 Embedding    → configurable
 Search       → configurable
 Vision       → configurable

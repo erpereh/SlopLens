@@ -17,13 +17,19 @@ base.describe("MV3 background API proxy", () => {
       await openHtmlFixture(page, "https://x.com/jane/status/1234567890", tweetFixture);
       await waitForOverlay(page);
       await expect(page.getByRole("button", { name: /details/i })).toBeVisible();
+      await expect
+        .poll(() =>
+          localhostApiRequests(requests).filter(
+            (item) => item.fromServiceWorker && item.url.endsWith("/analyze"),
+          ).length,
+        )
+        .toBeGreaterThan(0);
 
       const api = localhostApiRequests(requests);
       const fromPage = api.filter((item) => !item.fromServiceWorker);
       const fromWorker = api.filter((item) => item.fromServiceWorker);
 
       expect(fromPage, "content script / document must not call localhost").toEqual([]);
-      expect(fromWorker.length).toBeGreaterThan(0);
       expect(
         fromWorker.some((item) => item.url.endsWith("/analyze") && item.method === "POST"),
       ).toBe(true);

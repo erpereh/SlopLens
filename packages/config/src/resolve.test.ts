@@ -70,4 +70,22 @@ describe("resolveAllProviderConfigs", () => {
     expect(resolved.vision.source).toBe("unconfigured");
     expect(resolved.reasoning.source).toBe("unconfigured");
   });
+
+  it("reads the TypeSafe decision bootstrap without JEV_MODEL", () => {
+    const resolved = resolveAllProviderConfigs({
+      env: {
+        DECISION_PROVIDER: "typesafe",
+        DECISION_MODEL: "jev-latest",
+        TYPESAFE_AI_BASE_URL: "https://api.typesafe.ai/v1",
+        JEV_MODEL: "typesafe-ai/jev",
+      },
+    });
+    expect(resolved.decision.source).toBe("env");
+    expect(resolved.decision.selection).toEqual({
+      capability: "decision",
+      providerId: "typesafe",
+      modelId: "jev-latest",
+      baseUrl: "https://api.typesafe.ai/v1",
+    });
+  });
 });

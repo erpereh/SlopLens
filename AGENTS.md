@@ -106,7 +106,7 @@ Para el MVP están cerradas, entre otras, estas decisiones:
 - Sin Supabase Cloud obligatorio.
 - Sin Supabase Edge Functions en el MVP.
 - Sin GitHub Actions en el MVP.
-- Jev como clasificador/router inicial.
+- Jev como clasificador/router inicial, accedido por TypeSafe AI oficial (`@ai-sdk/typesafe-ai`), no por Vercel AI Gateway.
 - Proveedores de IA, embeddings, búsqueda y multimodal desacoplados mediante interfaces.
 - Ningún proveedor concreto es obligatorio: los `.env` son solo defaults de bootstrap y la configuración debe poder evolucionar/operar desde la propia app.
 

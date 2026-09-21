@@ -1,9 +1,21 @@
 import { MemorySecretStore } from "@sloplens/config";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { listProviderSelections, replaceProviderSelections } from "../db/provider-selections";
 import { createSettingsService } from "./settings-service";
 
+vi.mock("../db/provider-selections", () => ({
+  listProviderSelections: vi.fn(),
+  replaceProviderSelections: vi.fn(),
+}));
+
 describe("createSettingsService", () => {
+  beforeEach(() => {
+    vi.mocked(listProviderSelections).mockReset();
+    vi.mocked(replaceProviderSelections).mockReset();
+    vi.mocked(listProviderSelections).mockResolvedValue([]);
+  });
+
   it("never returns secret values in settings responses", async () => {
     const secretStore = new MemorySecretStore();
     await secretStore.set("embedding:openrouter", "super-secret-key");
@@ -46,6 +58,47 @@ describe("createSettingsService", () => {
       }),
     ).rejects.toMatchObject({
       body: { code: "validation_error" },
+    });
+  });
+
+  it("persists legacy jev / typesafe-ai/jev as typesafe + jev-latest", async () => {
+    vi.mocked(listProviderSelections).mockResolvedValue([
+      { capability: "decision", providerId: "jev", modelId: "typesafe-ai/jev" },
+    ]);
+    vi.mocked(replaceProviderSelections).mockResolvedValue();
+
+    const service = createSettingsService({
+      sql: {} as never,
+      secretStore: new MemorySecretStore(),
+      env: {},
+    });
+
+    const settings = await service.getSettings();
+    expect(replaceProviderSelections).toHaveBeenCalledWith({} as never, [
+      { capability: "decision", providerId: "typesafe", modelId: "jev-latest" },
+    ]);
+    expect(settings.selections).toEqual([
+      { capability: "decision", providerId: "typesafe", modelId: "jev-latest" },
+    ]);
+  });
+
+  it("returns the normalized decision selection if persistence fails", async () => {
+    vi.mocked(listProviderSelections).mockResolvedValue([
+      { capability: "decision", providerId: "jev" },
+    ]);
+    vi.mocked(replaceProviderSelections).mockRejectedValue(new Error("db locked"));
+
+    const service = createSettingsService({
+      sql: {} as never,
+      secretStore: new MemorySecretStore(),
+      env: {},
+    });
+
+    const settings = await service.getSettings();
+    expect(settings.selections[0]).toEqual({
+      capability: "decision",
+      providerId: "typesafe",
+      modelId: "jev-latest",
     });
   });
 });

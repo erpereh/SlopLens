@@ -165,6 +165,13 @@ function toFormValues(settings: SettingsResponse): SettingsFormValues {
   return { capabilities };
 }
 
+function providerLabel(providerId: string): string {
+  if (providerId === "typesafe") {
+    return "TypeSafe";
+  }
+  return providerId;
+}
+
 function toProviderOptions(
   providers: ProvidersResponse,
 ): Record<ProviderCapability, { id: string; label: string }[]> {
@@ -172,7 +179,7 @@ function toProviderOptions(
   for (const group of providers.capabilities) {
     options[group.capability] = group.providers.map((provider) => ({
       id: provider.providerId,
-      label: provider.providerId,
+      label: providerLabel(provider.providerId),
     }));
   }
   return options;

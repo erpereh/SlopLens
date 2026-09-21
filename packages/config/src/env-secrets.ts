@@ -3,7 +3,7 @@ import type { ProviderCapability } from "./selection";
 export type EnvLookup = Record<string, string | undefined>;
 
 const PROVIDER_SECRET_ENV_KEYS: Record<string, readonly string[]> = {
-  jev: ["AI_GATEWAY_API_KEY"],
+  typesafe: ["TYPESAFE_AI_API_KEY"],
   openrouter: ["OPENROUTER_API_KEY"],
   tavily: ["TAVILY_API_KEY"],
 };

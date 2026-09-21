@@ -4,6 +4,7 @@
  */
 
 export const OFFICIAL_PROVIDER_BASE_URLS: Readonly<Record<string, readonly string[]>> = {
+  typesafe: ["https://api.typesafe.ai/v1"],
   openrouter: ["https://openrouter.ai/api/v1"],
   tavily: ["https://api.tavily.com"],
 };

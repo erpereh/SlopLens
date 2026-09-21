@@ -1,9 +1,12 @@
 import {
+  normalizeProviderSelections,
   PROVIDER_CAPABILITIES,
   type ProviderCapability,
   type ProviderSelection,
+  providerSelectionsEqual,
   type SecretStore,
   secretStoreKey,
+  TYPESAFE_PROVIDER_ID,
   validateProviderBaseUrl,
 } from "@sloplens/config";
 import type { PutProviderSelectionsRequest, SettingsResponse } from "@sloplens/shared";
@@ -24,13 +27,30 @@ export function createSettingsService(input: {
   secretStore: SecretStore;
   env: NodeJS.ProcessEnv;
 }): SettingsService {
+  async function loadUserSelections(): Promise<ProviderSelection[]> {
+    const stored = await listProviderSelections(input.sql);
+    const normalized = normalizeProviderSelections(stored);
+    if (providerSelectionsEqual(stored, normalized)) {
+      return normalized;
+    }
+    if (!input.sql) {
+      return normalized;
+    }
+    try {
+      await replaceProviderSelections(input.sql, normalized);
+      return normalized;
+    } catch {
+      return normalized;
+    }
+  }
+
   return {
     async listUserSelections() {
-      return listProviderSelections(input.sql);
+      return loadUserSelections();
     },
 
     async getSettings() {
-      const userSelections = await listProviderSelections(input.sql);
+      const userSelections = await loadUserSelections();
       const resolved = resolveEffectiveSelections({
         userSelections,
         env: input.env,
@@ -61,7 +81,8 @@ export function createSettingsService(input: {
     },
 
     async putProviderSettings(body) {
-      for (const selection of body.selections) {
+      const incoming = normalizeProviderSelections(body.selections);
+      for (const selection of incoming) {
         const baseUrlError = validateProviderBaseUrl(selection.providerId, selection.baseUrl);
         if (baseUrlError) {
           throw validationError(baseUrlError);
@@ -72,8 +93,8 @@ export function createSettingsService(input: {
         throw new Error("Database unavailable");
       }
 
-      const existing = await listProviderSelections(input.sql);
-      const merged = mergeByCapability(existing, body.selections);
+      const existing = await loadUserSelections();
+      const merged = normalizeProviderSelections(mergeByCapability(existing, incoming));
       for (const selection of merged) {
         const baseUrlError = validateProviderBaseUrl(selection.providerId, selection.baseUrl);
         if (baseUrlError) {
@@ -84,7 +105,11 @@ export function createSettingsService(input: {
 
       if (body.secrets) {
         for (const secretUpdate of body.secrets) {
-          const key = secretStoreKey(secretUpdate.capability, secretUpdate.providerId);
+          const providerId =
+            secretUpdate.capability === "decision" && secretUpdate.providerId === "jev"
+              ? TYPESAFE_PROVIDER_ID
+              : secretUpdate.providerId;
+          const key = secretStoreKey(secretUpdate.capability, providerId);
           if (secretUpdate.delete) {
             await input.secretStore.delete(key);
             continue;

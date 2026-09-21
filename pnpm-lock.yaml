@@ -291,9 +291,9 @@ importers:
 
   packages/ai:
     dependencies:
-      '@ai-sdk/gateway':
-        specifier: ^4.0.87
-        version: 4.0.87(zod@4.6.5)
+      '@ai-sdk/typesafe-ai':
+        specifier: ^3.0.4
+        version: 3.0.4(zod@4.6.5)
       '@sloplens/config':
         specifier: workspace:*
         version: link:../config
@@ -517,6 +517,12 @@ packages:
   '@ai-sdk/provider@4.0.17':
     resolution: {integrity: sha512-VYMBxIQdcHqbIf1j+YZlI9Ati6LZ4wJe0GGd4z4a5H/KxTggjeOiyaVYTnfF7LHZK5jMQ+rofmzz4QPqf++NUw==}
     engines: {node: '>=22'}
+
+  '@ai-sdk/typesafe-ai@3.0.4':
+    resolution: {integrity: sha512-LQvqtf6cVla5iyH/LYs9rvl63NDWRRqggz9ilGNmjixhi5TuONAWo+SC6+xT46izn/bpyx9hmXNdMLg3ZSSW0A==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
 
   '@aklinker1/rollup-plugin-visualizer@5.12.0':
     resolution: {integrity: sha512-X24LvEGw6UFmy0lpGJDmXsMyBD58XmX1bbwsaMLhNoM+UMQfQ3b2RtC+nz4b/NoRK5r6QJSKJHBNVeUdwqybaQ==}
@@ -3646,6 +3652,12 @@ snapshots:
   '@ai-sdk/provider@4.0.17':
     dependencies:
       json-schema: 0.4.0
+
+  '@ai-sdk/typesafe-ai@3.0.4(zod@4.6.5)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.17
+      '@ai-sdk/provider-utils': 5.0.45(zod@4.6.5)
+      zod: 4.6.5
 
   '@aklinker1/rollup-plugin-visualizer@5.12.0(rollup@4.63.4)':
     dependencies:

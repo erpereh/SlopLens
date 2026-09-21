@@ -6,6 +6,16 @@ export {
   providerSelectionSchema,
 } from "./browser";
 export {
+  DEFAULT_TYPESAFE_MODEL_ID,
+  isLegacyDecisionSelection,
+  LEGACY_DECISION_PROVIDER_ID,
+  LEGACY_GATEWAY_DECISION_MODEL_ID,
+  normalizeDecisionSelection,
+  normalizeProviderSelections,
+  providerSelectionsEqual,
+  TYPESAFE_PROVIDER_ID,
+} from "./decision-selection";
+export {
   type EnvLookup as SecretEnvLookup,
   envSecretKeysForProvider,
   isProviderSecretConfiguredInEnv,

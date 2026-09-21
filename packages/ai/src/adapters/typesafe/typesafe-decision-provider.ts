@@ -1,19 +1,20 @@
-import { createGateway } from "@ai-sdk/gateway";
+import { createTypeSafeAi } from "@ai-sdk/typesafe-ai";
 import type { NormalizedContent } from "@sloplens/core";
 import { type Experimental_EvaluationModel as EvaluationModel, experimental_evaluate } from "ai";
 
 import { AiProviderError } from "../../errors";
 import type { DecisionInput, DecisionProvider } from "../../providers/decision";
-import { DEFAULT_JEV_MODEL_ID, PROVIDER_IDS } from "../defaults";
+import { DEFAULT_DECISION_MODEL_ID, DEFAULT_TYPESAFE_BASE_URL, PROVIDER_IDS } from "../defaults";
 import { type JevEvaluationAnswers, mapJevAnswersToContentDecision } from "./map-evaluation";
 import { jevContentDecisionQuestions } from "./questions";
 
-export interface JevDecisionProviderConfig {
+export interface TypeSafeDecisionProviderConfig {
   apiKey: string;
   modelId?: string;
+  baseUrl?: string;
   threshold?: number;
   evaluate?: typeof experimental_evaluate;
-  gatewayFactory?: typeof createGateway;
+  createClient?: typeof createTypeSafeAi;
 }
 
 function contentToEvaluationState(content: NormalizedContent) {
@@ -29,23 +30,28 @@ function contentToEvaluationState(content: NormalizedContent) {
   };
 }
 
-export function createJevDecisionProvider(config: JevDecisionProviderConfig): DecisionProvider {
-  const modelId = config.modelId ?? DEFAULT_JEV_MODEL_ID;
+export function createTypeSafeDecisionProvider(
+  config: TypeSafeDecisionProviderConfig,
+): DecisionProvider {
+  const modelId = config.modelId ?? DEFAULT_DECISION_MODEL_ID;
   const evaluate = config.evaluate ?? experimental_evaluate;
-  const gatewayFactory = config.gatewayFactory ?? createGateway;
+  const createClient = config.createClient ?? createTypeSafeAi;
 
   if (!config.apiKey.trim()) {
     throw new AiProviderError(
       "provider_not_configured",
-      "Jev decision provider requires an API key",
+      "TypeSafe decision provider requires an API key",
       {
         capability: "decision",
       },
     );
   }
 
-  const gateway = gatewayFactory({ apiKey: config.apiKey.trim() });
-  const evaluationModel: EvaluationModel = gateway.evaluationModel(modelId);
+  const client = createClient({
+    apiKey: config.apiKey.trim(),
+    baseURL: config.baseUrl?.trim() || DEFAULT_TYPESAFE_BASE_URL,
+  });
+  const evaluationModel: EvaluationModel = client.evaluationModel(modelId);
 
   return {
     providerId: PROVIDER_IDS.decision,
@@ -55,9 +61,6 @@ export function createJevDecisionProvider(config: JevDecisionProviderConfig): De
           model: evaluationModel,
           state: JSON.stringify(contentToEvaluationState(input.content)),
           questions: jevContentDecisionQuestions,
-          providerOptions: {
-            gateway: { zeroDataRetention: true },
-          },
         });
 
         return mapJevAnswersToContentDecision(result.answers as JevEvaluationAnswers, {
@@ -67,7 +70,7 @@ export function createJevDecisionProvider(config: JevDecisionProviderConfig): De
         if (error instanceof AiProviderError) {
           throw error;
         }
-        const message = error instanceof Error ? error.message : "Jev evaluation failed";
+        const message = error instanceof Error ? error.message : "TypeSafe evaluation failed";
         if (/rate limit|429/i.test(message)) {
           throw new AiProviderError("rate_limited", message, {
             retryable: true,

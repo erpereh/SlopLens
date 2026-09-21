@@ -1,6 +1,7 @@
 /** Bootstrap defaults only — not domain constants. Override via provider config. */
 
-export const DEFAULT_JEV_MODEL_ID = "typesafe-ai/jev";
+export const DEFAULT_DECISION_MODEL_ID = "jev-latest";
+export const DEFAULT_TYPESAFE_BASE_URL = "https://api.typesafe.ai/v1";
 
 export const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
@@ -14,7 +15,7 @@ export const DEFAULT_TAVILY_BASE_URL = "https://api.tavily.com";
 export const DEFAULT_DECISION_BOOLEAN_THRESHOLD = 0.6;
 
 export const PROVIDER_IDS = {
-  decision: "jev",
+  decision: "typesafe",
   embedding: "openrouter",
   search: "tavily",
   vision: "openrouter",

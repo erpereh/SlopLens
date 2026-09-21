@@ -27,8 +27,8 @@ describe.skipIf(!smokeEnabled)("provider smoke", () => {
 
   const registry = createDefaultProviderRegistryFromEnv();
 
-  it("decision: one Jev evaluation when AI_GATEWAY_API_KEY is configured", async () => {
-    const provider = registry.getDecision("jev");
+  it("decision: one TypeSafe evaluation when TYPESAFE_AI_API_KEY is configured", async () => {
+    const provider = registry.getDecision("typesafe");
     if (!provider) {
       return;
     }

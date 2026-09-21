@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createJevDecisionProvider } from "./jev-decision-provider";
+import { createTypeSafeDecisionProvider } from "./typesafe-decision-provider";
 
-describe("createJevDecisionProvider", () => {
-  it("maps evaluate answers into a ContentDecision", async () => {
+describe("createTypeSafeDecisionProvider", () => {
+  it("maps evaluate answers into a ContentDecision via the official TypeSafe client", async () => {
     const evaluate = vi.fn(async () => ({
       answers: {
         aiSlop: { type: "boolean", probability: 0.2 },
@@ -29,19 +29,24 @@ describe("createJevDecisionProvider", () => {
       warnings: [],
       rounding: {},
       providerMetadata: {},
-      response: { timestamp: new Date(), modelId: "typesafe-ai/jev" },
+      response: { timestamp: new Date(), modelId: "jev-latest" },
     }));
 
-    const evaluationModel = "typesafe-ai/jev-mock";
-    const gatewayFactory = vi.fn(() => ({
-      evaluationModel: vi.fn(() => evaluationModel),
+    const evaluationModel = { specificationVersion: "v4" };
+    const evaluationModelFn = vi.fn(() => evaluationModel);
+    const createClient = vi.fn(() => ({
+      evaluationModel: evaluationModelFn,
     }));
 
-    const provider = createJevDecisionProvider({
-      apiKey: "test-gateway-key",
+    const provider = createTypeSafeDecisionProvider({
+      apiKey: "test-typesafe-key",
+      modelId: "jev-latest",
+      baseUrl: "https://api.typesafe.ai/v1",
       evaluate: evaluate as never,
-      gatewayFactory: gatewayFactory as never,
+      createClient: createClient as never,
     });
+
+    expect(provider.providerId).toBe("typesafe");
 
     const decision = await provider.analyze({
       content: {
@@ -52,8 +57,15 @@ describe("createJevDecisionProvider", () => {
       },
     });
 
-    expect(gatewayFactory).toHaveBeenCalledWith({ apiKey: "test-gateway-key" });
+    expect(createClient).toHaveBeenCalledWith({
+      apiKey: "test-typesafe-key",
+      baseURL: "https://api.typesafe.ai/v1",
+    });
+    expect(evaluationModelFn).toHaveBeenCalledWith("jev-latest");
     expect(evaluate).toHaveBeenCalledOnce();
+    const payload = evaluate.mock.calls.at(0)?.at(0) as Record<string, unknown> | undefined;
+    expect(payload?.model).toBe(evaluationModel);
+    expect(payload).not.toHaveProperty("providerOptions");
     expect(decision.contentType).toBe("opinion");
     expect(decision.containsClaim).toBe(true);
     expect(decision.aiSlop).toBe(0.2);

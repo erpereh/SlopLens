@@ -1,8 +1,8 @@
-import { createJevDecisionProvider } from "./adapters/jev/jev-decision-provider";
 import { createOpenRouterEmbeddingProvider } from "./adapters/openrouter/embedding-provider";
 import { createOpenRouterReasoningProvider } from "./adapters/openrouter/reasoning-provider";
 import { createOpenRouterVisionProvider } from "./adapters/openrouter/vision-provider";
 import { createTavilySearchProvider } from "./adapters/tavily/search-provider";
+import { createTypeSafeDecisionProvider } from "./adapters/typesafe/typesafe-decision-provider";
 import {
   createProviderRegistry,
   type ProviderRegistry,
@@ -13,6 +13,7 @@ export interface DefaultProviderRegistryConfig {
   decision?: {
     apiKey?: string;
     modelId?: string;
+    baseUrl?: string;
     threshold?: number;
   };
   embedding?: {
@@ -43,9 +44,10 @@ export function createDefaultProviderRegistry(
 
   if (config.decision?.apiKey?.trim()) {
     entries.decision = {
-      jev: createJevDecisionProvider({
+      typesafe: createTypeSafeDecisionProvider({
         apiKey: config.decision.apiKey,
         modelId: config.decision.modelId,
+        ...(config.decision.baseUrl ? { baseUrl: config.decision.baseUrl } : {}),
         threshold: config.decision.threshold,
       }),
     };
@@ -98,8 +100,9 @@ export function createDefaultProviderRegistryFromEnv(
 ): ProviderRegistry {
   return createDefaultProviderRegistry({
     decision: {
-      apiKey: env.AI_GATEWAY_API_KEY,
-      modelId: env.JEV_MODEL ?? env.DECISION_MODEL,
+      apiKey: env.TYPESAFE_AI_API_KEY,
+      modelId: env.DECISION_MODEL,
+      baseUrl: env.TYPESAFE_AI_BASE_URL ?? env.DECISION_BASE_URL,
     },
     embedding: {
       apiKey: env.OPENROUTER_API_KEY,

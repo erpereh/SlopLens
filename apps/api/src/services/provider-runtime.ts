@@ -59,7 +59,7 @@ export function createProviderRuntime(input: {
     switch (capability) {
       case "decision":
         return createDefaultProviderRegistry({
-          decision: { apiKey, modelId },
+          decision: { apiKey, modelId, ...(baseUrl ? { baseUrl } : {}) },
         });
       case "embedding":
         return createDefaultProviderRegistry({

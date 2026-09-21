@@ -16,6 +16,7 @@ import { waitForOverlay } from "../helpers/overlay";
 const SECRET_PATTERNS = [
   "OPENROUTER_API_KEY",
   "AI_GATEWAY_API_KEY",
+  "TYPESAFE_AI_API_KEY",
   "TAVILY_API_KEY",
   "DATABASE_URL",
   "sk-or-",
@@ -75,7 +76,7 @@ base.describe("secrets stay out of the extension", () => {
         expect(item.headers["x-api-key"] ?? "").toBe("");
         const body = item.postData ?? "";
         expect(body).not.toMatch(
-          /OPENROUTER_API_KEY|AI_GATEWAY_API_KEY|TAVILY_API_KEY|sk-or-|tvly-/,
+          /OPENROUTER_API_KEY|AI_GATEWAY_API_KEY|TYPESAFE_AI_API_KEY|TAVILY_API_KEY|sk-or-|tvly-/,
         );
         expect(body).not.toMatch(/"apiKey"\s*:/);
       }
