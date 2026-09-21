@@ -22,6 +22,15 @@ export const healthResponseSchema = z
   })
   .strict();
 
+export const slopSeriesPointSchema = z
+  .object({
+    day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    slop: z.number().min(0).max(1).nullable(),
+    x: z.number().min(0).max(1).nullable(),
+    youtube: z.number().min(0).max(1).nullable(),
+  })
+  .strict();
+
 export const metricsResponseSchema = z
   .object({
     status: z.enum(["ok", "degraded", "unavailable"]),
@@ -49,6 +58,7 @@ export const metricsResponseSchema = z
       })
       .strict(),
     lastActivityAt: z.string().min(1).nullable(),
+    slopSeries: z.array(slopSeriesPointSchema).nullable(),
   })
   .strict();
 
@@ -278,6 +288,7 @@ export const relatedResponseSchema = z
 
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
 export type MetricsResponse = z.infer<typeof metricsResponseSchema>;
+export type SlopSeriesPoint = z.infer<typeof slopSeriesPointSchema>;
 export type ContentListQuery = z.infer<typeof contentListQuerySchema>;
 
 export const EMPTY_METRICS_COUNTS: MetricsResponse["counts"] = {

@@ -127,6 +127,8 @@ export type MessageKey =
   | "dashboard.verifications"
   | "dashboard.recentHistory"
   | "dashboard.platformSplit"
+  | "dashboard.slopOverTime"
+  | "dashboard.noSeries"
   | "history.empty"
   | "history.error"
   | "history.openOriginal"
@@ -293,6 +295,8 @@ const en: Record<MessageKey | ErrorMessageKey, string> = {
   "dashboard.verifications": "Verifications",
   "dashboard.recentHistory": "Recent analyses",
   "dashboard.platformSplit": "X and YouTube",
+  "dashboard.slopOverTime": "Slop over time",
+  "dashboard.noSeries": "No analyzed days yet.",
   "history.empty": "Nothing analyzed yet.",
   "history.error": "Could not load analyzed content.",
   "history.openOriginal": "Open original",
@@ -465,6 +469,8 @@ const es: Record<MessageKey | ErrorMessageKey, string> = {
   "dashboard.verifications": "Verificaciones",
   "dashboard.recentHistory": "Análisis recientes",
   "dashboard.platformSplit": "X y YouTube",
+  "dashboard.slopOverTime": "Slop en el tiempo",
+  "dashboard.noSeries": "Todavía no hay días analizados.",
   "history.empty": "Todavía no hay contenido analizado.",
   "history.error": "No se pudo cargar el contenido analizado.",
   "history.openOriginal": "Abrir original",

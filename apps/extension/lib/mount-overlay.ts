@@ -161,6 +161,8 @@ export class OverlayMountManager {
           rootNode.host.style.display = "inline-block";
           rootNode.host.style.width = "fit-content";
           rootNode.host.style.maxWidth = "16rem";
+          rootNode.host.style.margin = "0";
+          rootNode.host.style.padding = "12px 16px 16px";
           rootNode.host.style.overflow = "visible";
           rootNode.host.style.position = "relative";
           rootNode.host.style.zIndex = "1";

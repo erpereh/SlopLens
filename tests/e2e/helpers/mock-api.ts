@@ -43,6 +43,7 @@ function payloadFor(requestUrl: string): unknown {
         averageSlop: 0.4,
       },
       lastActivityAt: "2026-09-21T12:00:00.000Z",
+      slopSeries: [{ day: "2026-09-21", slop: 0.4, x: 0.2, youtube: 0.8 }],
     };
   }
   if (pathname.endsWith("/settings")) {
@@ -152,6 +153,7 @@ export async function installApiMock(
             averageSlop: null,
           },
           lastActivityAt: null,
+          slopSeries: null,
         }),
       );
       return;

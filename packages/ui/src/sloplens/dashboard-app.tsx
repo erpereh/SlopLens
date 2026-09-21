@@ -1,8 +1,16 @@
 import type { ProviderCapability } from "@sloplens/config/browser";
 import type { ContentHistoryItem, ContentListQuery, MetricsResponse } from "@sloplens/shared";
-import { AtSign, Clapperboard, LayoutDashboard, Menu, Settings } from "lucide-react";
+import {
+  AtSign,
+  Clapperboard,
+  LayoutDashboard,
+  Menu,
+  ScanSearch,
+  Settings,
+  ShieldCheck,
+} from "lucide-react";
 import { motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { AnimatedBadge } from "@/components/motion/animated-badge";
 import {
   AnimatedSidebar,
@@ -37,6 +45,7 @@ import { HistoryList } from "./history-list";
 import { ProviderSettingsList } from "./provider-settings";
 import { scoreToPercent } from "./score-signal";
 import type { SettingsFormSubmitPayload } from "./settings-form";
+import { SlopTimeChart } from "./slop-chart";
 import { SlopLensThemeToggleButton } from "./theme-toggle-button";
 import type { SettingsFormValues } from "./types";
 
@@ -337,15 +346,31 @@ function OverviewSection({
               : `${scoreToPercent(metrics.counts.averageSlop)}%`}
           </p>
         </DashboardCard>
+        <DashboardCard title={t("dashboard.slopOverTime")} className="lg:col-span-2">
+          <SlopTimeChart series={metrics?.slopSeries ?? null} />
+        </DashboardCard>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard title={t("dashboard.xAnalyzed")} value={metrics?.counts.byPlatform.x ?? null} />
+        <MetricCard
+          title={t("dashboard.xAnalyzed")}
+          value={metrics?.counts.byPlatform.x ?? null}
+          icon={<AtSign className="size-4" />}
+        />
         <MetricCard
           title={t("dashboard.youtubeAnalyzed")}
           value={metrics?.counts.byPlatform.youtube ?? null}
+          icon={<Clapperboard className="size-4" />}
         />
-        <MetricCard title={t("dashboard.verifications")} value={metrics?.counts.claims ?? null} />
-        <MetricCard title={t("dashboard.relations")} value={metrics?.counts.relations ?? null} />
+        <MetricCard
+          title={t("dashboard.verifications")}
+          value={metrics?.counts.claims ?? null}
+          icon={<ShieldCheck className="size-4" />}
+        />
+        <MetricCard
+          title={t("dashboard.relations")}
+          value={metrics?.counts.relations ?? null}
+          icon={<ScanSearch className="size-4" />}
+        />
       </div>
       <section className="space-y-3">
         <h2 className="text-sm font-medium">{t("dashboard.recentHistory")}</h2>
@@ -542,10 +567,12 @@ function MetricCard({
   title,
   value,
   suffix,
+  icon,
 }: {
   title: string;
   value: number | null;
   suffix?: string;
+  icon?: ReactNode;
 }) {
   const { t } = useSlopLensI18n();
   return (
@@ -555,6 +582,11 @@ function MetricCard({
       transition={{ duration: 0.28 }}
     >
       <DashboardCard title={title} className="p-5">
+        {icon ? (
+          <span className="mb-3 grid size-8 place-items-center rounded-full bg-muted text-muted-foreground">
+            {icon}
+          </span>
+        ) : null}
         {value == null ? (
           <p className="text-3xl font-semibold text-muted-foreground">
             {t("dashboard.unavailable")}

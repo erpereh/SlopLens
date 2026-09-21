@@ -385,7 +385,7 @@ El cliente tipado vive en `packages/shared` (`createSlopLensApiClient`). La exte
 
 - GET, read-only, sin token de emparejamiento.
 - Responde siempre 200: si PostgreSQL/pgvector falla, `status` degradado/unavailable y conteos `null`.
-- Contrato: solo `status`, checks (`database`, `pgvector`), conteos agregados (`contentItems`, `cachedAnalyses`, `clusters`, `relations`, `byPlatform.x`, `byPlatform.youtube`, `claims`, `averageSlop`) y `lastActivityAt`.
+- Contrato: solo `status`, checks (`database`, `pgvector`), conteos agregados (`contentItems`, `cachedAnalyses`, `clusters`, `relations`, `byPlatform.x`, `byPlatform.youtube`, `claims`, `averageSlop`), `lastActivityAt` y `slopSeries` (media diaria de `aiSlop` de los últimos 14 días, con corte `x` / `youtube`). Sin filas, `slopSeries` es `[]`. Si esa query falla, `null` y el estado pasa a `degraded`.
 - No devuelve `localToken`, API keys, URLs sensibles, texto de posts, hashes, SQL ni filas.
 - Si una query de conteo falla y la base sigue en pie, ese conteo va a `null` y `status` es `degraded`. El resumen y el pie del dashboard usan el mismo estado: un `/health` en línea no se pinta como desconectado porque `/metrics` haya fallado.
 

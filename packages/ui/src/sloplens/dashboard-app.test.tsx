@@ -52,6 +52,7 @@ const unavailableMetrics = {
     averageSlop: null,
   },
   lastActivityAt: null,
+  slopSeries: null,
 };
 
 const readyHistory = {
@@ -187,6 +188,7 @@ describe("SlopLensDashboardApp", () => {
                 averageSlop: 0.4,
               },
               lastActivityAt: "2026-09-21T12:00:00.000Z",
+              slopSeries: [{ day: "2026-09-21", slop: 0.4, x: 0.4, youtube: null }],
             },
           })}
         />,

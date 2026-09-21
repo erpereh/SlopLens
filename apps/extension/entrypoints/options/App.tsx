@@ -39,6 +39,7 @@ const unavailableMetrics: MetricsResponse = {
   checks: { database: false, pgvector: false },
   counts: EMPTY_METRICS_COUNTS,
   lastActivityAt: null,
+  slopSeries: null,
 };
 
 export function OptionsApp() {

@@ -1,6 +1,7 @@
 import type { ContentHistoryItem } from "@sloplens/shared";
 import { motion, useReducedMotion } from "motion/react";
-import { Button, ButtonLink } from "@/components/motion/button/base";
+import { useEffect, useRef } from "react";
+import { ButtonLink } from "@/components/motion/button/base";
 import { useSlopLensI18n } from "@/i18n/context";
 import { safeExternalHttpUrl } from "@/lib/safe-http-url";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,22 @@ export function HistoryList({
   onLoadMore: () => void;
 }) {
   const { t } = useSlopLensI18n();
+  const sentinel = useRef<HTMLDivElement>(null);
+  const loading = phase === "loading";
+
+  useEffect(() => {
+    const node = sentinel.current;
+    if (!node || !nextCursor || loading) {
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        onLoadMore();
+      }
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [loading, nextCursor, onLoadMore]);
 
   if (unavailable) {
     return <p className="text-sm text-muted-foreground">{t("dashboard.unavailable")}</p>;
@@ -48,9 +65,9 @@ export function HistoryList({
         ))}
       </ul>
       {nextCursor ? (
-        <Button type="button" variant="outline" size="sm" onClick={onLoadMore}>
-          {phase === "loading" ? t("status.loading") : t("history.loadMore")}
-        </Button>
+        <div ref={sentinel} className="h-8" data-sloplens-history-more="true">
+          {loading ? <p className="text-xs text-muted-foreground">{t("status.loading")}</p> : null}
+        </div>
       ) : null}
     </div>
   );

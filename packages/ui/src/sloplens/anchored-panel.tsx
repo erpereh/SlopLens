@@ -90,7 +90,7 @@ export function SlopLensAnchoredPanel({
               color: "var(--card-foreground)",
             }}
             className={cn(
-              "absolute z-50 w-[min(20rem,calc(100vw-1.5rem))] overflow-x-hidden rounded-lg border border-border shadow-xl",
+              "absolute z-50 h-[22rem] w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-lg border border-border shadow-xl",
               side === "top" ? "bottom-[calc(100%+0.5rem)]" : "top-[calc(100%+0.5rem)]",
               className,
             )}

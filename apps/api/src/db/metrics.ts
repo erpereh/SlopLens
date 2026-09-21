@@ -1,4 +1,4 @@
-import { EMPTY_METRICS_COUNTS, type MetricsResponse } from "@sloplens/shared";
+import { EMPTY_METRICS_COUNTS, type MetricsResponse, type SlopSeriesPoint } from "@sloplens/shared";
 import type postgres from "postgres";
 
 import { healthStatusFromChecks, runDbHealthChecks } from "./health";
@@ -14,6 +14,7 @@ export async function readLocalMetrics(sql: postgres.Sql | null): Promise<Metric
       checks,
       counts: emptyCounts,
       lastActivityAt: null,
+      slopSeries: null,
     };
   }
 
@@ -27,6 +28,7 @@ export async function readLocalMetrics(sql: postgres.Sql | null): Promise<Metric
       readPlatforms(sql),
       readCount(sql`select count(*)::int as n from public.claims`),
       readAverageSlop(sql),
+      readSlopSeries(sql),
     ]);
     const [
       contentItems,
@@ -37,14 +39,17 @@ export async function readLocalMetrics(sql: postgres.Sql | null): Promise<Metric
       byPlatform,
       claims,
       averageSlop,
+      slopSeries,
     ] = settled;
     const countsFailed = [contentItems, cachedAnalyses, clusters, relations, claims].some(
       (value) => value == null,
     );
     const platformMissing = byPlatform.x == null || byPlatform.youtube == null;
     const activityFailed = lastActivityAt === undefined;
+    const seriesFailed = slopSeries === null;
     return {
-      status: countsFailed || platformMissing || activityFailed ? "degraded" : status,
+      status:
+        countsFailed || platformMissing || activityFailed || seriesFailed ? "degraded" : status,
       checks,
       counts: {
         contentItems,
@@ -56,6 +61,7 @@ export async function readLocalMetrics(sql: postgres.Sql | null): Promise<Metric
         averageSlop,
       },
       lastActivityAt: lastActivityAt ?? null,
+      slopSeries,
     };
   } catch {
     return {
@@ -63,6 +69,7 @@ export async function readLocalMetrics(sql: postgres.Sql | null): Promise<Metric
       checks,
       counts: emptyCounts,
       lastActivityAt: null,
+      slopSeries: null,
     };
   }
 }
@@ -109,6 +116,76 @@ async function readPlatforms(sql: postgres.Sql): Promise<MetricsResponse["counts
   } catch {
     return { x: null, youtube: null };
   }
+}
+
+async function readSlopSeries(sql: postgres.Sql): Promise<SlopSeriesPoint[] | null> {
+  try {
+    const rows = await sql<
+      { day: string; platform: string; slop: number | string | null; n: string | number }[]
+    >`
+      select
+        to_char(date_trunc('day', ci.captured_at), 'YYYY-MM-DD') as day,
+        ci.platform,
+        avg((ca.decision->>'aiSlop')::double precision) as slop,
+        count(*)::int as n
+      from public.content_items ci
+      join lateral (
+        select decision
+        from public.content_analysis
+        where content_item_id = ci.id
+        order by analyzed_at desc
+        limit 1
+      ) ca on true
+      where ci.captured_at >= now() - interval '14 days'
+        and ci.platform in ('x', 'youtube')
+        and jsonb_typeof(ca.decision->'aiSlop') = 'number'
+      group by 1, 2
+      order by 1
+    `;
+    return foldSlopSeries(rows);
+  } catch {
+    return null;
+  }
+}
+
+export function foldSlopSeries(
+  rows: { day: string; platform: string; slop: number | string | null; n: string | number }[],
+): SlopSeriesPoint[] {
+  const days = new Map<
+    string,
+    { x?: { slop: number; n: number }; youtube?: { slop: number; n: number } }
+  >();
+  for (const row of rows) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(row.day)) {
+      continue;
+    }
+    const slop = toUnit(row.slop);
+    const n = toCount(row.n) ?? 0;
+    if (slop == null || n <= 0) {
+      continue;
+    }
+    const bucket = days.get(row.day) ?? {};
+    if (row.platform === "x" || row.platform === "youtube") {
+      bucket[row.platform] = { slop, n };
+    }
+    days.set(row.day, bucket);
+  }
+  return [...days.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([day, bucket]) => {
+      const weighted = [bucket.x, bucket.youtube].filter(
+        (part): part is { slop: number; n: number } => Boolean(part),
+      );
+      const total = weighted.reduce((sum, part) => sum + part.n, 0);
+      const slop =
+        total === 0 ? null : weighted.reduce((sum, part) => sum + part.slop * part.n, 0) / total;
+      return {
+        day,
+        slop: slop == null ? null : Math.min(1, Math.max(0, slop)),
+        x: bucket.x?.slop ?? null,
+        youtube: bucket.youtube?.slop ?? null,
+      };
+    });
 }
 
 async function readAverageSlop(sql: postgres.Sql): Promise<number | null> {

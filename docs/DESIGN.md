@@ -24,13 +24,13 @@ La interfaz debe priorizar información y contexto sobre decoración.
 ## Estado actual de la UI
 
 - Kit beUI público en `packages/ui`, montado en la extensión dentro de `sloplens-root` (Shadow DOM).
-- Superficies: `SlopLensUiRoot` → `SlopLensShell` (chip `Slop · XX%` sobre negro `#000`, con icono a la izquierda según el umbral: por debajo, cerca o por encima). Sin flecha. El panel anclado se abre hacia arriba con tabs Analyze · Verify · Trace y crece con el contenido, sin scrollbar.
+- Superficies: `SlopLensUiRoot` → `SlopLensShell` (chip `Slop · XX%` sobre negro `#000`, con icono a la izquierda según el umbral: por debajo, cerca o por encima). Sin flecha. El panel anclado tiene alto fijo en las tres pestañas; el scroll interno no enseña barra.
 - El dashboard (Options a pestaña completa) usa Animated Sidebar: Resumen, X, YouTube y, abajo separado, Ajustes. Resumen muestra métricas reales y el historial reciente. X es una lista densa; YouTube usa cards con thumbnail. Ajustes agrupa apariencia (tema, idioma, motion) y providers en filas expandibles (`bouncy-accordion`). La API key solo se monta al editar y nunca se rehidrata.
 - El popup (`SlopLensPopupControl`) es el control rápido del feed: badge de backend, Auto Analyze, atenuar, sello, umbral, theme toggle y CTA al dashboard. Idioma, motion y providers no viven en el popup.
 - En Shadow DOM el control de tema es `SlopLensThemeToggleButton`. El tema resuelto se aplica al cascade root real (`html` en popup/dashboard, host `sloplens-root` en overlay) para que `:host(.dark)` y `html.dark` pinten.
 - Instalable desde `@beui`: `animated-sidebar`, `popover` (lenguaje Morph; el panel del chip no porta a `document.body`), `range-slider`, `bouncy-accordion`, tabs, switch, tooltip, toast, select, loader, theme-toggle. El panel del overlay es un shell local con `SPRING_PANEL` porque Morph/Gooey del popover público escapa al `body`.
 - i18n en/es. Light / dark / system persistido en `chrome.storage.local`. Preferencia de motion `system | reduce`. Preferencias de feed (auto analyze, dim, stamp, umbral) también en `chrome.storage.local`.
-- El chip abre un panel out-of-flow anclado. El lado (`top` o `bottom`) se elige al abrir y no vuelve a saltar en el scroll. El host abierto sube su `z-index` para que el panel no quede debajo del chip vecino. El panel mide su contenido y no muestra scrollbar. Fondo opaco (`var(--card)`); los tokens `--color-*` también viven en `:host` porque `:root` no existe en el Shadow DOM. El chip va separado del borde del post (`margin` en `:host`).
+- El chip abre un panel out-of-flow anclado. El lado (`top` o `bottom`) se elige al abrir y no vuelve a saltar en el scroll. El host abierto sube su `z-index`. Las tres pestañas ocupan el mismo alto (`22rem`) y el scroll interno oculta la barra. Fondo opaco (`var(--card)`). El chip usa padding en el host (`12px 16px 16px`) para no quedar en la esquina. El sello SLOP entra una sola vez como un tampón. Rastrear solo muestra secciones con datos.
 - El overlay compacto muestra loading/error de Analyze (no un vacío falso). Sources viven dentro de Verify; Related dentro de Trace.
 - Verify muestra una señal de evidencia (`Backed by sources` / `Unverified` / etc.), nunca un veredicto absoluto.
 - Cierre del panel: Escape, clic fuera y segundo clic en el chip. Foco inicial razonable; al cerrar vuelve al chip.
@@ -55,7 +55,7 @@ Receta vigente:
 
 - Sidebar izquierda: Resumen, X, YouTube; Ajustes separado abajo con borde. Item activo como pill suave. Footer con versión y backend.
 - Canvas con aire: título de sección a la izquierda; en Resumen, “Probar backend” y theme toggle a la derecha.
-- Resumen: hero con la cifra real de contenidos analizados, barra de reparto X/YouTube con esos conteos, cards de apoyo y el historial reciente. `NumberTicker` solo si el número no es `null`. Si `/metrics` falla, copy “Unavailable”, nunca un número inventado.
+- Resumen: hero con icono y la cifra real de contenidos analizados, cards de apoyo con icono, gráfica de slop en el tiempo (`slopSeries`) y el historial, que pide la página siguiente al llegar abajo. `NumberTicker` solo si el número no es `null`. Si no hay días, la gráfica dice que no hay datos.
 - X: lista, búsqueda, orden reciente/slop y filtro claim o slop alto.
 - YouTube: thumbnail, canal, título, extracto, slop, clickbait, claim y enlace. Sin descripción de visión inventada.
 - Ajustes: tema, idioma y motion en una fila; providers como filas que se expanden. La key no se muestra hasta editar y el campo nace vacío.

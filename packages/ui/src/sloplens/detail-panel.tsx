@@ -94,7 +94,7 @@ export function SlopLensDetailPanel({
   if (!open) return null;
 
   if (embedded) {
-    return <div className={cn("overflow-x-hidden", className)}>{body}</div>;
+    return <div className={cn("h-full overflow-hidden", className)}>{body}</div>;
   }
 
   return (
@@ -147,7 +147,7 @@ function PanelBody({
   const sources = verify?.sources ?? [];
 
   return (
-    <div className="flex flex-col overflow-x-hidden p-4" data-sloplens-panel="true">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden p-4" data-sloplens-panel="true">
       <header className="mb-3 flex shrink-0 items-center justify-between gap-2">
         <h2 className="text-base font-semibold">{t("app.name")}</h2>
         <div className="flex items-center gap-1">
@@ -176,7 +176,10 @@ function PanelBody({
           <TabsTrigger value="trace">{t("tab.trace")}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="analyze" className="mt-3 overflow-x-hidden">
+        <TabsContent
+          value="analyze"
+          className="mt-3 h-72 min-h-72 flex-1 overflow-x-hidden overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {analyzeState.phase === "success" && analyze?.summary ? (
             <p className="mb-3 text-sm leading-relaxed text-foreground">{analyze.summary}</p>
           ) : null}
@@ -207,7 +210,10 @@ function PanelBody({
           ) : null}
         </TabsContent>
 
-        <TabsContent value="verify" className="mt-3 overflow-x-hidden">
+        <TabsContent
+          value="verify"
+          className="mt-3 h-72 min-h-72 flex-1 overflow-x-hidden overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {verifyState.phase === "success" ? (
             <div className="space-y-3">
               {verify?.stance ? (
@@ -252,7 +258,10 @@ function PanelBody({
           )}
         </TabsContent>
 
-        <TabsContent value="trace" className="mt-3 overflow-x-hidden">
+        <TabsContent
+          value="trace"
+          className="mt-3 h-72 min-h-72 flex-1 overflow-x-hidden overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {traceState.phase === "success" ? (
             <TraceSections trace={trace} />
           ) : (
@@ -277,12 +286,22 @@ function TraceSections({ trace }: { trace?: TracePanelContent }) {
   const origin = trace?.possibleOrigin;
   const originHref = safeExternalHttpUrl(origin?.url);
 
+  const related = trace?.related ?? [];
+  const evidence = trace?.evidence ?? [];
+  const derivatives = trace?.derivatives ?? [];
+  const hasAnything =
+    Boolean(origin) || evidence.length > 0 || related.length > 0 || derivatives.length > 0;
+
+  if (!hasAnything) {
+    return <p className="text-sm text-muted-foreground">{t("empty.trace.insufficient")}</p>;
+  }
+
   return (
-    <div className="space-y-3" data-sloplens-trace="stack">
-      <section className="rounded-lg border border-border bg-muted/40 p-3">
-        <h3 className="text-xs font-medium text-muted-foreground">{t("trace.possibleOrigin")}</h3>
-        {origin ? (
-          <div className="mt-2 space-y-1.5 text-sm text-foreground">
+    <div className="space-y-4" data-sloplens-trace="stack">
+      {origin ? (
+        <section className="rounded-xl border border-border bg-muted/30 p-4">
+          <h3 className="text-sm font-medium">{t("trace.possibleOrigin")}</h3>
+          <div className="mt-3 space-y-2 text-sm text-foreground">
             {originHref ? (
               <a
                 href={originHref}
@@ -298,40 +317,36 @@ function TraceSections({ trace }: { trace?: TracePanelContent }) {
             {origin.publishedAt ? (
               <p className="text-xs text-muted-foreground">{origin.publishedAt}</p>
             ) : null}
-            <p className="leading-relaxed">{origin.whyThisMayBeTheOrigin}</p>
+            <p className="leading-6">{origin.whyThisMayBeTheOrigin}</p>
             <p className="text-xs text-muted-foreground">
               {t(`trace.confidence.${origin.confidence}`)}
             </p>
           </div>
-        ) : (
-          <p className="mt-2 text-sm text-muted-foreground">{t("trace.noOrigin")}</p>
-        )}
-      </section>
+        </section>
+      ) : null}
 
-      <section className="space-y-1.5">
-        <h3 className="text-xs font-medium text-muted-foreground">{t("trace.evidence")}</h3>
-        {trace?.evidence && trace.evidence.length > 0 ? (
-          <ul className="space-y-2 text-sm">
-            {trace.evidence.map((item) => (
-              <li key={`${item.sourceUrl ?? item.summary}`} className="leading-relaxed">
-                {item.summary}
-              </li>
+      {evidence.length > 0 ? (
+        <section className="space-y-2">
+          <h3 className="text-sm font-medium">{t("trace.evidence")}</h3>
+          <ul className="space-y-2 text-sm leading-6">
+            {evidence.map((item) => (
+              <li key={`${item.sourceUrl ?? item.summary}`}>{item.summary}</li>
             ))}
           </ul>
-        ) : (
-          <p className="text-sm text-muted-foreground">{t("empty.sources")}</p>
-        )}
-      </section>
+        </section>
+      ) : null}
 
-      <section className="space-y-1.5">
-        <h3 className="text-xs font-medium text-muted-foreground">{t("tab.related")}</h3>
-        <RelatedList items={trace?.related ?? []} empty={t("empty.related")} />
-      </section>
+      {related.length > 0 ? (
+        <section className="space-y-2">
+          <h3 className="text-sm font-medium">{t("tab.related")}</h3>
+          <RelatedList items={related} empty="" />
+        </section>
+      ) : null}
 
-      {trace?.derivatives && trace.derivatives.length > 0 ? (
-        <section className="space-y-1.5">
-          <h3 className="text-xs font-medium text-muted-foreground">{t("trace.derivatives")}</h3>
-          <RelatedList items={trace.derivatives} empty={t("trace.noDerivatives")} />
+      {derivatives.length > 0 ? (
+        <section className="space-y-2">
+          <h3 className="text-sm font-medium">{t("trace.derivatives")}</h3>
+          <RelatedList items={derivatives} empty="" />
         </section>
       ) : null}
 

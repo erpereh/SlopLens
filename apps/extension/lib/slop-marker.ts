@@ -48,7 +48,8 @@ const HOST_CSS = `
   letter-spacing: 0.14em;
   line-height: 1;
   color: transparent;
-  -webkit-text-stroke: 3px rgba(220, 38, 38, 0.72);
+  -webkit-text-stroke: 3px rgba(220, 38, 38, 0.86);
+  text-shadow: 0 10px 0 rgba(220, 38, 38, 0.08);
   transform: rotate(-14deg);
 }
 [${SLOP_STAMP_ATTR}][${SLOP_STAMP_ANIMATE_ATTR}] span {
@@ -75,9 +76,10 @@ html[data-reduce-motion="true"] [${SLOP_DIMMED_ATTR}="true"] {
   transition: none;
 }
 @keyframes sloplens-stamp-in {
-  0% { transform: rotate(-18deg) scale(1.35); opacity: 0; }
-  70% { transform: rotate(-12deg) scale(1.06); opacity: 1; }
-  100% { transform: rotate(-14deg) scale(1); opacity: 1; }
+  0% { transform: translateY(-46%) rotate(-32deg) scale(1.55); opacity: 0; }
+  58% { transform: translateY(6%) rotate(-8deg) scale(0.94); opacity: 1; }
+  78% { transform: translateY(-3%) rotate(-18deg) scale(1.06); opacity: 1; }
+  100% { transform: translateY(0) rotate(-14deg) scale(1); opacity: 1; }
 }
 @keyframes sloplens-stamp-fade {
   from { opacity: 0; }

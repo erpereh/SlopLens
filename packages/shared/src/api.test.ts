@@ -48,6 +48,7 @@ describe("API schemas", () => {
         averageSlop: 0.4,
       },
       lastActivityAt: "2026-09-21T12:00:00.000Z",
+      slopSeries: [{ day: "2026-09-21", slop: 0.4, x: 0.2, youtube: 0.8 }],
     });
     expect(parsed.counts.contentItems).toBe(3);
     expect(() =>

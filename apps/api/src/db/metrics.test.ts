@@ -1,7 +1,7 @@
 import { EMPTY_METRICS_COUNTS } from "@sloplens/shared";
 import { describe, expect, it } from "vitest";
 
-import { readLocalMetrics } from "./metrics";
+import { foldSlopSeries, readLocalMetrics } from "./metrics";
 
 describe("readLocalMetrics", () => {
   it("returns null counts without throwing when the database is unavailable", async () => {
@@ -10,6 +10,7 @@ describe("readLocalMetrics", () => {
     expect(payload.checks).toEqual({ database: false, pgvector: false });
     expect(payload.counts).toEqual(EMPTY_METRICS_COUNTS);
     expect(payload.lastActivityAt).toBeNull();
+    expect(payload.slopSeries).toBeNull();
     expect(JSON.stringify(payload)).not.toMatch(/localToken|apiKey|select |http/i);
   });
 
@@ -62,6 +63,7 @@ describe("readLocalMetrics", () => {
       claims: 4,
       averageSlop: 0.4,
     });
+    expect(payload.slopSeries).toEqual([]);
     expect(JSON.stringify(payload)).not.toMatch(/apiKey|localToken|tweet body/);
   });
 
@@ -109,5 +111,14 @@ describe("readLocalMetrics", () => {
     expect(payload.counts.contentItems).toBe(3);
     expect(payload.counts.claims).toBeNull();
     expect(payload.counts.byPlatform).toEqual({ x: 2, youtube: 1 });
+  });
+
+  it("weights a day's slop by how many items each platform contributed", () => {
+    expect(
+      foldSlopSeries([
+        { day: "2026-09-21", platform: "x", slop: 0.25, n: 3 },
+        { day: "not-a-day", platform: "x", slop: 1, n: 1 },
+      ]),
+    ).toEqual([{ day: "2026-09-21", slop: 0.25, x: 0.25, youtube: null }]);
   });
 });

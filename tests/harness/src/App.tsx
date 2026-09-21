@@ -345,6 +345,7 @@ function DashboardScene({
                   averageSlop: null,
                 },
                 lastActivityAt: null,
+                slopSeries: null,
               }
             : {
                 status: "ok",
@@ -359,6 +360,7 @@ function DashboardScene({
                   averageSlop: 0.41,
                 },
                 lastActivityAt: "2026-09-21T12:00:00.000Z",
+                slopSeries: [{ day: "2026-09-21", slop: 0.41, x: 0.3, youtube: 0.6 }],
               }
         }
         history={
