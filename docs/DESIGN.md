@@ -103,7 +103,7 @@ Instalación típica:
 npx shadcn@latest add @beui/button
 npx shadcn@latest add @beui/tabs
 npx shadcn@latest add @beui/drawer
-npx shadcn@latest add @beui/animated-number
+npx shadcn@latest add @beui/number-ticker
 ```
 
 Los agentes deben comprobar el nombre real del componente en la documentación antes de instalarlo. No inventar slugs.
@@ -300,9 +300,9 @@ Para:
 - Unverified;
 - Contradicted.
 
-### Animated Number
+### Number ticker (`number-ticker`)
 
-Para scores y contadores:
+Para scores y contadores (slug público verificado; no usar `animated-number` como sustituto por defecto):
 
 ```text
 Slop       82%
