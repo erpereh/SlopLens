@@ -75,6 +75,9 @@ export function createApp(env: ApiEnv, options: CreateAppOptions = {}): Hono {
         if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
           return origin;
         }
+        if (/^chrome-extension:\/\//.test(origin)) {
+          return origin;
+        }
         return null;
       },
     }),

@@ -19,7 +19,10 @@ describe("analyze service", () => {
     const service = createAnalyzeService({
       sql: null,
       runtime: mockRuntime({
-        requireDecision: async () => mockDecisionProvider(analyze),
+        requireDecision: async () => ({
+          provider: mockDecisionProvider(analyze),
+          selection: { capability: "decision", providerId: "jev", modelId: "test-decision" },
+        }),
       }),
     });
 
@@ -45,7 +48,10 @@ describe("analyze service", () => {
     const service = createAnalyzeService({
       sql: null,
       runtime: mockRuntime({
-        requireDecision: async () => mockDecisionProvider(analyze),
+        requireDecision: async () => ({
+          provider: mockDecisionProvider(analyze),
+          selection: { capability: "decision", providerId: "jev", modelId: "test-decision" },
+        }),
         optionalVision: async () => vision,
       }),
     });
@@ -56,6 +62,28 @@ describe("analyze service", () => {
     );
     expect(result.decision.clickbait).toBe(0.9);
     expect(analyze).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns a vision warning when thumbnail analysis fails", async () => {
+    const vision = mockVisionProvider("unused");
+    vi.spyOn(vision, "analyze").mockRejectedValue(new Error("vision provider down"));
+
+    const service = createAnalyzeService({
+      sql: null,
+      runtime: mockRuntime({
+        requireDecision: async () => ({
+          provider: mockDecisionProvider(),
+          selection: { capability: "decision", providerId: "jev", modelId: "test-decision" },
+        }),
+        optionalVision: async () => vision,
+      }),
+    });
+
+    const result = await service.analyze({ content: youtubeContent });
+    expect(result.decision.contentType).toBeTruthy();
+    expect(result.warnings).toEqual([
+      { capability: "vision", message: "vision provider down" },
+    ]);
   });
 
   it("maps missing decision provider to provider_not_configured", async () => {

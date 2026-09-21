@@ -63,7 +63,7 @@ export async function persistEmbedding(input: {
       ${input.contentItemId},
       ${input.embedding.modelId},
       ${input.embedding.dimensions},
-      ${literal}::extensions.vector(2048)
+      ${literal}::extensions.vector(${PGVECTOR_EMBEDDING_DIMENSIONS})
     )
     on conflict (content_item_id, model_id) do update
       set dim = excluded.dim,
@@ -89,15 +89,15 @@ export async function findNearestNeighbors(input: {
       ci.url,
       ci.platform,
       ci.title,
-      (1 - ((ce.embedding::extensions.halfvec(2048)) <=>
-        ((${literal}::extensions.vector(2048))::extensions.halfvec(2048))))::float as score
+      (1 - ((ce.embedding::extensions.halfvec(${PGVECTOR_EMBEDDING_DIMENSIONS})) <=>
+        ((${literal}::extensions.vector(${PGVECTOR_EMBEDDING_DIMENSIONS}))::extensions.halfvec(${PGVECTOR_EMBEDDING_DIMENSIONS}))))::float as score
     from public.content_embeddings ce
     inner join public.content_items ci on ci.id = ce.content_item_id
     where ce.model_id = ${input.embedding.modelId}
       and ce.dim = ${PGVECTOR_EMBEDDING_DIMENSIONS}
       and (${excludeId}::uuid is null or ce.content_item_id <> ${excludeId}::uuid)
-    order by (ce.embedding::extensions.halfvec(2048)) <=>
-      ((${literal}::extensions.vector(2048))::extensions.halfvec(2048))
+    order by (ce.embedding::extensions.halfvec(${PGVECTOR_EMBEDDING_DIMENSIONS})) <=>
+      ((${literal}::extensions.vector(${PGVECTOR_EMBEDDING_DIMENSIONS}))::extensions.halfvec(${PGVECTOR_EMBEDDING_DIMENSIONS}))
     limit ${input.limit}
   `;
 

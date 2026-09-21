@@ -1,4 +1,3 @@
-import { DEFAULT_EMBEDDING_MODEL_ID } from "@sloplens/ai";
 import type { Platform } from "@sloplens/core";
 import { platformSchema } from "@sloplens/core";
 import type { RelatedRequest, RelatedResponse } from "@sloplens/shared";
@@ -51,8 +50,11 @@ export function createRelatedService(input: {
         });
       }
 
-      const modelId = selection.modelId ?? DEFAULT_EMBEDDING_MODEL_ID;
-      let embedding = await findEmbeddingByContentAndModel(sql, contentItemId, modelId);
+      const selectionModelId = selection.modelId?.trim();
+      let embedding =
+        selectionModelId
+          ? await findEmbeddingByContentAndModel(sql, contentItemId, selectionModelId)
+          : null;
       if (!embedding) {
         embedding = await provider.embed(contentToEmbeddingText(request.content));
         await persistEmbedding({ sql, contentItemId, embedding });

@@ -1,3 +1,4 @@
+import { BOOTSTRAP_PROVIDER_IDS } from "@sloplens/ai";
 import {
   PROVIDER_CAPABILITIES,
   type ProviderCapability,
@@ -7,14 +8,6 @@ import type { ProvidersResponse } from "@sloplens/shared";
 
 import { isProviderSecretConfigured, resolveEffectiveSelections } from "./secrets-resolver";
 import type { ApiDependencies } from "./types";
-
-const KNOWN_PROVIDERS: Record<ProviderCapability, readonly string[]> = {
-  decision: ["jev"],
-  embedding: ["openrouter"],
-  search: ["tavily"],
-  vision: ["openrouter"],
-  reasoning: ["openrouter"],
-};
 
 export async function buildProvidersResponse(deps: ApiDependencies): Promise<ProvidersResponse> {
   const userSelections = await deps.settings.listUserSelections();
@@ -26,7 +19,7 @@ export async function buildProvidersResponse(deps: ApiDependencies): Promise<Pro
   const capabilities = await Promise.all(
     PROVIDER_CAPABILITIES.map(async (capability) => {
       const effective = resolved[capability].selection;
-      const providerIds = new Set<string>(KNOWN_PROVIDERS[capability]);
+      const providerIds = new Set<string>(BOOTSTRAP_PROVIDER_IDS[capability]);
       if (effective?.providerId) {
         providerIds.add(effective.providerId);
       }

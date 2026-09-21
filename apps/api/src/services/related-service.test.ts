@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { PGVECTOR_EMBEDDING_DIMENSIONS } from "@sloplens/config";
+import { describe, expect, it, vi } from "vitest";
 
 import { HttpError } from "../lib/http-errors";
 import { createRelatedService } from "./related-service";
-import { mockRuntime, sampleContent } from "./test-providers";
+import { mockEmbeddingProvider, mockRuntime, sampleContent } from "./test-providers";
 
 describe("related service", () => {
   it("requires the database for pgvector neighbors", async () => {
@@ -14,5 +15,60 @@ describe("related service", () => {
     await expect(service.related({ content: sampleContent })).rejects.toMatchObject({
       body: { code: "backend_unavailable" },
     });
+  });
+
+  it("persists embeddings using modelId returned from embed() when selection has no modelId", async () => {
+    const embedModelId = "observed-embed-model";
+    const values = Array.from({ length: PGVECTOR_EMBEDDING_DIMENSIONS }, () => 0.01);
+    const provider = mockEmbeddingProvider(values, embedModelId);
+    const embedSpy = vi.spyOn(provider, "embed");
+
+    const contentItemId = "11111111-1111-1111-1111-111111111111";
+    let persistedModelId: string | undefined;
+
+    const sql = Object.assign(
+      async (strings: TemplateStringsArray, ..._values: unknown[]) => {
+        const query = strings.join(" ");
+        if (query.includes("from public.content_items") && query.includes("content_hash")) {
+          return [];
+        }
+        if (query.includes("insert into public.content_items")) {
+          return [{ id: contentItemId }];
+        }
+        if (query.includes("from public.content_embeddings") && query.includes("model_id")) {
+          return [];
+        }
+        if (query.includes("insert into public.content_embeddings")) {
+          persistedModelId = _values.find((value) => value === embedModelId) as string | undefined;
+          return [];
+        }
+        if (query.includes("content_embeddings ce")) {
+          return [];
+        }
+        if (query.includes("content_relations")) {
+          return [];
+        }
+        if (query.includes("insert into public.clusters")) {
+          return [];
+        }
+        return [];
+      },
+      { json: (value: unknown) => value },
+    );
+
+    const service = createRelatedService({
+      sql: sql as never,
+      runtime: mockRuntime({
+        requireEmbedding: async () => ({
+          provider,
+          selection: { capability: "embedding", providerId: "openrouter" },
+        }),
+      }),
+    });
+
+    const result = await service.related({ content: sampleContent });
+    expect(embedSpy).toHaveBeenCalledOnce();
+    expect(persistedModelId).toBe(embedModelId);
+    expect(result.items).toEqual([]);
   });
 });

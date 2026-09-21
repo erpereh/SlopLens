@@ -81,12 +81,42 @@ export async function upsertContentItem(input: {
 export async function findCachedAnalysisByHash(
   sql: postgres.Sql,
   contentHash: string,
+  decisionProviderId: string,
+  decisionModelId: string,
 ): Promise<CachedContentAnalysis | null> {
   const rows = await sql<{ id: string; content_hash: string; decision: ContentDecision }[]>`
     select ci.id, ci.content_hash, ca.decision
     from public.content_items ci
     inner join public.content_analysis ca on ca.content_item_id = ci.id
     where ci.content_hash = ${contentHash}
+      and ca.decision_provider_id = ${decisionProviderId}
+      and ca.decision_model_id = ${decisionModelId}
+    limit 1
+  `;
+
+  const row = rows[0];
+  if (!row) {
+    return null;
+  }
+
+  return {
+    contentItemId: row.id,
+    contentHash: row.content_hash,
+    decision: row.decision,
+  };
+}
+
+/** Latest analysis row for a content hash (any decision provider/model). */
+export async function findLatestCachedAnalysisByHash(
+  sql: postgres.Sql,
+  contentHash: string,
+): Promise<CachedContentAnalysis | null> {
+  const rows = await sql<{ id: string; content_hash: string; decision: ContentDecision }[]>`
+    select ci.id, ci.content_hash, ca.decision
+    from public.content_items ci
+    inner join public.content_analysis ca on ca.content_item_id = ci.id
+    where ci.content_hash = ${contentHash}
+    order by ca.analyzed_at desc
     limit 1
   `;
 
@@ -114,13 +144,25 @@ export async function upsertContentAnalysisCache(input: {
   publishedAt?: string | undefined;
   metadata: Record<string, unknown>;
   decision: ContentDecision;
+  decisionProviderId: string;
+  decisionModelId: string;
 }): Promise<string> {
   const contentItemId = await upsertContentItem(input);
 
   await input.sql`
-    insert into public.content_analysis (content_item_id, decision)
-    values (${contentItemId}, ${input.sql.json(toPostgresJson(input.decision))})
-    on conflict (content_item_id) do update
+    insert into public.content_analysis (
+      content_item_id,
+      decision,
+      decision_provider_id,
+      decision_model_id
+    )
+    values (
+      ${contentItemId},
+      ${input.sql.json(toPostgresJson(input.decision))},
+      ${input.decisionProviderId},
+      ${input.decisionModelId}
+    )
+    on conflict (content_item_id, decision_provider_id, decision_model_id) do update
       set decision = excluded.decision,
           analyzed_at = now()
   `;

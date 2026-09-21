@@ -26,6 +26,7 @@ export {
   OFFICIAL_PROVIDER_BASE_URLS,
   validateProviderBaseUrl,
 } from "./provider-base-url";
+export { PGVECTOR_EMBEDDING_DIMENSIONS } from "./pgvector-dimensions";
 export {
   FILE_SECRET_STORE_FALLBACK_RELATIVE_PATH,
   MemorySecretStore,

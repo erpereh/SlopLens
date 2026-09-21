@@ -83,11 +83,19 @@ export const analyzeRequestSchema = z
   })
   .strict();
 
+export const analyzeWarningSchema = z
+  .object({
+    capability: z.enum(["vision"]),
+    message: z.string().min(1),
+  })
+  .strict();
+
 export const analyzeResponseSchema = z
   .object({
     decision: contentDecisionSchema,
     cached: z.boolean(),
     contentHash: z.string().min(1).optional(),
+    warnings: z.array(analyzeWarningSchema).optional(),
   })
   .strict();
 
@@ -188,6 +196,7 @@ export type ProvidersResponse = z.infer<typeof providersResponseSchema>;
 export type SettingsResponse = z.infer<typeof settingsResponseSchema>;
 export type PutProviderSelectionsRequest = z.infer<typeof putProviderSelectionsRequestSchema>;
 export type AnalyzeRequest = z.infer<typeof analyzeRequestSchema>;
+export type AnalyzeWarning = z.infer<typeof analyzeWarningSchema>;
 export type AnalyzeResponse = z.infer<typeof analyzeResponseSchema>;
 export type VerifyRequest = z.infer<typeof verifyRequestSchema>;
 export type VerifySource = z.infer<typeof verifySourceSchema>;

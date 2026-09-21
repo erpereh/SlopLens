@@ -1,3 +1,4 @@
+import { PGVECTOR_EMBEDDING_DIMENSIONS } from "@sloplens/config";
 import { describe, expect, it } from "vitest";
 import { AiProviderError } from "./errors";
 import { createDefaultProviderRegistryFromEnv } from "./registry-defaults";
@@ -59,6 +60,7 @@ describe.skipIf(!smokeEnabled)("provider smoke", () => {
     try {
       const vector = await provider.embed("SlopLens embedding dimension probe.");
       expect(vector.dimensions).toBe(vector.values.length);
+      expect(vector.values.length).toBe(PGVECTOR_EMBEDDING_DIMENSIONS);
       console.info(`[smoke] observed embedding dimensions: ${vector.dimensions}`);
     } catch (error) {
       if (ignoreSmokeProviderFailure(error)) {

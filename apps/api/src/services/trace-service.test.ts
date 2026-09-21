@@ -20,6 +20,47 @@ describe("trace service", () => {
     expect(result.graph.origin).toBeUndefined();
   });
 
+  it("continues when search is not configured but web evidence exists from a later retry", async () => {
+    const service = createTraceService({
+      sql: null,
+      runtime: mockRuntime({
+        requireSearch: async () => {
+          throw new Error("search not configured");
+        },
+        requireEmbedding: async () => {
+          throw new Error("skip related");
+        },
+      }),
+    });
+
+    const result = await service.trace({ content: sampleContent });
+    expect(result.status).toBe("insufficient_evidence");
+  });
+
+  it("returns ok with search evidence when related is unavailable", async () => {
+    const service = createTraceService({
+      sql: null,
+      runtime: mockRuntime({
+        requireSearch: async () =>
+          mockSearchProvider([
+            {
+              url: "https://blog.example.com/story",
+              title: "Story",
+              snippet: "Background context",
+            },
+          ]),
+        requireEmbedding: async () => {
+          throw new Error("skip related");
+        },
+      }),
+    });
+
+    const result = await service.trace({ content: sampleContent });
+    expect(result.status).toBe("ok");
+    expect(result.evidence.length).toBeGreaterThan(0);
+    expect(result.graph.similar).toEqual([]);
+  });
+
   it("uses a primary-source search hit as the origin candidate", async () => {
     const service = createTraceService({
       sql: null,

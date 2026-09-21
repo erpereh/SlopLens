@@ -66,7 +66,8 @@ El monorepo pnpm + Turborepo está operativo. Los contratos compartidos están c
 - Servidor en `http://127.0.0.1:3001` (`apps/api`).
 - Rutas reales: `GET /health`, `GET /providers`, `GET /settings`, `PUT /settings/providers`, `POST /analyze`, `POST /verify`, `POST /trace`, `POST /related`.
 - Cliente PostgreSQL vía `DATABASE_URL` (`postgres`).
-- Caché por `content_hash` para análisis y embeddings.
+- Caché por `content_hash` + `decision_provider_id` + `decision_model_id` para análisis; embeddings por `content_item_id` + `model_id` del vector devuelto por el provider.
+- CORS: loopback HTTP y orígenes `chrome-extension://` (MV3); no se abre a `*`.
 - `SecretStore` OS-first con `@napi-rs/keyring` (service `sloplens`, account `${capability}:${providerId}`). Fallback explícito `FileSecretStore` (`.data/secret-store.json`, gitignored, ACL/0600), etiquetado `kind: "file"` / `isFallback: true`. No es equivalente a un keychain.
 - Resolución de credenciales: SecretStore del usuario → bootstrap `.env` → `provider_not_configured`. Settings nunca devuelve el valor de una key.
 
@@ -75,13 +76,14 @@ El monorepo pnpm + Turborepo está operativo. Los contratos compartidos están c
 - Decision: Jev vía AI Gateway (`@ai-sdk/gateway`).
 - Embedding / vision / reasoning: OpenRouter.
 - Search: Tavily (`include_answer: false`; el campo answer nunca es un veredicto).
-- Registry por `providerId`. El dominio solo usa interfaces.
+- Registry por `providerId` (`packages/ai`); `apps/api` resuelve credenciales/settings y obtiene instancias vía `createDefaultProviderRegistry`, sin switches duplicados en dominio.
 
 **Embeddings / pgvector (G1b):**
 
-- Dimensión **verificada por smoke**: `embedding.length === 2048` (modelo de bootstrap OpenRouter).
-- Tabla `content_embeddings` con `model_id`, `dim`, `embedding vector(2048)`.
-- Índice HNSW sobre `halfvec(2048)` porque pgvector limita HNSW en `vector` a 2000 dimensiones.
+- Dimensión canónica: `PGVECTOR_EMBEDDING_DIMENSIONS` en `@sloplens/config` (2048 hoy); migraciones SQL deben mantener `vector(N)` / `halfvec(N)` alineadas con esa constante.
+- Smoke (`SLOPLENS_SMOKE=1`): `embedding.values.length === PGVECTOR_EMBEDDING_DIMENSIONS`.
+- Tabla `content_embeddings` con `model_id`, `dim`, `embedding vector(N)`.
+- Índice HNSW sobre `halfvec(N)` porque pgvector limita HNSW en `vector` a 2000 dimensiones.
 - Persistencia rechaza `values.length !== dim` de la columna verificada.
 
 **Extensión:**
@@ -363,9 +365,9 @@ El cliente tipado vive en `packages/shared` (`createSlopLensApiClient`). La exte
 ### `/analyze`
 
 - recibe contenido normalizado;
-- reutiliza análisis por `content_hash` salvo `forceRefresh`;
+- reutiliza análisis por `content_hash` + provider/model de decisión salvo `forceRefresh`;
 - llama al `DecisionProvider` (Jev por defecto);
-- en YouTube, o si `needsImageAnalysis`, analiza el thumbnail con `VisionProvider` cuando está configurado;
+- en YouTube, o si `needsImageAnalysis`, analiza el thumbnail con `VisionProvider` cuando está configurado; si vision falla tras una decisión válida, la respuesta incluye `warnings` (p. ej. `capability: vision`) sin invalidar la decisión;
 - no descarga transcripciones: usa `NormalizedContent.text` solo si el adapter ya lo aportó;
 - persiste `content_items` + `content_analysis`.
 
@@ -381,16 +383,17 @@ El cliente tipado vive en `packages/shared` (`createSlopLensApiClient`). La exte
 
 Trace **básico** del MVP:
 
-- búsqueda (`topic: news`) + vecinos pgvector + `content_relations`;
-- grafo parcial: origen candidato, similares, derivaciones;
-- `insufficient_evidence` si no hay ninguna de las tres;
+- búsqueda opcional (`topic: news` si el provider está configurado) + vecinos pgvector + `content_relations`;
+- grafo parcial: origen candidato (desde búsqueda cuando hay), similares, derivaciones;
+- `insufficient_evidence` solo si búsqueda, vecinos y relaciones están vacíos;
+- deduplica `originates_from` antes de insertar en `content_relations`;
 - no hay mapa de propagación.
 
 ### `/related`
 
-- genera o reutiliza embedding;
+- genera o reutiliza embedding por `model_id` de settings o el devuelto por `embed()`;
 - consulta HNSW (`halfvec`) en la dimensión verificada;
-- rechaza persistir si `values.length !== 2048`;
+- rechaza persistir si `values.length !== PGVECTOR_EMBEDDING_DIMENSIONS`;
 - agrupa en `clusters` cuando hay ≥2 vecinos con score alto.
 
 ## Pipeline de IA
@@ -807,7 +810,7 @@ MVP:
 - persistencia en PostgreSQL para análisis reutilizables;
 - no Redis.
 
-La caché debe evitar repetir verificaciones o embeddings idénticos cuando el contenido no ha cambiado.
+La caché debe evitar repetir verificaciones o embeddings idénticos cuando el contenido no ha cambiado. Claims reutilizables por `(content_item_id, claim_text)` cuando el contenido está vinculado.
 
 ## Seguridad
 

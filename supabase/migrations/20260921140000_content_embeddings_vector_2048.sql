@@ -1,6 +1,6 @@
 -- G1b: content_embeddings with verified dimension N=2048.
--- Observed by the embedding smoke test against the bootstrap OpenRouter model
--- (nvidia/nemotron-3-embed-1b:free): embedding.length === 2048.
+-- Must match `PGVECTOR_EMBEDDING_DIMENSIONS` in `@sloplens/config` (2048 today).
+-- Observed by the embedding smoke test: embedding.values.length === that constant.
 -- pgvector HNSW on `vector` maxes at 2000 dims, so the index uses a halfvec cast.
 
 create table if not exists public.content_embeddings (

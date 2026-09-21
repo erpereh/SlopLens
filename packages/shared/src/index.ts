@@ -8,8 +8,10 @@ export { API_ROUTES, type ApiRoute } from "./api/routes";
 export {
   type AnalyzeRequest,
   type AnalyzeResponse,
+  type AnalyzeWarning,
   analyzeRequestSchema,
   analyzeResponseSchema,
+  analyzeWarningSchema,
   type HealthResponse,
   healthResponseSchema,
   type ProvidersResponse,

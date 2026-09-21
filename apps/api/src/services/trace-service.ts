@@ -4,7 +4,7 @@ import type postgres from "postgres";
 
 import { hashNormalizedContent } from "../content-hash";
 import { findContentItemByHash } from "../db/content-cache";
-import { insertContentRelation, listRelationsFromContent } from "../db/relations";
+import { hasRelation, insertContentRelation, listRelationsFromContent } from "../db/relations";
 import { classifySourceKind, rankSearchResults } from "./primary-sources";
 import type { ProviderRuntime } from "./provider-runtime";
 import { createRelatedService } from "./related-service";
@@ -14,10 +14,7 @@ export function createTraceService(input: { sql: postgres.Sql | null; runtime: P
 
   return {
     async trace(request: TraceRequest): Promise<TraceResponse> {
-      const search = await input.runtime.requireSearch();
-      const query = buildTraceQuery(request);
-      const results = await search.search(query, { maxResults: 8, topic: "news" });
-      const ranked = rankSearchResults(results);
+      const ranked = await runOptionalSearch(input.runtime, request);
 
       let similar: TraceResponse["graph"]["similar"] = [];
       try {
@@ -54,13 +51,21 @@ export function createTraceService(input: { sql: postgres.Sql | null; runtime: P
         : undefined;
 
       if (input.sql && origin && storedItem) {
-        await insertContentRelation({
+        const exists = await hasRelation({
           sql: input.sql,
           fromContentId: storedItem.id,
           toUrl: origin.url,
           relationType: "originates_from",
-          summary: origin.title,
         });
+        if (!exists) {
+          await insertContentRelation({
+            sql: input.sql,
+            fromContentId: storedItem.id,
+            toUrl: origin.url,
+            relationType: "originates_from",
+            summary: origin.title,
+          });
+        }
       }
 
       const evidence = ranked.slice(0, 5).map((result) => ({
@@ -68,8 +73,10 @@ export function createTraceService(input: { sql: postgres.Sql | null; runtime: P
         sourceUrl: result.url,
       }));
 
-      const hasGraph = Boolean(origin) || similar.length > 0 || derivations.length > 0;
-      if (!hasGraph) {
+      const hasSearchEvidence = evidence.length > 0;
+      const hasSimilar = similar.length > 0;
+      const hasDerivations = derivations.length > 0;
+      if (!hasSearchEvidence && !hasSimilar && !hasDerivations) {
         return {
           status: "insufficient_evidence",
           graph: { similar: [], derivations: [] },
@@ -88,6 +95,20 @@ export function createTraceService(input: { sql: postgres.Sql | null; runtime: P
       };
     },
   };
+}
+
+async function runOptionalSearch(
+  runtime: ProviderRuntime,
+  request: TraceRequest,
+): Promise<SearchResult[]> {
+  try {
+    const search = await runtime.requireSearch();
+    const query = buildTraceQuery(request);
+    const results = await search.search(query, { maxResults: 8, topic: "news" });
+    return rankSearchResults(results);
+  } catch {
+    return [];
+  }
 }
 
 function buildTraceQuery(request: TraceRequest): string {

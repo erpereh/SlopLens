@@ -3,7 +3,7 @@ import type { VerifyEvidence, VerifyRequest, VerifyResponse, VerifySource } from
 import type postgres from "postgres";
 
 import { hashNormalizedContent } from "../content-hash";
-import { findCachedAnalysisByHash } from "../db/content-cache";
+import { findLatestCachedAnalysisByHash } from "../db/content-cache";
 import { toPostgresJson } from "../db/json";
 import { classifySourceKind, rankSearchResults } from "./primary-sources";
 import type { ProviderRuntime } from "./provider-runtime";
@@ -75,7 +75,10 @@ async function shouldUseReasoning(
     return false;
   }
 
-  const cached = await findCachedAnalysisByHash(input.sql, hashNormalizedContent(request.content));
+  const cached = await findLatestCachedAnalysisByHash(
+    input.sql,
+    hashNormalizedContent(request.content),
+  );
   return cached?.decision.needsPowerfulModel === true;
 }
 
@@ -173,10 +176,18 @@ async function persistClaim(
     : [];
   const contentItemId = contentRows[0]?.id ?? null;
 
-  await sql`
-    insert into public.claims (content_item_id, claim_text)
-    values (${contentItemId}, ${request.claim})
-  `;
+  if (contentItemId) {
+    await sql`
+      insert into public.claims (content_item_id, claim_text)
+      values (${contentItemId}, ${request.claim})
+      on conflict (content_item_id, claim_text) where content_item_id is not null do nothing
+    `;
+  } else {
+    await sql`
+      insert into public.claims (content_item_id, claim_text)
+      values (${contentItemId}, ${request.claim})
+    `;
+  }
 
   for (const source of sources) {
     await sql`

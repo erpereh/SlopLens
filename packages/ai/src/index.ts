@@ -75,3 +75,4 @@ export {
   createDefaultProviderRegistryFromEnv,
   type DefaultProviderRegistryConfig,
 } from "./registry-defaults";
+export { BOOTSTRAP_PROVIDER_IDS } from "./bootstrap-provider-ids";

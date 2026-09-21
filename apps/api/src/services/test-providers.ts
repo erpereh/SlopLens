@@ -90,13 +90,21 @@ export function mockReasoningProvider(text: string): ReasoningProvider {
 }
 
 export function mockRuntime(overrides: Partial<ProviderRuntime> = {}): ProviderRuntime {
+  const decisionSelection: ProviderSelection = {
+    capability: "decision",
+    providerId: "jev",
+    modelId: "test-decision",
+  };
   const embeddingSelection: ProviderSelection = {
     capability: "embedding",
     providerId: "openrouter",
     modelId: "test-embed",
   };
   return {
-    requireDecision: async () => mockDecisionProvider(),
+    requireDecision: async () => ({
+      provider: mockDecisionProvider(),
+      selection: decisionSelection,
+    }),
     requireEmbedding: async () => ({
       provider: mockEmbeddingProvider(new Array(2048).fill(0.01)),
       selection: embeddingSelection,
