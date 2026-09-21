@@ -2,6 +2,7 @@ import type { ContentDecision, NormalizedContent } from "@sloplens/core";
 import { SlopLensApiError } from "@sloplens/shared";
 import {
   type FeatureViewState,
+  formatAnalyzeSummary,
   type RelatedItem,
   type SlopLensPanelTab,
   SlopLensShell,
@@ -9,7 +10,6 @@ import {
   type SourceItem,
   type TracePanelContent,
   type VerifyPanelContent,
-  formatAnalyzeSummary,
 } from "@sloplens/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 

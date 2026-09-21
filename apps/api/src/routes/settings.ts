@@ -2,8 +2,8 @@ import { putProviderSelectionsRequestSchema, settingsResponseSchema } from "@slo
 import type { Context } from "hono";
 
 import { backendUnavailable, validationError } from "../lib/http-errors";
-import { LOCAL_API_TOKEN_HEADER } from "../services/local-auth";
 import { parseJsonBody, readJsonBody } from "../middleware/error-handler";
+import { LOCAL_API_TOKEN_HEADER } from "../services/local-auth";
 import type { ApiDependencies } from "../services/types";
 
 export function getSettingsHandler(deps: ApiDependencies) {

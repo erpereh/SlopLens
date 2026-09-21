@@ -81,9 +81,7 @@ describe("analyze service", () => {
 
     const result = await service.analyze({ content: youtubeContent });
     expect(result.decision.contentType).toBeTruthy();
-    expect(result.warnings).toEqual([
-      { capability: "vision", message: "vision provider down" },
-    ]);
+    expect(result.warnings).toEqual([{ capability: "vision", message: "vision provider down" }]);
   });
 
   it("maps missing decision provider to provider_not_configured", async () => {

@@ -32,10 +32,13 @@ function stripWxtAtAlias(config: { resolve?: { alias?: unknown } }) {
     return;
   }
   if (Array.isArray(current)) {
-    config.resolve!.alias = current.filter((entry) => {
-      const find = typeof entry === "object" && entry !== null ? (entry as { find?: unknown }).find : entry;
-      return find !== "@";
-    });
+    if (config.resolve) {
+      config.resolve.alias = current.filter((entry) => {
+        const find =
+          typeof entry === "object" && entry !== null ? (entry as { find?: unknown }).find : entry;
+        return find !== "@";
+      });
+    }
     return;
   }
   if (typeof current === "object") {

@@ -51,10 +51,9 @@ export function createRelatedService(input: {
       }
 
       const selectionModelId = selection.modelId?.trim();
-      let embedding =
-        selectionModelId
-          ? await findEmbeddingByContentAndModel(sql, contentItemId, selectionModelId)
-          : null;
+      let embedding = selectionModelId
+        ? await findEmbeddingByContentAndModel(sql, contentItemId, selectionModelId)
+        : null;
       if (!embedding) {
         embedding = await provider.embed(contentToEmbeddingText(request.content));
         await persistEmbedding({ sql, contentItemId, embedding });

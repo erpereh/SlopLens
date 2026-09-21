@@ -1,11 +1,11 @@
 import { X } from "lucide-react";
 import { useState } from "react";
 import { Citations } from "@/components/agents/citations";
-import { safeExternalHttpUrl } from "@/lib/safe-http-url";
 import { Button } from "@/components/motion/button/base";
 import { Drawer } from "@/components/motion/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/motion/tabs";
 import { useSlopLensI18n } from "@/i18n/context";
+import { safeExternalHttpUrl } from "@/lib/safe-http-url";
 import { cn } from "@/lib/utils";
 import { FeatureStatePanel } from "./feature-state";
 import { ScorePercentSignal, type ScoreSignalTone, ScoreTextSignal } from "./score-signal";
@@ -346,24 +346,24 @@ function PanelBody({
               {related.map((item) => {
                 const href = safeExternalHttpUrl(item.url);
                 return (
-                <li key={item.id} className="overflow-hidden rounded-md border border-border p-2">
-                  {href ? (
-                    <a
-                      href={href}
-                      className="break-words font-medium text-primary underline-offset-2 hover:underline"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {item.title}
-                    </a>
-                  ) : (
-                    <span className="font-medium">{item.title}</span>
-                  )}
-                  {item.platform ? (
-                    <p className="text-xs text-muted-foreground">{item.platform}</p>
-                  ) : null}
-                </li>
-              );
+                  <li key={item.id} className="overflow-hidden rounded-md border border-border p-2">
+                    {href ? (
+                      <a
+                        href={href}
+                        className="break-words font-medium text-primary underline-offset-2 hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {item.title}
+                      </a>
+                    ) : (
+                      <span className="font-medium">{item.title}</span>
+                    )}
+                    {item.platform ? (
+                      <p className="text-xs text-muted-foreground">{item.platform}</p>
+                    ) : null}
+                  </li>
+                );
               })}
             </ul>
           ) : (

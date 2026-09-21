@@ -2,7 +2,7 @@ import { pathToFileURL } from "node:url";
 
 import { serve } from "@hono/node-server";
 import { createApp } from "./app";
-import { loadApiEnv } from "./env";
+import { loadApiEnv, loadBootstrapEnvFromApiPackage } from "./env";
 import { API_DEFAULT_ORIGIN, API_DEFAULT_PORT } from "./index";
 
 export function startServer(env = loadApiEnv()) {
@@ -28,5 +28,6 @@ export function startServer(env = loadApiEnv()) {
 
 const entryPath = process.argv[1];
 if (entryPath && import.meta.url === pathToFileURL(entryPath).href) {
+  loadBootstrapEnvFromApiPackage();
   startServer();
 }

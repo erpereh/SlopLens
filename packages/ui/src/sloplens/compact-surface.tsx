@@ -31,7 +31,10 @@ export function SlopLensCompactSurface({
   if (analyzeState.phase === "error") {
     return (
       <div
-        className={cn("inline-flex max-w-[min(100%,20rem)] flex-col gap-1.5", className)}
+        className={cn(
+          "inline-flex max-w-[min(100%,20rem)] flex-col gap-1.5 rounded-2xl border border-border bg-card/95 p-1.5 shadow-md backdrop-blur-sm",
+          className,
+        )}
         data-sloplens-compact="true"
       >
         <FeatureErrorPanel
@@ -41,7 +44,13 @@ export function SlopLensCompactSurface({
           onRetry={onRetryAnalyze}
           onOpenSettings={onOpenSettings}
         />
-        <Button type="button" size="sm" variant="outline" className="self-end" onClick={onOpenDetail}>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="self-end"
+          onClick={onOpenDetail}
+        >
           {t("overlay.expand")}
         </Button>
       </div>
@@ -58,20 +67,19 @@ export function SlopLensCompactSurface({
   const chipStatus =
     analyzeState.phase === "loading"
       ? "loading"
-      : analyzeReady && decision && decision.containsClaim
+      : analyzeReady && decision?.containsClaim
         ? "info"
         : "neutral";
 
   return (
     <div
       className={cn(
-        "inline-flex max-w-[min(100%,20rem)] flex-col items-stretch gap-1.5",
+        "inline-flex max-w-[min(100%,20rem)] flex-col items-stretch gap-0.5 rounded-2xl border border-border bg-card/95 p-1 shadow-md backdrop-blur-sm",
         className,
       )}
-      aria-label={t("app.name")}
       data-sloplens-compact="true"
     >
-      <div className="inline-flex min-w-0 items-center gap-1 rounded-full border border-border bg-card/95 p-0.5 pl-2 shadow-md backdrop-blur-sm">
+      <div className="inline-flex min-w-0 items-center gap-1 pl-1.5">
         {analyzeState.phase === "loading" ? (
           <LoaderCircle className="size-3.5 shrink-0 animate-spin text-primary" aria-hidden />
         ) : null}
@@ -97,14 +105,14 @@ export function SlopLensCompactSurface({
       </div>
 
       {onOpenDetailTab ? (
-        <div className="flex flex-wrap justify-end gap-1 px-0.5">
+        <div className="flex flex-wrap justify-end gap-0.5">
           {(["analyze", "verify", "trace"] as const).map((tab) => (
             <Button
               key={tab}
               type="button"
               size="sm"
-              variant="outline"
-              className="h-6 rounded-full px-2 text-[11px]"
+              variant="ghost"
+              className="h-6 rounded-full px-2 text-[11px] text-foreground"
               onClick={() => onOpenDetailTab(tab)}
             >
               {t(`tab.${tab}`)}

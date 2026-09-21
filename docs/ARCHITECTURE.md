@@ -643,6 +643,8 @@ pnpm --filter @sloplens/extension dev
 
 `supabase start` levanta el stack local mediante Docker.
 
+El proceso de `apps/api` carga `apps/api/.env` como bootstrap al arrancar, sin pisar variables ya presentes en el entorno y sin registrar esos valores.
+
 `pnpm dev` debe poder arrancar los procesos de desarrollo del monorepo.
 
 Puertos orientativos:

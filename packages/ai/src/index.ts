@@ -34,6 +34,7 @@ export {
   createTavilySearchProvider,
   type TavilySearchProviderConfig,
 } from "./adapters/tavily/search-provider";
+export { BOOTSTRAP_PROVIDER_IDS } from "./bootstrap-provider-ids";
 export { AiProviderError, isRateLimitedStatus, isRetryableHttpStatus } from "./errors";
 export type { DecisionInput, DecisionProvider } from "./providers/decision";
 export {
@@ -75,4 +76,3 @@ export {
   createDefaultProviderRegistryFromEnv,
   type DefaultProviderRegistryConfig,
 } from "./registry-defaults";
-export { BOOTSTRAP_PROVIDER_IDS } from "./bootstrap-provider-ids";

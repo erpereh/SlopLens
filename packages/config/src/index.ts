@@ -11,6 +11,12 @@ export {
   isProviderSecretConfiguredInEnv,
   readEnvSecretForProvider,
 } from "./env-secrets";
+export { PGVECTOR_EMBEDDING_DIMENSIONS } from "./pgvector-dimensions";
+export {
+  normalizeProviderBaseUrl,
+  OFFICIAL_PROVIDER_BASE_URLS,
+  validateProviderBaseUrl,
+} from "./provider-base-url";
 export {
   CONFIG_SOURCES,
   type ConfigSource,
@@ -21,12 +27,6 @@ export {
   resolveAllProviderConfigs,
   resolveProviderConfig,
 } from "./resolve";
-export {
-  normalizeProviderBaseUrl,
-  OFFICIAL_PROVIDER_BASE_URLS,
-  validateProviderBaseUrl,
-} from "./provider-base-url";
-export { PGVECTOR_EMBEDDING_DIMENSIONS } from "./pgvector-dimensions";
 export {
   FILE_SECRET_STORE_FALLBACK_RELATIVE_PATH,
   MemorySecretStore,

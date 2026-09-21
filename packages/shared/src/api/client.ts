@@ -3,6 +3,7 @@ import { errorEnvelopeSchema } from "../errors";
 import { API_ROUTES } from "./routes";
 
 export const SLOPLENS_LOCAL_API_TOKEN_HEADER = "x-sloplens-local-token";
+
 import {
   type AnalyzeRequest,
   type AnalyzeResponse,

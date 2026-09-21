@@ -63,4 +63,20 @@ describe("SlopLensCompactSurface", () => {
     expect(screen.queryByText("Primary source")).not.toBeInTheDocument();
     expect(screen.queryByText("None found")).not.toBeInTheDocument();
   });
+
+  it("renders Analyze Verify Trace shortcuts on the compact chip", () => {
+    render(
+      wrap(
+        <SlopLensCompactSurface
+          signals={{}}
+          analyzeState={{ phase: "idle" }}
+          onOpenDetail={() => undefined}
+          onOpenDetailTab={() => undefined}
+        />,
+      ),
+    );
+    expect(screen.getByRole("button", { name: /^analyze$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^verify$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^trace$/i })).toBeInTheDocument();
+  });
 });

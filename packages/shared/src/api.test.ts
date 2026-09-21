@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   createSlopLensApiClient,
-  SlopLensApiError,
   SLOPLENS_LOCAL_API_TOKEN_HEADER,
+  SlopLensApiError,
 } from "./api/client";
 import { API_ROUTES } from "./api/routes";
 import { analyzeRequestSchema, healthResponseSchema } from "./api/schemas";

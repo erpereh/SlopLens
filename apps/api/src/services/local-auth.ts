@@ -8,7 +8,10 @@ export const LOCAL_API_TOKEN_HEADER = "x-sloplens-local-token";
 export interface LocalAuthService {
   getToken(): Promise<string>;
   isLoopbackHost(hostHeader: string | undefined): boolean;
-  assertMutatingRequest(hostHeader: string | undefined, tokenHeader: string | undefined): Promise<void>;
+  assertMutatingRequest(
+    hostHeader: string | undefined,
+    tokenHeader: string | undefined,
+  ): Promise<void>;
 }
 
 export function createLocalAuthService(secretStore: SecretStore): LocalAuthService {

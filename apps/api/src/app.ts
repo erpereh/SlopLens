@@ -18,8 +18,8 @@ import { getProvidersHandler } from "./routes/providers";
 import { getSettingsHandler, putSettingsProvidersHandler } from "./routes/settings";
 import { createSecretStore } from "./secret-store/create-secret-store";
 import { createFeatureServices, type FeatureServices } from "./services/feature-services";
-import { createProviderRuntime, type ProviderRuntime } from "./services/provider-runtime";
 import { createLocalAuthService } from "./services/local-auth";
+import { createProviderRuntime, type ProviderRuntime } from "./services/provider-runtime";
 import { createSettingsService } from "./services/settings-service";
 import type { ApiDependencies } from "./services/types";
 

@@ -35,6 +35,7 @@ La interfaz debe priorizar información y contexto sobre decoración.
 - El panel de detalle en viewport ancho es un diálogo no modal (`aria-modal=false`) para no bloquear la página; a ≤1024 usa drawer.
 - El drawer del overlay no bloquea el scroll de la página anfitriona y usa un scrim ligero (`lightBackdrop`) para no atrapar la atención en el host.
 - El chip compacto muestra una sola señal resumida y accesos rápidos Analyze · Verify · Trace; las métricas y el resumen “qué estás viendo” viven en el panel expandido.
+- El chip compacto (señal, Details y atajos) lleva su propio `bg-card`, para que las etiquetas se lean sobre fondos oscuros del host y no queden como pastillas vacías.
 - `sloplens-root` se limita a ~20rem de ancho para no empujar el layout del host.
 
 No existe `apps/web` ni dashboard.
@@ -283,11 +284,11 @@ Analyze · Verify · Trace
 
 ## Superficie compacta
 
-Por defecto, una sola fila tipo chip (no una card de ~20rem con todas las métricas):
+Por defecto, un chip pequeño con fondo propio (no una card de ~20rem con todas las métricas):
 
 ```text
 [ Verifiable claim ]  [ Details ]
-Analyze · Verify · Trace   (atajos opcionales debajo del chip)
+Analyze · Verify · Trace   (atajos debajo, mismo fondo del chip)
 ```
 
 El panel expandido muestra el resumen localizado (“qué estás viendo”), las señales numéricas como secundarias y Verify incluye fuentes visibles cuando existen.

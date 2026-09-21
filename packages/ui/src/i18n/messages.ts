@@ -131,9 +131,11 @@ const en: Record<MessageKey | ErrorMessageKey, string> = {
   "loading.searchingSources": "Searching sources…",
   "empty.analyze": "Run Analyze to summarize what you are viewing.",
   "empty.verify": "Run Verify to look for supporting or conflicting evidence.",
-  "empty.verify.insufficient": "Verify finished, but there wasn't enough evidence to assess this claim.",
+  "empty.verify.insufficient":
+    "Verify finished, but there wasn't enough evidence to assess this claim.",
   "empty.trace": "Run Trace to explore possible origins and derivatives.",
-  "empty.trace.insufficient": "Trace finished, but there wasn't enough evidence to suggest an origin.",
+  "empty.trace.insufficient":
+    "Trace finished, but there wasn't enough evidence to suggest an origin.",
   "empty.sources": "No sources to show yet.",
   "empty.related": "No related items yet.",
   "settings.title": "Provider settings",
@@ -212,9 +214,11 @@ const es: Record<MessageKey | ErrorMessageKey, string> = {
   "loading.searchingSources": "Buscando fuentes…",
   "empty.analyze": "Ejecuta Analizar para resumir lo que estás viendo.",
   "empty.verify": "Ejecuta Verificar para buscar evidencia a favor o en contra.",
-  "empty.verify.insufficient": "Verificar terminó, pero no hubo evidencia suficiente para valorar la afirmación.",
+  "empty.verify.insufficient":
+    "Verificar terminó, pero no hubo evidencia suficiente para valorar la afirmación.",
   "empty.trace": "Ejecuta Rastrear para explorar posibles orígenes.",
-  "empty.trace.insufficient": "Rastrear terminó, pero no hubo evidencia suficiente para sugerir un origen.",
+  "empty.trace.insufficient":
+    "Rastrear terminó, pero no hubo evidencia suficiente para sugerir un origen.",
   "empty.sources": "Aún no hay fuentes.",
   "empty.related": "Aún no hay relacionados.",
   "settings.title": "Ajustes de proveedores",

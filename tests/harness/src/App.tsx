@@ -1,6 +1,7 @@
 import type { ContentDecision } from "@sloplens/core";
 import {
   type FeatureViewState,
+  formatAnalyzeSummary,
   type RelatedItem,
   SlopLensShell,
   SlopLensUiRoot,
@@ -8,7 +9,6 @@ import {
   type ThemePreference,
   type TracePanelContent,
   type VerifyPanelContent,
-  formatAnalyzeSummary,
 } from "@sloplens/ui";
 import { type ReactNode, useMemo, useState } from "react";
 
