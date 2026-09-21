@@ -10,6 +10,9 @@ export function getHealthHandler(deps: ApiDependencies) {
     const payload = healthResponseSchema.parse({
       status: healthStatusFromChecks(checks),
       checks,
+      ...(deps.localAuth.isLoopbackHost(c.req.header("host"))
+        ? { localToken: await deps.localAuth.getToken() }
+        : {}),
     });
     return c.json(payload, payload.status === "unavailable" ? 503 : 200);
   };

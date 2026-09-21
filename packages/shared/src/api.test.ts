@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createSlopLensApiClient, SlopLensApiError } from "./api/client";
+import {
+  createSlopLensApiClient,
+  SlopLensApiError,
+  SLOPLENS_LOCAL_API_TOKEN_HEADER,
+} from "./api/client";
+import { API_ROUTES } from "./api/routes";
 import { analyzeRequestSchema, healthResponseSchema } from "./api/schemas";
 
 const content = {
@@ -69,5 +74,25 @@ describe("createSlopLensApiClient", () => {
       });
     }
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it("sends the local token header on settings provider updates", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ selections: [], secrets: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const client = createSlopLensApiClient({
+      baseUrl: "http://127.0.0.1:3001",
+      fetch: fetchMock,
+      localToken: "pairing-token",
+    });
+    await client.putProviderSelections({ selections: [] });
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(init.headers).toMatchObject({
+      [SLOPLENS_LOCAL_API_TOKEN_HEADER]: "pairing-token",
+    });
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain(API_ROUTES.settingsProviders);
   });
 });

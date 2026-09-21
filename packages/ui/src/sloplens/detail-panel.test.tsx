@@ -46,4 +46,39 @@ describe("SlopLensDetailPanel", () => {
     expect(screen.getByRole("dialog").getAttribute("aria-modal")).toBe("false");
     expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
   });
+
+  it("does not render javascript: links in related items", () => {
+    render(
+      wrap(
+        <SlopLensDetailPanel
+          open
+          onOpenChange={() => undefined}
+          asDrawer={false}
+          activeTab="related"
+          analyzeState={idle}
+          verifyState={idle}
+          traceState={idle}
+          sourcesState={idle}
+          relatedState={success}
+          related={[
+            {
+              id: "r1",
+              title: "Unsafe",
+              url: "javascript:alert(1)",
+            },
+            {
+              id: "r2",
+              title: "Safe",
+              url: "https://example.com/article",
+            },
+          ]}
+        />,
+      ),
+    );
+
+    expect(screen.queryByRole("link", { name: "Unsafe" })).not.toBeInTheDocument();
+    const safe = screen.getByRole("link", { name: "Safe" });
+    expect(safe.getAttribute("href")).toBe("https://example.com/article");
+    expect(safe.getAttribute("rel")).toBe("noopener noreferrer");
+  });
 });

@@ -1,6 +1,8 @@
 import type { ErrorBody } from "../errors";
 import { errorEnvelopeSchema } from "../errors";
 import { API_ROUTES } from "./routes";
+
+export const SLOPLENS_LOCAL_API_TOKEN_HEADER = "x-sloplens-local-token";
 import {
   type AnalyzeRequest,
   type AnalyzeResponse,
@@ -58,6 +60,8 @@ export interface SlopLensApiClient {
 export interface SlopLensApiClientOptions {
   baseUrl: string;
   fetch?: typeof fetch;
+  /** Required for PUT /settings/providers when the API enforces loopback pairing. */
+  localToken?: string | (() => string | undefined);
 }
 
 type ZodLike<T> = {
@@ -68,15 +72,34 @@ export function createSlopLensApiClient(options: SlopLensApiClientOptions): Slop
   const baseUrl = normalizeBaseUrl(options.baseUrl);
   const fetchImpl = options.fetch ?? fetch;
 
+  function resolveLocalToken(): string | undefined {
+    const token = options.localToken;
+    if (typeof token === "function") {
+      return token();
+    }
+    return token;
+  }
+
   async function request<T>(
     method: string,
     route: string,
     schema: ZodLike<T>,
     body?: unknown,
   ): Promise<T> {
+    const headers: Record<string, string> = {};
+    if (body !== undefined) {
+      headers["content-type"] = "application/json";
+    }
+    if (method === "PUT" && route === API_ROUTES.settingsProviders) {
+      const localToken = resolveLocalToken();
+      if (localToken) {
+        headers[SLOPLENS_LOCAL_API_TOKEN_HEADER] = localToken;
+      }
+    }
+
     const response = await fetchImpl(new URL(route, `${baseUrl}/`).toString(), {
       method,
-      headers: body === undefined ? undefined : { "content-type": "application/json" },
+      headers: Object.keys(headers).length > 0 ? headers : undefined,
       body: body === undefined ? undefined : JSON.stringify(body),
     });
 

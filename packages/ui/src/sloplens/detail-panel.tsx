@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { useState } from "react";
 import { Citations } from "@/components/agents/citations";
+import { safeExternalHttpUrl } from "@/lib/safe-http-url";
 import { Button } from "@/components/motion/button/base";
 import { Drawer } from "@/components/motion/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/motion/tabs";
@@ -314,14 +315,16 @@ function PanelBody({
         >
           {relatedState.phase === "success" && related && related.length > 0 ? (
             <ul className="space-y-2 text-sm">
-              {related.map((item) => (
+              {related.map((item) => {
+                const href = safeExternalHttpUrl(item.url);
+                return (
                 <li key={item.id} className="rounded-md border border-border p-2">
-                  {item.url ? (
+                  {href ? (
                     <a
-                      href={item.url}
+                      href={href}
                       className="font-medium text-primary underline-offset-2 hover:underline"
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                     >
                       {item.title}
                     </a>
@@ -332,7 +335,8 @@ function PanelBody({
                     <p className="text-xs text-muted-foreground">{item.platform}</p>
                   ) : null}
                 </li>
-              ))}
+              );
+              })}
             </ul>
           ) : (
             <FeatureStatePanel

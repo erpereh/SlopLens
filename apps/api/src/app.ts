@@ -19,6 +19,7 @@ import { getSettingsHandler, putSettingsProvidersHandler } from "./routes/settin
 import { createSecretStore } from "./secret-store/create-secret-store";
 import { createFeatureServices, type FeatureServices } from "./services/feature-services";
 import { createProviderRuntime, type ProviderRuntime } from "./services/provider-runtime";
+import { createLocalAuthService } from "./services/local-auth";
 import { createSettingsService } from "./services/settings-service";
 import type { ApiDependencies } from "./services/types";
 
@@ -33,6 +34,7 @@ export interface CreateAppOptions {
 export function createApp(env: ApiEnv, options: CreateAppOptions = {}): Hono {
   const sql = options.sql !== undefined ? options.sql : createSqlClient(env.databaseUrl);
   const secretStore = options.secretStore ?? createSecretStore().store;
+  const localAuth = createLocalAuthService(secretStore);
   const settings =
     options.settings ??
     createSettingsService({
@@ -55,6 +57,7 @@ export function createApp(env: ApiEnv, options: CreateAppOptions = {}): Hono {
     env,
     sql,
     secretStore,
+    localAuth,
     settings,
     features,
     runtime,

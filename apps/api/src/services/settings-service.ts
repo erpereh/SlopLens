@@ -4,11 +4,13 @@ import {
   type ProviderSelection,
   type SecretStore,
   secretStoreKey,
+  validateProviderBaseUrl,
 } from "@sloplens/config";
 import type { PutProviderSelectionsRequest, SettingsResponse } from "@sloplens/shared";
 import type postgres from "postgres";
 
 import { listProviderSelections, replaceProviderSelections } from "../db/provider-selections";
+import { validationError } from "../lib/http-errors";
 import { isProviderSecretConfigured, resolveEffectiveSelections } from "./secrets-resolver";
 
 export interface SettingsService {
@@ -59,12 +61,25 @@ export function createSettingsService(input: {
     },
 
     async putProviderSettings(body) {
+      for (const selection of body.selections) {
+        const baseUrlError = validateProviderBaseUrl(selection.providerId, selection.baseUrl);
+        if (baseUrlError) {
+          throw validationError(baseUrlError);
+        }
+      }
+
       if (!input.sql) {
         throw new Error("Database unavailable");
       }
 
       const existing = await listProviderSelections(input.sql);
       const merged = mergeByCapability(existing, body.selections);
+      for (const selection of merged) {
+        const baseUrlError = validateProviderBaseUrl(selection.providerId, selection.baseUrl);
+        if (baseUrlError) {
+          throw validationError(baseUrlError);
+        }
+      }
       await replaceProviderSelections(input.sql, merged);
 
       if (body.secrets) {

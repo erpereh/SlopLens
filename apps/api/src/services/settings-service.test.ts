@@ -26,4 +26,26 @@ describe("createSettingsService", () => {
     expect(serialized.includes("bootstrap-key")).toBe(false);
     expect(serialized.includes("apiKey")).toBe(false);
   });
+
+  it("rejects provider selections with disallowed remote base URLs", async () => {
+    const service = createSettingsService({
+      sql: null,
+      secretStore: new MemorySecretStore(),
+      env: {},
+    });
+
+    await expect(
+      service.putProviderSettings({
+        selections: [
+          {
+            capability: "embedding",
+            providerId: "openrouter",
+            baseUrl: "https://evil.example/v1",
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      body: { code: "validation_error" },
+    });
+  });
 });

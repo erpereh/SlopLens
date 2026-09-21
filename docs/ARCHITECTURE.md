@@ -811,6 +811,13 @@ La caché debe evitar repetir verificaciones o embeddings idénticos cuando el c
 
 ## Seguridad
 
+### API local (loopback)
+
+- El servidor del MVP escucha solo en `127.0.0.1` (no en todas las interfaces).
+- Cualquier proceso en la misma máquina puede llamar al API local; eso es inherente a un backend single-user en loopback y no se trata como autenticación multiusuario.
+- Aun así, las mutaciones de configuración (`PUT /settings/providers`) exigen un **token de emparejamiento local** generado al arrancar, persistido en `SecretStore` y devuelto en `GET /health` únicamente cuando el `Host` es loopback (`127.0.0.1` / `localhost`). La extensión (Options) lo envía en el header `X-SlopLens-Local-Token`.
+- Objetivo: impedir que otro proceso local redirija API keys a un `baseUrl` remoto arbitrario al guardar providers. Los `baseUrl` de providers conocidos (`openrouter`, `tavily`) están en allowlist de URLs oficiales; cualquier otro `baseUrl` remoto se rechaza. Solo se permiten URLs `http`/`https` hacia loopback o redes privadas (p. ej. mocks locales).
+
 - Las API keys viven en SecretStore (OS primero) o en `.env` de bootstrap del API; nunca en el bundle de la extensión.
 - Incluir `.env.example`, nunca secretos reales.
 - Validar inputs con Zod.

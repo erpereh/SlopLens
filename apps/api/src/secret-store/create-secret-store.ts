@@ -35,6 +35,11 @@ class OsFirstSecretStore implements SecretStore {
     if (this.#os) {
       try {
         await this.#os.set(key, value);
+        try {
+          await this.#file.delete(key);
+        } catch {
+          // Best-effort purge of stale file fallback copies.
+        }
         return;
       } catch {
         // Fall through to explicit file fallback.

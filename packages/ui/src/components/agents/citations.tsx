@@ -7,6 +7,7 @@ import { type ReactNode, useCallback, useId, useState } from "react";
 import { AgentDisclosure } from "@/components/agents/agent-disclosure";
 import { EASE_OUT, SPRING_LAYOUT, SPRING_SWAP } from "@/lib/ease";
 import { useFavicon } from "@/lib/hooks/use-favicon";
+import { safeExternalHttpUrl } from "@/lib/safe-http-url";
 import { cn } from "@/lib/utils";
 
 export interface CitationItem {
@@ -139,9 +140,10 @@ function CitationRow({
   const className =
     "group/citation flex items-center gap-2 rounded-md px-1.5 py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring";
   const id = citationTargetId(idPrefix, citation.id);
+  const href = safeExternalHttpUrl(citation.url);
 
-  return citation.url ? (
-    <a id={id} href={citation.url} target="_blank" rel="noreferrer noopener" className={className}>
+  return href ? (
+    <a id={id} href={href} target="_blank" rel="noopener noreferrer" className={className}>
       {content}
     </a>
   ) : (

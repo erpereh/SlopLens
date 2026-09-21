@@ -17,6 +17,8 @@ export const healthResponseSchema = z
       })
       .strict()
       .optional(),
+    /** Present only for loopback health requests; used to authorize settings mutations. */
+    localToken: z.string().min(1).optional(),
   })
   .strict();
 
