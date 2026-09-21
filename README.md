@@ -10,25 +10,13 @@ Acciones centrales:
 
 ## Estado
 
-Gate 0: monorepo y contratos compartidos. Aún no hay servidor Hono, overlays ni columnas `vector(N)`.
+MVP local en `feat/mvp-integration`: extensión WXT (X / YouTube), backend Hono, Supabase Local + pgvector (`vector(2048)` + HNSW `halfvec`), Settings con SecretStore OS-first.
 
-MVP previsto:
-
-- X / Twitter.
-- YouTube.
-- Extensión WXT + React.
-- UI beUI.
-- Backend local Hono.
-- Supabase Local + PostgreSQL + pgvector.
-- Docker.
-- Jev como clasificador/router inicial.
-- Sin suscripciones ni paywalls.
-- Sin cloud obligatorio.
-- Sin `apps/web` en el MVP.
+No existe `apps/web`; no es requisito del MVP.
 
 ## Arranque
 
-Requisitos: Node 22+, pnpm 12. Docker Desktop hace falta más adelante para `supabase start`, no para typecheck.
+Requisitos: Node 22+, pnpm 12, Docker Desktop para Supabase Local.
 
 ```bash
 pnpm install
@@ -37,16 +25,37 @@ pnpm typecheck
 pnpm test
 ```
 
-Cuando Docker Desktop esté en marcha (Foundation / G1):
+Copiar `apps/api/.env.example` → `apps/api/.env` y `apps/extension/.env.example` → `apps/extension/.env`. La extensión solo admite `WXT_API_BASE_URL`; nunca secrets.
+
+Con Docker Desktop en marcha:
 
 ```bash
-supabase start
-pnpm dev
+npx supabase start
+npx supabase db reset   # aplica migraciones, incluida content_embeddings vector(2048)
+pnpm --filter @sloplens/api dev
 ```
 
-La migración actual solo habilita la extensión `vector`. No crea `vector(N)` ni HNSW.
+En otro terminal:
 
-Los `.env` locales viven en `apps/api/.env` y `apps/extension/.env` (ignorados). Copiar desde los `.env.example`. La extensión solo admite `WXT_API_BASE_URL`; nunca secrets.
+```bash
+pnpm --filter @sloplens/extension dev
+```
+
+Cargar la extensión empaquetada (Chrome / Edge unpacked) desde `apps/extension/.output/chrome-mv3` tras `pnpm --filter @sloplens/extension build`.
+
+Puertos:
+
+```text
+SlopLens API       http://127.0.0.1:3001
+PostgreSQL         localhost:54322
+Supabase Studio    localhost:54323
+```
+
+Smoke real de providers (opcional, gasta cuota):
+
+```bash
+SLOPLENS_SMOKE=1 pnpm --filter @sloplens/ai test
+```
 
 ## Documentación
 

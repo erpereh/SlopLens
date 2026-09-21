@@ -21,6 +21,18 @@ SlopLens debe sentirse:
 
 La interfaz debe priorizar información y contexto sobre decoración.
 
+## Estado actual de la UI
+
+- Kit beUI público en `packages/ui`, montado en la extensión dentro de `sloplens-root` (Shadow DOM).
+- Superficies: `SlopLensUiRoot` → `SlopLensShell` (badge compacto + panel/drawer con tabs Analyze · Verify · Trace · Sources · Related).
+- Options usa `SlopLensSettingsForm`; las keys se envían al API y no se persisten en la extensión.
+- En Shadow DOM el control de tema es `SlopLensThemeToggleButton` (el Theme Toggle de beUI opera sobre `document.documentElement` y no sirve aislado).
+- Sustitutos locales porque el registry público devolvió 404: `button-base`, `number-ticker`, `agent-progress`. El resto del kit se instaló desde `@beui`.
+- i18n en/es. Light / dark / system persistido en `chrome.storage.local`.
+- Viewport estrecho (≤1024): el detalle pasa a drawer.
+
+No existe `apps/web` ni dashboard.
+
 ## Sistema visual: beUI
 
 beUI público y gratuito es la fuente de verdad visual de SlopLens.
@@ -302,7 +314,7 @@ Para:
 
 ### Number ticker (`number-ticker`)
 
-Para scores y contadores (slug público verificado; no usar `animated-number` como sustituto por defecto):
+Para scores y contadores. El slug público `number-ticker` no estaba disponible en el registry (404); el proyecto usa un sustituto local con la misma función (no usar `animated-number` como nombre por defecto):
 
 ```text
 Slop       82%

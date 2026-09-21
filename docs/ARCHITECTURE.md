@@ -57,34 +57,50 @@ Debe representar la arquitectura actual y las decisiones de implementación vige
 | CI | no GitHub Actions en el MVP |
 | Cloud | no obligatorio |
 
-## Estado de implementación (Gate 0 + Foundation)
+## Estado de implementación
 
-El monorepo pnpm + Turborepo existe. Los contratos compartidos están congelados en TypeScript + Zod.
+El monorepo pnpm + Turborepo está operativo. Los contratos compartidos están congelados en TypeScript + Zod.
 
-**Foundation (backend local):**
+**Backend local (Hono):**
 
-- Servidor Hono en `http://127.0.0.1:3001` (`apps/api`).
-- Rutas: `GET /health`, `GET /providers`, `GET /settings`, `PUT /settings/providers`, shells validados para `POST /analyze`, `/verify`, `/trace`, `/related` (501 hasta features).
+- Servidor en `http://127.0.0.1:3001` (`apps/api`).
+- Rutas reales: `GET /health`, `GET /providers`, `GET /settings`, `PUT /settings/providers`, `POST /analyze`, `POST /verify`, `POST /trace`, `POST /related`.
 - Cliente PostgreSQL vía `DATABASE_URL` (`postgres`).
-- Migración de dominio mínima: `content_items`, `content_analysis`, `claims`, `sources`, `content_relations`, `provider_selections`. **Sin** columna `vector(N)` ni HNSW.
-- Caché por `content_hash` (helpers en API + tablas anteriores).
-- `SecretStore` OS-first con `@napi-rs/keyring` (service `sloplens`, account `${capability}:${providerId}`) y fallback explícito `FileSecretStore` (`.data/secret-store.json`, gitignored, ACL/0600).
-- Resolución de credenciales: SecretStore del usuario → bootstrap `.env` → `provider_not_configured`. Las respuestas de settings solo exponen `configured`, nunca valores.
+- Caché por `content_hash` para análisis y embeddings.
+- `SecretStore` OS-first con `@napi-rs/keyring` (service `sloplens`, account `${capability}:${providerId}`). Fallback explícito `FileSecretStore` (`.data/secret-store.json`, gitignored, ACL/0600), etiquetado `kind: "file"` / `isFallback: true`. No es equivalente a un keychain.
+- Resolución de credenciales: SecretStore del usuario → bootstrap `.env` → `provider_not_configured`. Settings nunca devuelve el valor de una key.
 
-**Gate 0 (sin cambiar):**
+**Proveedores (adapters, no dominio):**
 
-- Workspace: `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `biome.json`, `tsconfig.base.json`.
-- Apps stub de extensión WXT mínima.
-- Packages: `core`, `ai`, `platforms`, `shared`, `config`; `ui` es stub.
-- Migración inicial: solo `create extension vector`. **No** hay `vector(N)` ni índice HNSW.
-- Vitest en packages con contratos.
+- Decision: Jev vía AI Gateway (`@ai-sdk/gateway`).
+- Embedding / vision / reasoning: OpenRouter.
+- Search: Tavily (`include_answer: false`; el campo answer nunca es un veredicto).
+- Registry por `providerId`. El dominio solo usa interfaces.
 
-No implementado todavía (gates posteriores):
+**Embeddings / pgvector (G1b):**
 
-- Adapters Jev / OpenRouter / Tavily en runtime.
-- `content_embeddings` tras verificar dimensión real.
-- UI beUI, overlays, Analyze / Verify / Trace / Related / Vision completos.
-- `apps/web` (no creado; no es requisito del MVP).
+- Dimensión **verificada por smoke**: `embedding.length === 2048` (modelo de bootstrap OpenRouter).
+- Tabla `content_embeddings` con `model_id`, `dim`, `embedding vector(2048)`.
+- Índice HNSW sobre `halfvec(2048)` porque pgvector limita HNSW en `vector` a 2000 dimensiones.
+- Persistencia rechaza `values.length !== dim` de la columna verificada.
+
+**Extensión:**
+
+- WXT MV3, content scripts en X e YouTube, custom element `sloplens-root` + Shadow DOM.
+- Overlay con `@sloplens/ui` (`SlopLensUiRoot` + `SlopLensShell`).
+- Options: `SlopLensSettingsForm` → `PUT /settings/providers`. Keys nunca se guardan en la extensión ni se loguean.
+- Env de la extensión: solo `WXT_API_BASE_URL`.
+- `@sloplens/shared` y `@sloplens/config/browser` no arrastran Node (`fs`, keyring, `child_process`) al bundle.
+
+**UI:**
+
+- Kit beUI público en `packages/ui`. Sustitutos locales donde el registry devolvió 404: `button-base`, `number-ticker`, `agent-progress`.
+- En Shadow DOM se usa `SlopLensThemeToggleButton` (no el ThemeToggle de documento).
+
+No implementado / fuera del MVP:
+
+- `apps/web` (no existe; no es requisito).
+- Mapa de propagación, narrativas, Feed Quality, filtros, spoilers, Auth, Redis, Edge Functions, GitHub Actions.
 
 ## Arquitectura general
 
@@ -122,19 +138,20 @@ La extensión no debe contener secretos de proveedores.
 ```text
 sloplens/
 ├── apps/
-│   ├── extension/          # WXT mínimo (background stub). Sin content scripts.
-│   └── api/                # stub; Hono llega en Foundation
+│   ├── extension/          # WXT MV3: content, popup, options, Shadow DOM
+│   └── api/                # Hono local :3001
 │
 ├── packages/
 │   ├── core/               # NormalizedContent, ContentDecision
-│   ├── ai/                 # interfaces de providers + registry
-│   ├── platforms/          # contrato PlatformAdapter
+│   ├── ai/                 # interfaces + adapters Jev/OpenRouter/Tavily
+│   ├── platforms/          # adapters X y YouTube
 │   ├── shared/             # error envelope, schemas API, cliente HTTP
 │   ├── config/             # ProviderSelection, resolución, SecretStore
-│   └── ui/                 # stub (solo package.json)
+│   │                       # browser entry: `@sloplens/config/browser`
+│   └── ui/                 # beUI + SlopLensShell / Settings
 │
 ├── supabase/
-│   ├── migrations/         # solo extensión vector
+│   ├── migrations/         # vector, tablas de dominio, content_embeddings vector(2048)
 │   ├── seed.sql
 │   └── config.toml
 │
@@ -194,7 +211,7 @@ No existe en el repositorio. No es requisito del MVP; la extensión es la superf
 
 ### `packages/ui`
 
-Stub en Gate 0 (solo `package.json`). beUI público/gratuito será la fuente visual cuando se implemente la UI.
+Componentes beUI públicos y superficies SlopLens (`SlopLensUiRoot`, `SlopLensShell`, `SlopLensSettingsForm`). En Shadow DOM el toggle de tema es `SlopLensThemeToggleButton`.
 
 No debe convertirse en un sistema de diseño paralelo.
 
@@ -206,17 +223,19 @@ Tipos y schemas de dominio independientes de proveedor y plataforma: `Normalized
 
 `ProviderSelection`, resolución user → env → unconfigured, y `SecretStore`.
 
+La extensión solo puede importar `@sloplens/config/browser` (schemas). `FileSecretStore` vive en `@sloplens/config/secrets/file` y es Node-only.
+
 ### `packages/ai`
 
-Contratos de providers (interfaces + registry). Adapters reales en gates posteriores.
+Contratos de providers e implementaciones adapter (Jev, OpenRouter, Tavily). IDs de modelo solo aquí y en defaults de bootstrap.
 
 ### `packages/platforms`
 
-Normalización y lógica común de adapters de plataformas.
+Adapters X y YouTube: extraen `NormalizedContent` desde el DOM. El core no conoce selectores.
 
 ### `packages/shared`
 
-Error envelope, schemas Zod de la API y cliente HTTP tipado extensión ↔ API. Sin lógica de dominio de contenido.
+Error envelope, schemas Zod de la API y cliente HTTP tipado extensión ↔ API. Importa `@sloplens/config/browser`, no el barrel Node.
 
 ### `supabase`
 
@@ -322,8 +341,6 @@ URL:
 http://127.0.0.1:3001
 ```
 
-En Gate 0 el proceso aún no escucha; el contrato HTTP ya está congelado.
-
 Endpoints:
 
 ```text
@@ -342,34 +359,35 @@ El cliente tipado vive en `packages/shared` (`createSlopLensApiClient`). La exte
 ### `/analyze`
 
 - recibe contenido normalizado;
-- llama al clasificador;
-- devuelve scores/decisiones;
-- detecta si existe un claim;
-- decide si hacen falta pasos adicionales;
-- puede persistir resultado reutilizable.
+- reutiliza análisis por `content_hash` salvo `forceRefresh`;
+- llama al `DecisionProvider` (Jev por defecto);
+- en YouTube, o si `needsImageAnalysis`, analiza el thumbnail con `VisionProvider` cuando está configurado;
+- no descarga transcripciones: usa `NormalizedContent.text` solo si el adapter ya lo aportó;
+- persiste `content_items` + `content_analysis`.
 
 ### `/verify`
 
-- recibe un claim;
-- busca fuentes;
-- prioriza fuente primaria;
-- contrasta evidencia;
-- usa un LLM complejo solo si aporta valor;
-- devuelve evidencia estructurada.
+- busca evidencia con `SearchProvider` (Tavily);
+- ordena fuentes primarias primero (gov/edu/agencias antes que posts);
+- nunca trata el campo `answer` de búsqueda como veredicto;
+- llama al LLM de razonamiento solo si `needsPowerfulModel` (análisis cacheado) o la evidencia es ambigua;
+- `insufficient_evidence` cuando no hay resultados o solo hay señales neutrales.
 
 ### `/trace`
 
-- busca origen;
-- consulta relaciones existentes;
-- relaciona contenido;
-- identifica posibles derivaciones;
-- devuelve grafo parcial y evidencia.
+Trace **básico** del MVP:
+
+- búsqueda (`topic: news`) + vecinos pgvector + `content_relations`;
+- grafo parcial: origen candidato, similares, derivaciones;
+- `insufficient_evidence` si no hay ninguna de las tres;
+- no hay mapa de propagación.
 
 ### `/related`
 
 - genera o reutiliza embedding;
-- consulta pgvector;
-- devuelve vecinos semánticos y clusters.
+- consulta HNSW (`halfvec`) en la dimensión verificada;
+- rechaza persistir si `values.length !== 2048`;
+- agrupa en `clusters` cuando hay ≥2 vecinos con score alto.
 
 ## Pipeline de IA
 
@@ -610,9 +628,10 @@ pnpm install
 pnpm lint
 pnpm typecheck
 pnpm test
-# Foundation / G1 (requiere Docker Desktop en marcha):
-supabase start
-pnpm dev
+# Requiere Docker Desktop en marcha:
+npx supabase start
+pnpm --filter @sloplens/api dev
+pnpm --filter @sloplens/extension dev
 ```
 
 `supabase start` levanta el stack local mediante Docker.
@@ -643,24 +662,21 @@ pnpm dev
 
 PostgreSQL es la fuente de verdad.
 
-**Gate 0:** la única migración aplicada en el repo habilita la extensión `vector` en el schema `extensions`. No existe ninguna columna `vector(N)` ni índice HNSW. La dimensión se fijará en una migración posterior tras verificarla (documentación del modelo configurado + respuesta real de API + smoke que mide `embedding.length`). Si docs y API discrepan, prevalece la longitud observada.
+**G1b:** dimensión verificada por smoke = **2048**. Migración `content_embeddings` con `vector(2048)` e índice HNSW sobre `halfvec(2048)` (pgvector limita HNSW en `vector` a 2000 dims).
 
-Tablas previstas para Foundation (migración `20260921130000_foundation_domain_tables.sql`):
+Tablas actuales:
 
 ```text
 content_items
+content_embeddings
 content_analysis
 claims
 sources
 content_relations
+clusters
+cluster_members
 provider_selections
 ```
-
-Pendiente hasta verificar dimensión de embeddings: `content_embeddings` con `vector(N)` e índice HNSW.
-
-Otras tablas previstas (futuro / MVP ampliado):
-
-No crear todas las tablas desde el primer commit si el MVP todavía no las necesita. Crear el mínimo esquema que soporte la funcionalidad implementada.
 
 ## `content_items`
 
@@ -729,15 +745,15 @@ nearest-neighbor search
 contenido relacionado
 ```
 
-Índice previsto: HNSW, **después** de verificar N.
+Índice actual: HNSW sobre `embedding::halfvec(2048)` (`halfvec_cosine_ops`). La columna sigue siendo `vector(2048)`; el cast es solo del índice porque HNSW en `vector` maxea a 2000 dims.
 
 El proveedor de embeddings debe poder cambiar sin reescribir el dominio.
 
 Reglas vigentes:
 
-- El dominio no hardcodea 2048 ni ninguna otra dimensión.
-- Cada fila futura de embeddings guardará `model_id` y `dim`.
-- Persistencia rechaza vectores cuya longitud no coincida con la dimensión verificada de ese modelo.
+- El dominio no hardcodea 2048; la constante de columna vive en el API (`PGVECTOR_EMBEDDING_DIMENSIONS`) como tamaño de schema verificado por smoke.
+- Cada fila de embeddings guarda `model_id` y `dim`.
+- Persistencia rechaza vectores cuya longitud no coincida con la dimensión verificada de la columna.
 - Cambiar provider/modelo/dimensión es una migración de datos explícita (re-embed o nueva columna/tabla); nunca mezclar espacios vectoriales.
 
 ## Auth
