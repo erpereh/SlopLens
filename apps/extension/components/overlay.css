@@ -1,0 +1,63 @@
+:host {
+  all: initial;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.sloplens-overlay {
+  --sl-bg: #f8fafc;
+  --sl-fg: #0f172a;
+  --sl-border: #cbd5e1;
+  --sl-accent: #2563eb;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.65rem;
+  max-width: 20rem;
+  border: 1px solid var(--sl-border);
+  border-radius: 0.65rem;
+  background: var(--sl-bg);
+  color: var(--sl-fg);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 0.08);
+}
+
+.sloplens-overlay[data-theme="dark"] {
+  --sl-bg: #0f172a;
+  --sl-fg: #e2e8f0;
+  --sl-border: #334155;
+  --sl-accent: #60a5fa;
+}
+
+.sloplens-overlay__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.sloplens-overlay__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--sl-accent);
+}
+
+.sloplens-overlay__hint {
+  margin: 0;
+  opacity: 0.85;
+}
+
+.sloplens-overlay[data-reduced-motion="true"] * {
+  animation: none !important;
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sloplens-overlay * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

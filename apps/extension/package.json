@@ -9,19 +9,23 @@
     "postinstall": "wxt prepare",
     "lint": "biome check .",
     "typecheck": "wxt prepare && tsc --noEmit",
-    "test": "node --eval process.exit(0)"
+    "test": "vitest run"
   },
   "dependencies": {
     "@sloplens/core": "workspace:*",
+    "@sloplens/platforms": "workspace:*",
     "@sloplens/shared": "workspace:*",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@types/chrome": "^0.0.306",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@wxt-dev/module-react": "^1.1.5",
+    "happy-dom": "^20.0.10",
     "typescript": "catalog:",
+    "vitest": "catalog:",
     "wxt": "^0.20.11"
   }
 }
