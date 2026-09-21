@@ -2,6 +2,7 @@ import { detectPlatform } from "@sloplens/platforms";
 
 import { LOCALE_STORAGE_KEY, resolveLocale } from "../lib/i18n";
 import { OverlayMountManager, type OverlayRuntimeState } from "../lib/mount-overlay";
+import { createScanScheduler } from "../lib/scan-scheduler";
 import { collectScanTargets } from "../lib/scan-targets";
 import { prefersReducedMotion, readThemePreference, THEME_STORAGE_KEY } from "../lib/theme";
 
@@ -19,18 +20,8 @@ export default defineContentScript({
 
     const manager = new OverlayMountManager(ctx);
     let runtime = await loadRuntimeState();
-    let scanScheduled = false;
 
-    const scheduleScan = () => {
-      if (scanScheduled) {
-        return;
-      }
-      scanScheduled = true;
-      queueMicrotask(async () => {
-        scanScheduled = false;
-        await scanPage(manager, platform, runtime);
-      });
-    };
+    const scheduleScan = createScanScheduler(() => scanPage(manager, platform, runtime));
 
     const observer = new MutationObserver(() => {
       scheduleScan();

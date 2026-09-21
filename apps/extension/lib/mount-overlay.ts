@@ -33,10 +33,32 @@ export interface OverlayRuntimeState {
 export class OverlayMountManager {
   private readonly registry = new OverlayHostRegistry();
   private readonly mounted = new WeakMap<HTMLElement, MountedRecord>();
+  private readonly inflight = new WeakMap<HTMLElement, Promise<void>>();
 
   constructor(private readonly ctx: ContentScriptContext) {}
 
   async syncTarget(target: ScanTarget, runtime: OverlayRuntimeState): Promise<void> {
+    const previous = this.inflight.get(target.host);
+    const job = (async () => {
+      if (previous) {
+        await previous;
+      }
+      await this.syncTargetUnlocked(target, runtime);
+    })();
+    this.inflight.set(target.host, job);
+    try {
+      await job;
+    } finally {
+      if (this.inflight.get(target.host) === job) {
+        this.inflight.delete(target.host);
+      }
+    }
+  }
+
+  private async syncTargetUnlocked(
+    target: ScanTarget,
+    runtime: OverlayRuntimeState,
+  ): Promise<void> {
     const content = this.extractContent(target);
     if (!content) {
       return;
@@ -113,6 +135,12 @@ export class OverlayMountManager {
       anchor: host,
       append: "after",
       onMount: (container) => {
+        const rootNode = container.getRootNode();
+        if (rootNode instanceof ShadowRoot && rootNode.host instanceof HTMLElement) {
+          rootNode.host.style.display = "block";
+          rootNode.host.style.maxWidth = "20rem";
+          rootNode.host.style.marginBlock = "0.5rem";
+        }
         reactRoot = createRoot(container);
         this.render(reactRoot, content, runtime);
         return { root: reactRoot };

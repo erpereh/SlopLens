@@ -47,8 +47,8 @@ export function ContentOverlay({
   const [trace, setTrace] = useState<TracePanelContent>();
   const [sources, setSources] = useState<SourceItem[]>([]);
   const [related, setRelated] = useState<RelatedItem[]>([]);
-  const [similarCount, setSimilarCount] = useState<number | null>(null);
-  const [primarySourceLabel, setPrimarySourceLabel] = useState<string | null>(null);
+  const [similarCount, setSimilarCount] = useState<number | null>();
+  const [primarySourceLabel, setPrimarySourceLabel] = useState<string | null>();
 
   const runAnalyze = useCallback(async () => {
     setAnalyzeState({ phase: "loading" });
