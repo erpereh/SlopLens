@@ -165,12 +165,12 @@ function toPossibleOrigin(result: SearchResult): NonNullable<TraceResponse["poss
 
 function originReason(result: SearchResult, primary: boolean): string {
   if (primary) {
-    return "This domain looks like a primary, academic, or agency publisher. That is a heuristic, not proof of origin.";
+    return "Este dominio parece una fuente primaria, académica o institucional. Es una heurística, no una prueba de origen.";
   }
   if (result.publishedAt) {
-    return "This is the earliest dated result among relevant matches. Earlier is not the same as origin.";
+    return "Es el resultado fechado más antiguo entre las coincidencias relevantes. Más antiguo no significa origen.";
   }
-  return "This was the strongest remaining match after relevance filtering. It is a candidate, not a confirmed origin.";
+  return "Es el mejor candidato que queda tras filtrar por relevancia. No es un origen confirmado.";
 }
 
 export { pickOriginCandidate, toPossibleOrigin };

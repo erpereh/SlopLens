@@ -64,4 +64,50 @@ describe("readLocalMetrics", () => {
     });
     expect(JSON.stringify(payload)).not.toMatch(/apiKey|localToken|tweet body/);
   });
+
+  it("keeps the other counts when one aggregate query fails", async () => {
+    const sql = async (strings: TemplateStringsArray) => {
+      const query = strings.join(" ");
+      if (query.includes("from public.claims")) {
+        throw new Error("claims unavailable");
+      }
+      if (query.includes("group by platform")) {
+        return [
+          { platform: "x", n: 2 },
+          { platform: "youtube", n: 1 },
+        ];
+      }
+      if (query.includes("max(captured_at)")) {
+        return [{ last: "2026-09-21T12:00:00.000Z" }];
+      }
+      if (query.includes("from public.content_items")) {
+        return [{ n: 3 }];
+      }
+      if (query.includes("avg(")) {
+        return [{ avg: 0.4 }];
+      }
+      if (query.includes("from public.content_analysis")) {
+        return [{ n: 2 }];
+      }
+      if (query.includes("from public.clusters")) {
+        return [{ n: 0 }];
+      }
+      if (query.includes("from public.content_relations")) {
+        return [{ n: 1 }];
+      }
+      if (query.includes("pg_extension")) {
+        return [{ exists: true }];
+      }
+      if (query.includes("select 1")) {
+        return [{ ok: 1 }];
+      }
+      return [];
+    };
+
+    const payload = await readLocalMetrics(sql as never);
+    expect(payload.status).toBe("degraded");
+    expect(payload.counts.contentItems).toBe(3);
+    expect(payload.counts.claims).toBeNull();
+    expect(payload.counts.byPlatform).toEqual({ x: 2, youtube: 1 });
+  });
 });

@@ -387,7 +387,7 @@ El cliente tipado vive en `packages/shared` (`createSlopLensApiClient`). La exte
 - Responde siempre 200: si PostgreSQL/pgvector falla, `status` degradado/unavailable y conteos `null`.
 - Contrato: solo `status`, checks (`database`, `pgvector`), conteos agregados (`contentItems`, `cachedAnalyses`, `clusters`, `relations`, `byPlatform.x`, `byPlatform.youtube`, `claims`, `averageSlop`) y `lastActivityAt`.
 - No devuelve `localToken`, API keys, URLs sensibles, texto de posts, hashes, SQL ni filas.
-- Un fallo de métricas no tumba `/health` ni el dashboard Resumen.
+- Si una query de conteo falla y la base sigue en pie, ese conteo va a `null` y `status` es `degraded`. El resumen y el pie del dashboard usan el mismo estado: un `/health` en línea no se pinta como desconectado porque `/metrics` haya fallado.
 
 ### `/content`
 

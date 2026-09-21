@@ -91,7 +91,7 @@ describe("trace service", () => {
     expect(result.graph.origin?.url).toBe("https://www.who.int/news");
     expect(result.possibleOrigin?.url).toBe("https://www.who.int/news");
     expect(result.possibleOrigin?.confidence).toBe("medium");
-    expect(result.possibleOrigin?.whyThisMayBeTheOrigin).toMatch(/heuristic|not proof/i);
+    expect(result.possibleOrigin?.whyThisMayBeTheOrigin).toMatch(/heurística|no una prueba/i);
     expect(result.uncertainty).toMatch(/not a confirmed origin/i);
     expect(result.evidence.length).toBeGreaterThan(0);
     expect(result.evidence[0]?.summary.length).toBeLessThanOrEqual(240);

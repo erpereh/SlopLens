@@ -28,33 +28,43 @@ export function SlopLensAnchoredPanel({
   const close = useCallback(() => onOpenChange(false), [onOpenChange]);
   useDismiss(open, close, rootRef, { behavior: "consume" });
 
+  const lockedSide = useRef<AnchoredPanelSide | null>(null);
+
   const place = useCallback(() => {
+    if (lockedSide.current) {
+      return;
+    }
     const triggerBox = triggerRef.current?.getBoundingClientRect();
     if (!triggerBox) {
       return;
     }
-    const estimatedHeight = panelRef.current?.offsetHeight ?? 280;
+    const estimatedHeight = panelRef.current?.offsetHeight ?? 352;
     const spaceAbove = triggerBox.top;
     const spaceBelow = window.innerHeight - triggerBox.bottom;
-    if (spaceAbove < estimatedHeight + 12 && spaceBelow > spaceAbove) {
-      setSide("bottom");
-    } else {
-      setSide("top");
-    }
+    const next: AnchoredPanelSide =
+      spaceAbove < estimatedHeight + 12 && spaceBelow > spaceAbove ? "bottom" : "top";
+    lockedSide.current = next;
+    setSide(next);
   }, []);
 
   useLayoutEffect(() => {
+    const node = rootRef.current;
+    const rootNode = node?.getRootNode();
+    const host =
+      rootNode instanceof ShadowRoot && rootNode.host instanceof HTMLElement ? rootNode.host : null;
+    if (!host) {
+      return;
+    }
+    host.style.position = "relative";
+    host.style.zIndex = open ? "4" : "1";
+  }, [open]);
+
+  useLayoutEffect(() => {
     if (!open) {
+      lockedSide.current = null;
       return;
     }
     place();
-    const onMove = () => place();
-    window.addEventListener("resize", onMove);
-    window.addEventListener("scroll", onMove, true);
-    return () => {
-      window.removeEventListener("resize", onMove);
-      window.removeEventListener("scroll", onMove, true);
-    };
   }, [open, place]);
 
   return (
@@ -74,9 +84,13 @@ export function SlopLensAnchoredPanel({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: side === "top" ? 8 : -8, scale: 0.98 }}
             transition={reduce ? { duration: 0 } : SPRING_PANEL}
-            style={{ transformOrigin: side === "top" ? "bottom left" : "top left" }}
+            style={{
+              transformOrigin: side === "top" ? "bottom left" : "top left",
+              backgroundColor: "var(--card)",
+              color: "var(--card-foreground)",
+            }}
             className={cn(
-              "absolute z-50 w-[min(20rem,calc(100vw-1.5rem))] overflow-x-hidden overflow-y-hidden rounded-lg border border-border bg-card text-card-foreground shadow-xl",
+              "absolute z-50 w-[min(20rem,calc(100vw-1.5rem))] overflow-x-hidden rounded-lg border border-border shadow-xl",
               side === "top" ? "bottom-[calc(100%+0.5rem)]" : "top-[calc(100%+0.5rem)]",
               className,
             )}

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { SlopLensI18nProvider } from "@/i18n/context";
@@ -92,7 +92,6 @@ describe("SlopLensDetailPanel", () => {
       ),
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /^related$/i }));
     expect(screen.queryByRole("link", { name: "Unsafe" })).not.toBeInTheDocument();
     const safe = screen.getByRole("link", { name: "Safe" });
     expect(safe.getAttribute("href")).toBe("https://example.com/article");

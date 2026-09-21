@@ -8,7 +8,11 @@ import { findLatestCachedAnalysisByHash } from "../db/content-cache";
 import { toPostgresJson } from "../db/json";
 import { classifySourceKind, rankSearchResults } from "./primary-sources";
 import type { ProviderRuntime } from "./provider-runtime";
-import { filterAndRerankSearchResults, truncateEvidenceSummary } from "./relevance";
+import {
+  filterAndRerankSearchResults,
+  isResultRelevant,
+  truncateEvidenceSummary,
+} from "./relevance";
 
 const SUPPORT_RE = /\b(confirm|confirmed|true|according to|official|announced)\b/i;
 const CONTRADICT_RE = /\b(false|not true|debunked|denied|hoax|no evidence|unfounded)\b/i;
@@ -135,7 +139,7 @@ async function parseReasoningEvidence(
   results: ReadonlyArray<SearchResult>,
 ): Promise<VerifyEvidence[]> {
   const result = await reasoning.complete({
-    prompt: `Assess the search results as evidence for the claim. Do not invent URLs. Never treat a search-engine answer field as a verdict. Return JSON only: {"evidence":[{"stance":"supports"|"contradicts"|"neutral","summary":"...","sourceUrl":"..."}]}.
+    prompt: `Assess the search results as evidence for the claim. Do not invent URLs. Never treat a search-engine answer field as a verdict. Omit any result that does not discuss the claim itself. Write every summary in Spanish. If none of the results discuss the claim, return {"evidence":[]}. Return JSON only: {"evidence":[{"stance":"supports"|"contradicts"|"neutral","summary":"...","sourceUrl":"..."}]}.
 Claim: ${claim}
 Results: ${JSON.stringify(results.map((row) => ({ url: row.url, title: row.title, snippet: row.snippet })))}`,
   });
@@ -159,6 +163,13 @@ Results: ${JSON.stringify(results.map((row) => ({ url: row.url, title: row.title
       return [];
     }
     if (item.sourceUrl && !allowedUrls.has(item.sourceUrl)) {
+      return [];
+    }
+    const source = results.find((row) => row.url === item.sourceUrl);
+    const overlapBlob = `${item.summary} ${source?.title ?? ""} ${source?.snippet ?? ""}`;
+    if (
+      !isResultRelevant(claim, { url: item.sourceUrl ?? "https://example.com", title: overlapBlob })
+    ) {
       return [];
     }
     return [

@@ -18,44 +18,44 @@ export async function readLocalMetrics(sql: postgres.Sql | null): Promise<Metric
   }
 
   try {
-    const [items, analyses, clusters, relations, activity, platforms, claims, slop] =
-      await Promise.all([
-        sql<{ n: string | number }[]>`select count(*)::int as n from public.content_items`,
-        sql<{ n: string | number }[]>`select count(*)::int as n from public.content_analysis`,
-        sql<{ n: string | number }[]>`select count(*)::int as n from public.clusters`,
-        sql<{ n: string | number }[]>`select count(*)::int as n from public.content_relations`,
-        sql<{ last: Date | string | null }[]>`
-          select max(captured_at) as last from public.content_items
-        `,
-        sql<{ platform: string; n: string | number }[]>`
-          select platform, count(*)::int as n
-          from public.content_items
-          where platform in ('x', 'youtube')
-          group by platform
-        `,
-        sql<{ n: string | number }[]>`select count(*)::int as n from public.claims`,
-        sql<{ avg: string | number | null }[]>`
-          select avg((decision->>'aiSlop')::double precision) as avg
-          from public.content_analysis
-          where jsonb_typeof(decision->'aiSlop') = 'number'
-        `,
-      ]);
+    const settled = await Promise.all([
+      readCount(sql`select count(*)::int as n from public.content_items`),
+      readCount(sql`select count(*)::int as n from public.content_analysis`),
+      readCount(sql`select count(*)::int as n from public.clusters`),
+      readCount(sql`select count(*)::int as n from public.content_relations`),
+      readActivity(sql),
+      readPlatforms(sql),
+      readCount(sql`select count(*)::int as n from public.claims`),
+      readAverageSlop(sql),
+    ]);
+    const [
+      contentItems,
+      cachedAnalyses,
+      clusters,
+      relations,
+      lastActivityAt,
+      byPlatform,
+      claims,
+      averageSlop,
+    ] = settled;
+    const countsFailed = [contentItems, cachedAnalyses, clusters, relations, claims].some(
+      (value) => value == null,
+    );
+    const platformMissing = byPlatform.x == null || byPlatform.youtube == null;
+    const activityFailed = lastActivityAt === undefined;
     return {
-      status,
+      status: countsFailed || platformMissing || activityFailed ? "degraded" : status,
       checks,
       counts: {
-        contentItems: toCount(items[0]?.n),
-        cachedAnalyses: toCount(analyses[0]?.n),
-        clusters: toCount(clusters[0]?.n),
-        relations: toCount(relations[0]?.n),
-        byPlatform: {
-          x: platformCount(platforms, "x"),
-          youtube: platformCount(platforms, "youtube"),
-        },
-        claims: toCount(claims[0]?.n),
-        averageSlop: toUnit(slop[0]?.avg),
+        contentItems,
+        cachedAnalyses,
+        clusters,
+        relations,
+        byPlatform,
+        claims,
+        averageSlop,
       },
-      lastActivityAt: toIso(activity[0]?.last),
+      lastActivityAt: lastActivityAt ?? null,
     };
   } catch {
     return {
@@ -72,6 +72,56 @@ function platformCount(
   platform: "x" | "youtube",
 ): number {
   return toCount(rows.find((row) => row.platform === platform)?.n) ?? 0;
+}
+
+async function readCount(query: PromiseLike<{ n: string | number }[]>): Promise<number | null> {
+  try {
+    const rows = await query;
+    return toCount(rows[0]?.n);
+  } catch {
+    return null;
+  }
+}
+
+async function readActivity(sql: postgres.Sql): Promise<string | null | undefined> {
+  try {
+    const rows = await sql<{ last: Date | string | null }[]>`
+      select max(captured_at) as last from public.content_items
+    `;
+    return toIso(rows[0]?.last);
+  } catch {
+    return undefined;
+  }
+}
+
+async function readPlatforms(sql: postgres.Sql): Promise<MetricsResponse["counts"]["byPlatform"]> {
+  try {
+    const rows = await sql<{ platform: string; n: string | number }[]>`
+      select platform, count(*)::int as n
+      from public.content_items
+      where platform in ('x', 'youtube')
+      group by platform
+    `;
+    return {
+      x: platformCount(rows, "x"),
+      youtube: platformCount(rows, "youtube"),
+    };
+  } catch {
+    return { x: null, youtube: null };
+  }
+}
+
+async function readAverageSlop(sql: postgres.Sql): Promise<number | null> {
+  try {
+    const rows = await sql<{ avg: string | number | null }[]>`
+      select avg((decision->>'aiSlop')::double precision) as avg
+      from public.content_analysis
+      where jsonb_typeof(decision->'aiSlop') = 'number'
+    `;
+    return toUnit(rows[0]?.avg);
+  } catch {
+    return null;
+  }
 }
 
 function toUnit(value: string | number | null | undefined): number | null {

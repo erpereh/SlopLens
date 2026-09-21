@@ -162,6 +162,8 @@ export class OverlayMountManager {
           rootNode.host.style.width = "fit-content";
           rootNode.host.style.maxWidth = "16rem";
           rootNode.host.style.overflow = "visible";
+          rootNode.host.style.position = "relative";
+          rootNode.host.style.zIndex = "1";
         }
         reactRoot = createRoot(container);
         this.render(reactRoot, host, content, runtime);

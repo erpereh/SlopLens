@@ -1,6 +1,7 @@
 import type { ProviderCapability } from "@sloplens/config/browser";
 import type { ContentHistoryItem, ContentListQuery, MetricsResponse } from "@sloplens/shared";
 import { AtSign, Clapperboard, LayoutDashboard, Menu, Settings } from "lucide-react";
+import { motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import { AnimatedBadge } from "@/components/motion/animated-badge";
 import {
@@ -138,15 +139,16 @@ export function SlopLensDashboardApp({
     }
   }, [historyQuery, onHistoryQueryChange]);
 
-  const healthLabel =
-    health === "ok"
-      ? t("popup.online")
-      : health === "degraded"
-        ? t("dashboard.degraded")
-        : health === "checking"
-          ? t("popup.checking")
-          : t("popup.offline");
-  const healthStatus = health === "ok" ? "success" : health === "checking" ? "loading" : "danger";
+  const surfaceStatus = combinedStatus(health, metrics);
+  const healthLabel = statusLabel(surfaceStatus, t);
+  const healthStatus =
+    surfaceStatus === "ok"
+      ? "success"
+      : surfaceStatus === "checking"
+        ? "loading"
+        : surfaceStatus === "degraded"
+          ? "warning"
+          : "danger";
   const browsing = section === "x" || section === "youtube";
 
   return (
@@ -232,7 +234,7 @@ export function SlopLensDashboardApp({
               signal={signal}
               onSignal={setSignal}
               history={history}
-              unavailable={metricsUnavailable(metrics, health)}
+              unavailable={combinedStatus(health, metrics) === "unavailable"}
               onLoadMore={onHistoryLoadMore}
             />
           ) : null}
@@ -294,50 +296,59 @@ function OverviewSection({
   onLoadMore: () => void;
 }) {
   const { t } = useSlopLensI18n();
-  const status = metrics?.status ?? (health === "checking" ? "checking" : health);
-  const unavailable = metricsUnavailable(metrics, health);
+  const status = combinedStatus(health, metrics);
+  const unavailable = status === "unavailable";
 
   return (
-    <div className="space-y-6">
-      <DashboardCard title={t("dashboard.backendStatus")} className="min-h-36">
-        <p className="text-3xl font-semibold tracking-tight">{statusLabel(status, t)}</p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {t("dashboard.lastActivity")}:{" "}
-          {formatActivity(metrics?.lastActivityAt, t("dashboard.none"))}
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {t("dashboard.database")}{" "}
-          {metrics?.checks.database ? t("popup.online") : t("dashboard.unavailable")}
-          {" · "}
-          {t("dashboard.pgvector")}{" "}
-          {metrics?.checks.pgvector ? t("popup.online") : t("dashboard.unavailable")}
-        </p>
-      </DashboardCard>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <MetricCard
-          title={t("dashboard.contentsAnalyzed")}
-          value={metrics?.counts.contentItems ?? null}
-        />
+    <div className="space-y-5">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
+        <DashboardCard className="min-h-40">
+          <p className="text-sm text-muted-foreground">{t("dashboard.contentsAnalyzed")}</p>
+          <div className="mt-2">
+            {metrics?.counts.contentItems == null ? (
+              <p className="text-4xl font-semibold tracking-tight text-muted-foreground">
+                {t("dashboard.unavailable")}
+              </p>
+            ) : (
+              <NumberTicker
+                value={metrics.counts.contentItems}
+                startOnView={false}
+                className="text-4xl font-semibold tracking-tight"
+              />
+            )}
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {statusLabel(status, t)}
+            {" · "}
+            {t("dashboard.lastActivity")}:{" "}
+            {formatActivity(metrics?.lastActivityAt, t("dashboard.none"))}
+          </p>
+        </DashboardCard>
+        <DashboardCard title={t("dashboard.platformSplit")}>
+          <PlatformSplit
+            x={metrics?.counts.byPlatform.x ?? null}
+            youtube={metrics?.counts.byPlatform.youtube ?? null}
+          />
+          <p className="mt-4 text-sm text-muted-foreground">
+            {t("dashboard.averageSlop")}
+            {": "}
+            {metrics?.counts.averageSlop == null
+              ? t("dashboard.unavailable")
+              : `${scoreToPercent(metrics.counts.averageSlop)}%`}
+          </p>
+        </DashboardCard>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard title={t("dashboard.xAnalyzed")} value={metrics?.counts.byPlatform.x ?? null} />
         <MetricCard
           title={t("dashboard.youtubeAnalyzed")}
           value={metrics?.counts.byPlatform.youtube ?? null}
         />
-        <MetricCard
-          title={t("dashboard.averageSlop")}
-          value={
-            metrics?.counts.averageSlop == null ? null : scoreToPercent(metrics.counts.averageSlop)
-          }
-          suffix="%"
-        />
         <MetricCard title={t("dashboard.verifications")} value={metrics?.counts.claims ?? null} />
-        <MetricCard title={t("dashboard.clusters")} value={metrics?.counts.clusters ?? null} />
         <MetricCard title={t("dashboard.relations")} value={metrics?.counts.relations ?? null} />
       </div>
       <section className="space-y-3">
-        <h2 className="text-sm font-medium text-muted-foreground">
-          {t("dashboard.recentHistory")}
-        </h2>
+        <h2 className="text-sm font-medium">{t("dashboard.recentHistory")}</h2>
         <HistoryList
           items={history.items}
           phase={history.phase}
@@ -346,6 +357,25 @@ function OverviewSection({
           onLoadMore={onLoadMore}
         />
       </section>
+    </div>
+  );
+}
+
+function PlatformSplit({ x, youtube }: { x: number | null; youtube: number | null }) {
+  const { t } = useSlopLensI18n();
+  if (x == null || youtube == null) {
+    return <p className="text-sm text-muted-foreground">{t("dashboard.unavailable")}</p>;
+  }
+  const total = x + youtube;
+  const xShare = total === 0 ? 0 : (x / total) * 100;
+  return (
+    <div data-sloplens-platform-split="true">
+      <div className="flex h-2 overflow-hidden rounded-full bg-muted">
+        <div className="h-full bg-foreground" style={{ width: `${xShare}%` }} />
+      </div>
+      <p className="mt-3 text-sm text-muted-foreground">
+        X {x} · YouTube {youtube}
+      </p>
     </div>
   );
 }
@@ -519,23 +549,47 @@ function MetricCard({
 }) {
   const { t } = useSlopLensI18n();
   return (
-    <DashboardCard title={title} className="p-5">
-      {value == null ? (
-        <p className="text-3xl font-semibold text-muted-foreground">{t("dashboard.unavailable")}</p>
-      ) : (
-        <NumberTicker
-          value={value}
-          suffix={suffix}
-          startOnView={false}
-          className="text-3xl font-semibold tracking-tight"
-        />
-      )}
-    </DashboardCard>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28 }}
+    >
+      <DashboardCard title={title} className="p-5">
+        {value == null ? (
+          <p className="text-3xl font-semibold text-muted-foreground">
+            {t("dashboard.unavailable")}
+          </p>
+        ) : (
+          <NumberTicker
+            value={value}
+            suffix={suffix}
+            startOnView={false}
+            className="text-3xl font-semibold tracking-tight"
+          />
+        )}
+      </DashboardCard>
+    </motion.div>
   );
 }
 
-function metricsUnavailable(metrics: MetricsResponse | null, health: DashboardHealth): boolean {
-  return metrics?.status === "unavailable" || health === "unavailable";
+function combinedStatus(
+  health: DashboardHealth,
+  metrics: MetricsResponse | null,
+): DashboardHealth | MetricsResponse["status"] {
+  if (health === "checking") {
+    return "checking";
+  }
+  if (health === "unavailable") {
+    return "unavailable";
+  }
+  if (
+    metrics?.status === "unavailable" ||
+    metrics?.status === "degraded" ||
+    health === "degraded"
+  ) {
+    return "degraded";
+  }
+  return "ok";
 }
 
 function statusLabel(

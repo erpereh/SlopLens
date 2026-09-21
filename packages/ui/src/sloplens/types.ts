@@ -22,6 +22,8 @@ export type FeatureViewState =
 export type CompactSignals = {
   slopSignal?: SlopPresentationSignal;
   decision?: ContentDecision;
+  /** Feed dim/stamp threshold, 0–1. The chip icon uses it. */
+  slopThreshold?: number;
 };
 
 export type AnalyzePanelContent = {

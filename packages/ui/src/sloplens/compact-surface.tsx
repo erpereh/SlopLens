@@ -1,5 +1,4 @@
-import { ChevronUp, LoaderCircle } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
+import { CircleAlert, CircleCheck, CircleDashed, LoaderCircle } from "lucide-react";
 import { AnimatedBadge } from "@/components/motion/animated-badge";
 import { Button } from "@/components/motion/button/base";
 import { NumberTicker } from "@/components/motion/number-ticker";
@@ -30,7 +29,6 @@ export function SlopLensCompactSurface({
   expanded?: boolean;
 }) {
   const { t } = useSlopLensI18n();
-  const reduceMotion = useReducedMotion() ?? false;
   const slopSignal = signals.slopSignal;
   const analyzeReady = analyzeState.phase === "success" && Boolean(slopSignal);
 
@@ -85,6 +83,9 @@ export function SlopLensCompactSurface({
   }
 
   const percent = slopSignal ? scoreToPercent(slopSignal.value) : 0;
+  const threshold = signals.slopThreshold ?? 0.7;
+  const level = slopLevel(slopSignal?.value ?? 0, threshold);
+  const LevelIcon = level === "slop" ? CircleAlert : level === "near" ? CircleDashed : CircleCheck;
   const chipStatus =
     analyzeState.phase === "loading"
       ? "loading"
@@ -101,10 +102,10 @@ export function SlopLensCompactSurface({
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-lg border border-border bg-card/95 shadow-md backdrop-blur-sm",
-        expanded && "border-foreground/25 bg-muted/80",
+        "inline-flex items-center rounded-lg border border-white/15 text-white shadow-md",
         className,
       )}
+      style={{ backgroundColor: "#000000" }}
       data-sloplens-compact="true"
     >
       <Tooltip content={t("signal.notVerdict")} side="top">
@@ -115,11 +116,14 @@ export function SlopLensCompactSurface({
           aria-label={accessibleLabel}
           aria-expanded={expanded}
           data-sloplens-slop-chip="true"
+          data-sloplens-slop-level={analyzeReady ? level : undefined}
           data-state={expanded ? "open" : "closed"}
         >
           {analyzeState.phase === "loading" ? (
-            <LoaderCircle className="size-3.5 shrink-0 animate-spin text-primary" aria-hidden />
-          ) : null}
+            <LoaderCircle className="size-3.5 shrink-0 animate-spin text-white" aria-hidden />
+          ) : (
+            <LevelIcon className="size-3.5 shrink-0 text-white" aria-hidden />
+          )}
           <AnimatedBadge
             status={chipStatus}
             size="sm"
@@ -141,18 +145,18 @@ export function SlopLensCompactSurface({
               ) : null}
             </span>
           </AnimatedBadge>
-          <motion.span
-            aria-hidden
-            animate={{ rotate: expanded ? 180 : 0 }}
-            transition={
-              reduceMotion ? { duration: 0 } : { type: "spring", duration: 0.35, bounce: 0.2 }
-            }
-            className="grid size-4 shrink-0 place-items-center text-muted-foreground"
-          >
-            <ChevronUp className="size-3.5" />
-          </motion.span>
         </button>
       </Tooltip>
     </div>
   );
+}
+
+function slopLevel(value: number, threshold: number): "clear" | "near" | "slop" {
+  if (value >= threshold) {
+    return "slop";
+  }
+  if (value >= threshold - 0.1) {
+    return "near";
+  }
+  return "clear";
 }

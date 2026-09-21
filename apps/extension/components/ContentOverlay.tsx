@@ -173,12 +173,12 @@ export function ContentOverlay({
     try {
       const claim = extractCanonicalClaim(content);
       const result = await client.verify({ claim, content });
-      const empty = result.status === "insufficient_evidence" && result.sources.length === 0;
+      const insufficient = result.status === "insufficient_evidence";
+      const finding = result.evidence.find((item) => item.stance !== "neutral");
       setVerify({
-        summary: empty ? undefined : (result.evidence[0]?.summary ?? result.sources[0]?.title),
+        summary: insufficient ? undefined : finding?.summary,
         stance: stanceFromEvidence(result.evidence.map((item) => item.stance)),
         claim: result.claim,
-        uncertainty: empty ? result.status : undefined,
         sources: result.sources.map((source, index) => ({
           id: source.url || String(index),
           title: source.title ?? source.url,
@@ -186,7 +186,9 @@ export function ContentOverlay({
           kind: source.kind,
         })),
       });
-      setVerifyState(empty ? { phase: "empty" } : { phase: "success" });
+      setVerifyState(
+        insufficient && result.sources.length === 0 ? { phase: "empty" } : { phase: "success" },
+      );
     } catch (error) {
       setVerifyState({ phase: "error", error: toFeatureError(error) });
     }
@@ -265,7 +267,7 @@ export function ContentOverlay({
       className="inline-flex w-fit bg-transparent"
     >
       <SlopLensShell
-        signals={{ slopSignal, decision }}
+        signals={{ slopSignal, decision, slopThreshold }}
         detailOpen={detailOpen}
         onDetailOpenChange={setDetailOpen}
         activeTab={tab}

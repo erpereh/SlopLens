@@ -126,6 +126,7 @@ export type MessageKey =
   | "dashboard.averageSlop"
   | "dashboard.verifications"
   | "dashboard.recentHistory"
+  | "dashboard.platformSplit"
   | "history.empty"
   | "history.error"
   | "history.openOriginal"
@@ -291,6 +292,7 @@ const en: Record<MessageKey | ErrorMessageKey, string> = {
   "dashboard.averageSlop": "Average slop",
   "dashboard.verifications": "Verifications",
   "dashboard.recentHistory": "Recent analyses",
+  "dashboard.platformSplit": "X and YouTube",
   "history.empty": "Nothing analyzed yet.",
   "history.error": "Could not load analyzed content.",
   "history.openOriginal": "Open original",
@@ -462,6 +464,7 @@ const es: Record<MessageKey | ErrorMessageKey, string> = {
   "dashboard.averageSlop": "Slop medio",
   "dashboard.verifications": "Verificaciones",
   "dashboard.recentHistory": "Análisis recientes",
+  "dashboard.platformSplit": "X y YouTube",
   "history.empty": "Todavía no hay contenido analizado.",
   "history.error": "No se pudo cargar el contenido analizado.",
   "history.openOriginal": "Abrir original",

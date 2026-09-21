@@ -71,6 +71,10 @@ export function isResultRelevant(claim: string, result: SearchResult): boolean {
       shared += 1;
     }
   }
+  const distinctive = [...claimTokens].filter((token) => /\d/.test(token) || token.includes("-"));
+  if (distinctive.length > 0 && !distinctive.some((token) => resultTokens.has(token))) {
+    return false;
+  }
   if (shared < MIN_SHARED_TOKENS) {
     return false;
   }

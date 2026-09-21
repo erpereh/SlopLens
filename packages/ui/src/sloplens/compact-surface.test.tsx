@@ -83,7 +83,46 @@ describe("SlopLensCompactSurface", () => {
       "aria-expanded",
       "false",
     );
+    expect(screen.getByRole("button", { name: /slop signal · 82%/i })).toHaveAttribute(
+      "data-sloplens-slop-level",
+      "slop",
+    );
     expect(screen.queryByRole("button", { name: /^verify$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^trace$/i })).not.toBeInTheDocument();
+  });
+
+  it("marks near and clear against the feed threshold", () => {
+    const { rerender } = render(
+      wrap(
+        <SlopLensCompactSurface
+          signals={{
+            slopSignal: { value: 0.62, label: "slop", source: "aiSlop" },
+            slopThreshold: 0.7,
+          }}
+          analyzeState={{ phase: "success" }}
+          onOpenDetail={() => undefined}
+        />,
+      ),
+    );
+    expect(screen.getByRole("button", { name: /slop signal · 62%/i })).toHaveAttribute(
+      "data-sloplens-slop-level",
+      "near",
+    );
+    rerender(
+      wrap(
+        <SlopLensCompactSurface
+          signals={{
+            slopSignal: { value: 0.3, label: "slop", source: "aiSlop" },
+            slopThreshold: 0.7,
+          }}
+          analyzeState={{ phase: "success" }}
+          onOpenDetail={() => undefined}
+        />,
+      ),
+    );
+    expect(screen.getByRole("button", { name: /slop signal · 30%/i })).toHaveAttribute(
+      "data-sloplens-slop-level",
+      "clear",
+    );
   });
 });

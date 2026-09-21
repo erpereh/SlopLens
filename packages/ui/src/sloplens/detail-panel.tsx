@@ -1,6 +1,5 @@
 import { X } from "lucide-react";
 import { Citations } from "@/components/agents/citations";
-import { BouncyAccordion } from "@/components/motion/bouncy-accordion";
 import { Button } from "@/components/motion/button/base";
 import { Drawer } from "@/components/motion/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/motion/tabs";
@@ -95,7 +94,7 @@ export function SlopLensDetailPanel({
   if (!open) return null;
 
   if (embedded) {
-    return <div className={cn("max-h-[min(28rem,70vh)] overflow-y-auto", className)}>{body}</div>;
+    return <div className={cn("overflow-x-hidden", className)}>{body}</div>;
   }
 
   return (
@@ -148,10 +147,7 @@ function PanelBody({
   const sources = verify?.sources ?? [];
 
   return (
-    <div
-      className="flex h-full min-h-0 max-h-[min(80vh,32rem)] flex-col overflow-x-hidden p-4"
-      data-sloplens-panel="true"
-    >
+    <div className="flex flex-col overflow-x-hidden p-4" data-sloplens-panel="true">
       <header className="mb-3 flex shrink-0 items-center justify-between gap-2">
         <h2 className="text-base font-semibold">{t("app.name")}</h2>
         <div className="flex items-center gap-1">
@@ -180,10 +176,7 @@ function PanelBody({
           <TabsTrigger value="trace">{t("tab.trace")}</TabsTrigger>
         </TabsList>
 
-        <TabsContent
-          value="analyze"
-          className="mt-3 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
-        >
+        <TabsContent value="analyze" className="mt-3 overflow-x-hidden">
           {analyzeState.phase === "success" && analyze?.summary ? (
             <p className="mb-3 text-sm leading-relaxed text-foreground">{analyze.summary}</p>
           ) : null}
@@ -214,10 +207,7 @@ function PanelBody({
           ) : null}
         </TabsContent>
 
-        <TabsContent
-          value="verify"
-          className="mt-3 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
-        >
+        <TabsContent value="verify" className="mt-3 overflow-x-hidden">
           {verifyState.phase === "success" ? (
             <div className="space-y-3">
               {verify?.stance ? (
@@ -262,10 +252,7 @@ function PanelBody({
           )}
         </TabsContent>
 
-        <TabsContent
-          value="trace"
-          className="mt-3 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
-        >
+        <TabsContent value="trace" className="mt-3 overflow-x-hidden">
           {traceState.phase === "success" ? (
             <TraceSections trace={trace} />
           ) : (
@@ -290,41 +277,40 @@ function TraceSections({ trace }: { trace?: TracePanelContent }) {
   const origin = trace?.possibleOrigin;
   const originHref = safeExternalHttpUrl(origin?.url);
 
-  const items = [
-    {
-      id: "origin",
-      title: t("trace.possibleOrigin"),
-      description: origin ? (
-        <div className="space-y-2 text-sm text-foreground">
-          {originHref ? (
-            <a
-              href={originHref}
-              className="break-words font-medium text-primary underline-offset-2 hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {origin.title ?? origin.url}
-            </a>
-          ) : (
-            <p className="font-medium">{origin.title ?? origin.url}</p>
-          )}
-          {origin.publishedAt ? (
-            <p className="text-xs text-muted-foreground">{origin.publishedAt}</p>
-          ) : null}
-          <p>{origin.whyThisMayBeTheOrigin}</p>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            {t(`trace.confidence.${origin.confidence}`)}
-          </p>
-        </div>
-      ) : (
-        <p>{t("trace.noOrigin")}</p>
-      ),
-    },
-    {
-      id: "evidence",
-      title: t("trace.evidence"),
-      description:
-        trace?.evidence && trace.evidence.length > 0 ? (
+  return (
+    <div className="space-y-3" data-sloplens-trace="stack">
+      <section className="rounded-lg border border-border bg-muted/40 p-3">
+        <h3 className="text-xs font-medium text-muted-foreground">{t("trace.possibleOrigin")}</h3>
+        {origin ? (
+          <div className="mt-2 space-y-1.5 text-sm text-foreground">
+            {originHref ? (
+              <a
+                href={originHref}
+                className="break-words font-medium text-primary underline-offset-2 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {origin.title ?? origin.url}
+              </a>
+            ) : (
+              <p className="font-medium">{origin.title ?? origin.url}</p>
+            )}
+            {origin.publishedAt ? (
+              <p className="text-xs text-muted-foreground">{origin.publishedAt}</p>
+            ) : null}
+            <p className="leading-relaxed">{origin.whyThisMayBeTheOrigin}</p>
+            <p className="text-xs text-muted-foreground">
+              {t(`trace.confidence.${origin.confidence}`)}
+            </p>
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-muted-foreground">{t("trace.noOrigin")}</p>
+        )}
+      </section>
+
+      <section className="space-y-1.5">
+        <h3 className="text-xs font-medium text-muted-foreground">{t("trace.evidence")}</h3>
+        {trace?.evidence && trace.evidence.length > 0 ? (
           <ul className="space-y-2 text-sm">
             {trace.evidence.map((item) => (
               <li key={`${item.sourceUrl ?? item.summary}`} className="leading-relaxed">
@@ -333,29 +319,27 @@ function TraceSections({ trace }: { trace?: TracePanelContent }) {
             ))}
           </ul>
         ) : (
-          <p>{t("empty.sources")}</p>
-        ),
-    },
-    {
-      id: "related",
-      title: t("tab.related"),
-      description: <RelatedList items={trace?.related ?? []} empty={t("empty.related")} />,
-    },
-    {
-      id: "derivatives",
-      title: t("trace.derivatives"),
-      description: (
-        <RelatedList items={trace?.derivatives ?? []} empty={t("trace.noDerivatives")} />
-      ),
-    },
-    {
-      id: "uncertainty",
-      title: t("trace.uncertainty"),
-      description: <p>{trace?.uncertainty ?? t("empty.trace.insufficient")}</p>,
-    },
-  ];
+          <p className="text-sm text-muted-foreground">{t("empty.sources")}</p>
+        )}
+      </section>
 
-  return <BouncyAccordion items={items} defaultValue="origin" />;
+      <section className="space-y-1.5">
+        <h3 className="text-xs font-medium text-muted-foreground">{t("tab.related")}</h3>
+        <RelatedList items={trace?.related ?? []} empty={t("empty.related")} />
+      </section>
+
+      {trace?.derivatives && trace.derivatives.length > 0 ? (
+        <section className="space-y-1.5">
+          <h3 className="text-xs font-medium text-muted-foreground">{t("trace.derivatives")}</h3>
+          <RelatedList items={trace.derivatives} empty={t("trace.noDerivatives")} />
+        </section>
+      ) : null}
+
+      {trace?.uncertainty ? (
+        <p className="text-xs leading-relaxed text-muted-foreground">{trace.uncertainty}</p>
+      ) : null}
+    </div>
+  );
 }
 
 function RelatedList({ items, empty }: { items: RelatedItem[]; empty: string }) {

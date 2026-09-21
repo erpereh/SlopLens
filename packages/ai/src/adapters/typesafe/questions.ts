@@ -15,7 +15,8 @@ export const ORIGINALITY_LEVELS = 5;
 export const jevContentDecisionQuestions = {
   aiSlop: {
     type: "boolean" as const,
-    instructions: "Is this low-quality or generic AI-generated slop?",
+    instructions:
+      "True only when the text itself is generic AI filler, formulaic mass-produced phrasing, or empty content. A human opinion, joke, reaction, or specific claim is false even if you disagree with it.",
   },
   engagementBait: {
     type: "boolean" as const,

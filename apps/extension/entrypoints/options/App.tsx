@@ -86,8 +86,10 @@ export function OptionsApp() {
 
   const loadHealthAndMetrics = useCallback(async () => {
     const client = createExtensionApiClient();
+    let apiStatus: "ok" | "degraded" | "unavailable" = "unavailable";
     try {
       const nextHealth = await client.health();
+      apiStatus = nextHealth.status;
       setHealth(nextHealth.status);
     } catch {
       setHealth("unavailable");
@@ -95,7 +97,10 @@ export function OptionsApp() {
     try {
       setMetrics(await client.metrics());
     } catch {
-      setMetrics(unavailableMetrics);
+      setMetrics({
+        ...unavailableMetrics,
+        status: apiStatus === "unavailable" ? "unavailable" : "degraded",
+      });
     }
   }, []);
 
