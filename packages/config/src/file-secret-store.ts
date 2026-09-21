@@ -1,5 +1,7 @@
+import { execFile } from "node:child_process";
 import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { promisify } from "node:util";
 
 import type { SecretStore } from "./secrets";
 
@@ -66,8 +68,35 @@ export class FileSecretStore implements SecretStore {
     try {
       await chmod(this.filePath, 0o600);
     } catch {
-      // Windows may ignore Unix modes; Foundation should apply an ACL-only-user fallback.
+      // Windows may ignore Unix modes; apply an ACL-only-user fallback when possible.
     }
+    await applyRestrictiveFilePermissions(this.filePath);
+  }
+}
+
+const execFileAsync = promisify(execFile);
+
+async function applyRestrictiveFilePermissions(filePath: string): Promise<void> {
+  if (process.platform === "win32") {
+    const username = process.env.USERNAME?.trim();
+    if (!username) {
+      return;
+    }
+    try {
+      await execFileAsync("icacls", [filePath, "/inheritance:r"], { windowsHide: true });
+      await execFileAsync("icacls", [filePath, "/grant:r", `${username}:(F)`], {
+        windowsHide: true,
+      });
+    } catch {
+      // Best-effort; file remains gitignored and outside version control.
+    }
+    return;
+  }
+
+  try {
+    await chmod(filePath, 0o600);
+  } catch {
+    // Best-effort on platforms that ignore Unix modes.
   }
 }
 

@@ -57,27 +57,33 @@ Debe representar la arquitectura actual y las decisiones de implementación vige
 | CI | no GitHub Actions en el MVP |
 | Cloud | no obligatorio |
 
-## Estado de implementación (Gate 0)
+## Estado de implementación (Gate 0 + Foundation)
 
-El monorepo pnpm + Turborepo existe. Los contratos compartidos están congelados en TypeScript + Zod. Todavía **no** hay servidor Hono, adapters de proveedor, overlays, content scripts ni columnas `vector(N)`.
+El monorepo pnpm + Turborepo existe. Los contratos compartidos están congelados en TypeScript + Zod.
 
-Implementado ahora:
+**Foundation (backend local):**
+
+- Servidor Hono en `http://127.0.0.1:3001` (`apps/api`).
+- Rutas: `GET /health`, `GET /providers`, `GET /settings`, `PUT /settings/providers`, shells validados para `POST /analyze`, `/verify`, `/trace`, `/related` (501 hasta features).
+- Cliente PostgreSQL vía `DATABASE_URL` (`postgres`).
+- Migración de dominio mínima: `content_items`, `content_analysis`, `claims`, `sources`, `content_relations`, `provider_selections`. **Sin** columna `vector(N)` ni HNSW.
+- Caché por `content_hash` (helpers en API + tablas anteriores).
+- `SecretStore` OS-first con `@napi-rs/keyring` (service `sloplens`, account `${capability}:${providerId}`) y fallback explícito `FileSecretStore` (`.data/secret-store.json`, gitignored, ACL/0600).
+- Resolución de credenciales: SecretStore del usuario → bootstrap `.env` → `provider_not_configured`. Las respuestas de settings solo exponen `configured`, nunca valores.
+
+**Gate 0 (sin cambiar):**
 
 - Workspace: `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `biome.json`, `tsconfig.base.json`.
-- Apps stub: `apps/api` (sin Hono) y `apps/extension` (WXT mínimo, sin content scripts).
-- Packages: `core`, `ai`, `platforms`, `shared`, `config`; `ui` es un stub de `package.json`.
-- Migración Gate 0: solo `create extension vector`. **No** hay `vector(N)` ni índice HNSW.
-- `supabase/seed.sql` vacío.
-- Scripts raíz: `dev`, `build`, `lint`, `typecheck`, `test`.
-- Vitest en los packages con contratos.
+- Apps stub de extensión WXT mínima.
+- Packages: `core`, `ai`, `platforms`, `shared`, `config`; `ui` es stub.
+- Migración inicial: solo `create extension vector`. **No** hay `vector(N)` ni índice HNSW.
+- Vitest en packages con contratos.
 
 No implementado todavía (gates posteriores):
 
-- Servidor Hono y rutas reales.
-- SecretStore del SO (solo interfaz + fallback de archivo etiquetado).
-- Adapters Jev / OpenRouter / Tavily.
-- Tablas de dominio (`content_items`, `content_embeddings`, etc.).
-- UI beUI, overlays, Analyze / Verify / Trace / Related / Vision.
+- Adapters Jev / OpenRouter / Tavily en runtime.
+- `content_embeddings` tras verificar dimensión real.
+- UI beUI, overlays, Analyze / Verify / Trace / Related / Vision completos.
 - `apps/web` (no creado; no es requisito del MVP).
 
 ## Arquitectura general
@@ -540,8 +546,8 @@ FileSecretStore (fallback encapsulado, no equivalente a keychain)
 provider_not_configured
 ```
 
-- Primario: credential store del SO. Service name `sloplens`. Solo el backend local accede. Gate 0 congela la interfaz (`OsSecretStore`); la implementación OS llega en Foundation.
-- Fallback: `FileSecretStore` (`kind: "file"`, `isFallback: true`). Path gitignored `.data/secret-store.json`. Permisos restrictivos. No es el diseño objetivo ni almacenamiento seguro definitivo.
+- Primario: credential store del SO vía `@napi-rs/keyring`. Service name `sloplens`, account `${capability}:${providerId}`. Solo el backend local accede.
+- Fallback: `FileSecretStore` (`kind: "file"`, `isFallback: true`). Path gitignored `.data/secret-store.json`. Permisos restrictivos (ACL solo usuario en Windows, `0600` en Unix). No es el diseño objetivo ni almacenamiento seguro definitivo.
 - Tests usan `MemorySecretStore`. Nunca loguear valores.
 - Settings y routes no leen/escriben JSON de secrets directamente.
 
@@ -639,34 +645,20 @@ PostgreSQL es la fuente de verdad.
 
 **Gate 0:** la única migración aplicada en el repo habilita la extensión `vector` en el schema `extensions`. No existe ninguna columna `vector(N)` ni índice HNSW. La dimensión se fijará en una migración posterior tras verificarla (documentación del modelo configurado + respuesta real de API + smoke que mide `embedding.length`). Si docs y API discrepan, prevalece la longitud observada.
 
-Tablas previstas para Foundation (aún no creadas):
+Tablas previstas para Foundation (migración `20260921130000_foundation_domain_tables.sql`):
 
 ```text
-users
-user_preferences
-
 content_items
-content_embeddings
 content_analysis
-
 claims
-claim_sources
-claim_verifications
-
 sources
-
-clusters
-cluster_members
-
-narratives
-narrative_members
-
 content_relations
-
-platform_accounts
-saved_filters
-spoiler_progress
+provider_selections
 ```
+
+Pendiente hasta verificar dimensión de embeddings: `content_embeddings` con `vector(N)` e índice HNSW.
+
+Otras tablas previstas (futuro / MVP ampliado):
 
 No crear todas las tablas desde el primer commit si el MVP todavía no las necesita. Crear el mínimo esquema que soporte la funcionalidad implementada.
 
