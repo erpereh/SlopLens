@@ -13,11 +13,15 @@
     "build": "tsc --noEmit",
     "lint": "biome check .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --project unit",
+    "test:smoke": "vitest run --project smoke"
   },
   "dependencies": {
+    "@ai-sdk/gateway": "^4.0.87",
     "@sloplens/config": "workspace:*",
     "@sloplens/core": "workspace:*",
+    "@sloplens/shared": "workspace:*",
+    "ai": "^7.0.105",
     "zod": "catalog:"
   },
   "devDependencies": {
