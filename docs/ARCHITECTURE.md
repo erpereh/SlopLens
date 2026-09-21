@@ -91,7 +91,8 @@ El monorepo pnpm + Turborepo está operativo. Los contratos compartidos están c
 - WXT MV3, content scripts en X e YouTube, custom element `sloplens-root` + Shadow DOM.
 - Overlay con `@sloplens/ui` (`SlopLensUiRoot` + `SlopLensShell`).
 - Options: `SlopLensSettingsForm` → `PUT /settings/providers`. Keys nunca se guardan en la extensión ni se loguean.
-- Env de la extensión: solo `WXT_API_BASE_URL`.
+- Transporte: content, popup y options **no** hacen fetch a localhost. Envían `chrome.runtime` messaging (`type: sloplens.api`, operations cerradas). El service worker valida `sender.id === chrome.runtime.id`, rechaza URL/path/headers arbitrarios y llama a Hono con `createHttpApiTransport`.
+- Env de la extensión: solo `WXT_API_BASE_URL` (usado por el SW).
 - `@sloplens/shared` y `@sloplens/config/browser` no arrastran Node (`fs`, keyring, `child_process`) al bundle.
 
 **UI:**
@@ -110,6 +111,10 @@ No implementado / fuera del MVP:
                     SlopLens Extension
                       WXT + React
                         + beUI
+                           │
+              chrome.runtime messaging
+                           │
+                  MV3 service worker
                            │
                            ▼
                     Local Hono API
@@ -237,7 +242,7 @@ Adapters X y YouTube: extraen `NormalizedContent` desde el DOM. El core no conoc
 
 ### `packages/shared`
 
-Error envelope, schemas Zod de la API y cliente HTTP tipado extensión ↔ API. Importa `@sloplens/config/browser`, no el barrel Node.
+Error envelope, schemas Zod de la API, `ApiTransport` (HTTP o runtime messaging) y cliente tipado. Importa `@sloplens/config/browser`, no el barrel Node.
 
 ### `supabase`
 
@@ -820,7 +825,7 @@ La caché debe evitar repetir verificaciones o embeddings idénticos cuando el c
 
 - El servidor del MVP escucha solo en `127.0.0.1` (no en todas las interfaces).
 - Cualquier proceso en la misma máquina puede llamar al API local; eso es inherente a un backend single-user en loopback y no se trata como autenticación multiusuario.
-- Aun así, las mutaciones de configuración (`PUT /settings/providers`) exigen un **token de emparejamiento local** generado al arrancar, persistido en `SecretStore` y devuelto en `GET /health` únicamente cuando el `Host` es loopback (`127.0.0.1` / `localhost`). La extensión (Options) lo envía en el header `X-SlopLens-Local-Token`.
+- Aun así, las mutaciones de configuración (`PUT /settings/providers`) exigen un **token de emparejamiento local** generado al arrancar, persistido en `SecretStore` y devuelto en `GET /health` únicamente cuando el `Host` es loopback (`127.0.0.1` / `localhost`). El **service worker** obtiene el token con `GET /health` y lo envía en `X-SlopLens-Local-Token`; content, popup y options no lo ven.
 - Objetivo: impedir que otro proceso local redirija API keys a un `baseUrl` remoto arbitrario al guardar providers. Los `baseUrl` de providers conocidos (`openrouter`, `tavily`) están en allowlist de URLs oficiales; cualquier otro `baseUrl` remoto se rechaza. Solo se permiten URLs `http`/`https` hacia loopback o redes privadas (p. ej. mocks locales).
 
 - Las API keys viven en SecretStore (OS primero) o en `.env` de bootstrap del API; nunca en el bundle de la extensión.
@@ -861,7 +866,7 @@ Playwright con el **Chromium empaquetado** (`launchPersistentContext` + `--load-
 
 La extensión se construye primero (`apps/extension/.output/chrome-mv3`). Los tests usan páginas HTML de fixture que imitan un tweet de X (`article[data-testid=tweet]`) y un watch de YouTube; no dependen de X/YouTube en vivo.
 
-El API local se intercepta (mock de Analyze/Verify/Related/Trace). Analyze se dispara al montar el overlay y el mock cubre ese POST. Un modo offline aborta `http://127.0.0.1:3001` para el error `backend_unavailable`.
+El API local se intercepta con `browserContext.route` (mock de Analyze/Verify/Related/Trace). El fetch lo hace el **service worker**, no el document. Los tests auditan `request.serviceWorker()`: page→localhost = 0; SW→localhost = rutas esperadas. Analyze se dispara al montar el overlay y el mock cubre ese POST. Un modo offline aborta `http://127.0.0.1:3001` para el error `backend_unavailable`.
 
 Comando: `pnpm test:e2e` (requiere `pnpm exec playwright install chromium` la primera vez).
 

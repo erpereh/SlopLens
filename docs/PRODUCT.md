@@ -618,6 +618,7 @@ En lugar de una única etiqueta, SlopLens puede mostrar componentes separados co
 Implementado ahora:
 
 - Extensión WXT en X / YouTube con overlay Analyze · Verify · Trace · Sources · Related.
+- El overlay, popup y Options hablan con Hono a través del service worker; la página de X o YouTube no hace fetch a localhost.
 - Backend local Hono con esas rutas (ya no son stubs 501).
 - Settings de proveedores en Options; keys en SecretStore del SO (archivo local solo como fallback etiquetado).
 - Vision del thumbnail de YouTube cuando Jev lo pide o la plataforma es YouTube.

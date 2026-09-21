@@ -1,9 +1,6 @@
 import type { ErrorBody } from "../errors";
 import { errorEnvelopeSchema } from "../errors";
-import { API_ROUTES } from "./routes";
-
-export const SLOPLENS_LOCAL_API_TOKEN_HEADER = "x-sloplens-local-token";
-
+import type { ApiOperation } from "./operations";
 import {
   type AnalyzeRequest,
   type AnalyzeResponse,
@@ -30,6 +27,13 @@ import {
   verifyRequestSchema,
   verifyResponseSchema,
 } from "./schemas";
+import {
+  type ApiTransport,
+  createHttpApiTransport,
+  type HttpApiTransportOptions,
+} from "./transport";
+
+export { SLOPLENS_LOCAL_API_TOKEN_HEADER } from "./client-headers";
 
 export class SlopLensApiError extends Error {
   readonly code: ErrorBody["code"];
@@ -58,95 +62,45 @@ export interface SlopLensApiClient {
   related(input: RelatedRequest): Promise<RelatedResponse>;
 }
 
-export interface SlopLensApiClientOptions {
-  baseUrl: string;
-  fetch?: typeof fetch;
-  /** Required for PUT /settings/providers when the API enforces loopback pairing. */
-  localToken?: string | (() => string | undefined);
-}
+export type SlopLensApiClientOptions =
+  | { transport: ApiTransport }
+  | (HttpApiTransportOptions & { transport?: never });
 
 type ZodLike<T> = {
   parse(data: unknown): T;
 };
 
 export function createSlopLensApiClient(options: SlopLensApiClientOptions): SlopLensApiClient {
-  const baseUrl = normalizeBaseUrl(options.baseUrl);
-  const fetchImpl = options.fetch ?? fetch;
+  const transport =
+    "transport" in options && options.transport
+      ? options.transport
+      : createHttpApiTransport(options);
 
-  function resolveLocalToken(): string | undefined {
-    const token = options.localToken;
-    if (typeof token === "function") {
-      return token();
+  async function call<T>(operation: ApiOperation, schema: ZodLike<T>, body?: unknown): Promise<T> {
+    const result = await transport.request(
+      body === undefined ? { operation } : { operation, body },
+    );
+    if (result.status < 200 || result.status >= 300) {
+      throw toApiError(result.body, result.status);
     }
-    return token;
-  }
-
-  async function request<T>(
-    method: string,
-    route: string,
-    schema: ZodLike<T>,
-    body?: unknown,
-  ): Promise<T> {
-    const headers: Record<string, string> = {};
-    if (body !== undefined) {
-      headers["content-type"] = "application/json";
-    }
-    if (method === "PUT" && route === API_ROUTES.settingsProviders) {
-      const localToken = resolveLocalToken();
-      if (localToken) {
-        headers[SLOPLENS_LOCAL_API_TOKEN_HEADER] = localToken;
-      }
-    }
-
-    const response = await fetchImpl(new URL(route, `${baseUrl}/`).toString(), {
-      method,
-      headers: Object.keys(headers).length > 0 ? headers : undefined,
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
-
-    const json: unknown = await readJson(response);
-    if (!response.ok) {
-      throw toApiError(json, response.status);
-    }
-    return schema.parse(json);
+    return schema.parse(result.body);
   }
 
   return {
-    health: () => request("GET", API_ROUTES.health, healthResponseSchema),
-    getProviders: () => request("GET", API_ROUTES.providers, providersResponseSchema),
-    getSettings: () => request("GET", API_ROUTES.settings, settingsResponseSchema),
+    health: () => call("health", healthResponseSchema),
+    getProviders: () => call("providers", providersResponseSchema),
+    getSettings: () => call("getSettings", settingsResponseSchema),
     putProviderSelections: (input) =>
-      request(
-        "PUT",
-        API_ROUTES.settingsProviders,
+      call(
+        "putSettingsProviders",
         settingsResponseSchema,
         putProviderSelectionsRequestSchema.parse(input),
       ),
-    analyze: (input) =>
-      request("POST", API_ROUTES.analyze, analyzeResponseSchema, analyzeRequestSchema.parse(input)),
-    verify: (input) =>
-      request("POST", API_ROUTES.verify, verifyResponseSchema, verifyRequestSchema.parse(input)),
-    trace: (input) =>
-      request("POST", API_ROUTES.trace, traceResponseSchema, traceRequestSchema.parse(input)),
-    related: (input) =>
-      request("POST", API_ROUTES.related, relatedResponseSchema, relatedRequestSchema.parse(input)),
+    analyze: (input) => call("analyze", analyzeResponseSchema, analyzeRequestSchema.parse(input)),
+    verify: (input) => call("verify", verifyResponseSchema, verifyRequestSchema.parse(input)),
+    trace: (input) => call("trace", traceResponseSchema, traceRequestSchema.parse(input)),
+    related: (input) => call("related", relatedResponseSchema, relatedRequestSchema.parse(input)),
   };
-}
-
-function normalizeBaseUrl(baseUrl: string): string {
-  return baseUrl.replace(/\/+$/, "");
-}
-
-async function readJson(response: Response): Promise<unknown> {
-  const text = await response.text();
-  if (!text) {
-    return null;
-  }
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    return text;
-  }
 }
 
 function toApiError(json: unknown, status: number): SlopLensApiError {

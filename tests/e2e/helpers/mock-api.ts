@@ -74,7 +74,12 @@ export type CapturedRequest = {
   method: string;
   headers: Record<string, string>;
   postData: string | null;
+  fromServiceWorker: boolean;
 };
+
+function isServiceWorkerRequest(request: { serviceWorker?: () => unknown }): boolean {
+  return typeof request.serviceWorker === "function" && request.serviceWorker() != null;
+}
 
 export function attachRequestAudit(context: BrowserContext): CapturedRequest[] {
   const captured: CapturedRequest[] = [];
@@ -84,7 +89,12 @@ export function attachRequestAudit(context: BrowserContext): CapturedRequest[] {
       method: request.method(),
       headers: request.headers(),
       postData: request.postData(),
+      fromServiceWorker: isServiceWorkerRequest(request),
     });
   });
   return captured;
+}
+
+export function localhostApiRequests(requests: CapturedRequest[]) {
+  return requests.filter((item) => item.url.startsWith("http://127.0.0.1:3001/"));
 }

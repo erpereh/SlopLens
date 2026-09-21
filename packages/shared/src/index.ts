@@ -1,9 +1,21 @@
 export {
   createSlopLensApiClient,
+  SLOPLENS_LOCAL_API_TOKEN_HEADER,
   type SlopLensApiClient,
   type SlopLensApiClientOptions,
   SlopLensApiError,
 } from "./api/client";
+export {
+  API_OPERATION_SPEC,
+  API_OPERATIONS,
+  type ApiOperation,
+  apiOperationSchema,
+  SLOPLENS_API_MESSAGE_TYPE,
+  type SlopLensApiBridgeResponse,
+  type SlopLensApiMessage,
+  sloplensApiBridgeResponseSchema,
+  sloplensApiMessageSchema,
+} from "./api/operations";
 export { API_ROUTES, type ApiRoute } from "./api/routes";
 export {
   type AnalyzeRequest,
@@ -35,6 +47,13 @@ export {
   verifyRequestSchema,
   verifyResponseSchema,
 } from "./api/schemas";
+export {
+  type ApiTransport,
+  type ApiTransportRequest,
+  type ApiTransportResponse,
+  createHttpApiTransport,
+  type HttpApiTransportOptions,
+} from "./api/transport";
 export {
   createErrorEnvelope,
   ERROR_CODES,

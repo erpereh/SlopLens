@@ -10,6 +10,7 @@ import {
   resolveExtensionPath,
   tweetFixture,
 } from "../helpers/extension";
+import { localhostApiRequests } from "../helpers/mock-api";
 import { waitForOverlay } from "../helpers/overlay";
 
 const SECRET_PATTERNS = [
@@ -62,10 +63,14 @@ base.describe("secrets stay out of the extension", () => {
       await page.getByRole("tab", { name: "Verify" }).click();
       await expect(page.getByText("Backed by sources")).toBeVisible();
 
-      const apiRequests = requests.filter((item) => item.url.startsWith("http://127.0.0.1:3001/"));
-      expect(apiRequests.length).toBeGreaterThan(0);
+      const apiRequests = localhostApiRequests(requests);
+      const fromPage = apiRequests.filter((item) => !item.fromServiceWorker);
+      const fromWorker = apiRequests.filter((item) => item.fromServiceWorker);
 
-      for (const item of apiRequests) {
+      expect(fromPage, "document must not fetch the local API").toEqual([]);
+      expect(fromWorker.length).toBeGreaterThan(0);
+
+      for (const item of fromWorker) {
         expect(item.headers.authorization ?? "").toBe("");
         expect(item.headers["x-api-key"] ?? "").toBe("");
         const body = item.postData ?? "";

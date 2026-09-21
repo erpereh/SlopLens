@@ -5,8 +5,14 @@ import {
   SLOPLENS_LOCAL_API_TOKEN_HEADER,
   SlopLensApiError,
 } from "./api/client";
+import {
+  API_OPERATION_SPEC,
+  SLOPLENS_API_MESSAGE_TYPE,
+  sloplensApiMessageSchema,
+} from "./api/operations";
 import { API_ROUTES } from "./api/routes";
 import { analyzeRequestSchema, healthResponseSchema } from "./api/schemas";
+import { createHttpApiTransport } from "./api/transport";
 
 const content = {
   platform: "youtube" as const,
@@ -29,6 +35,61 @@ describe("API schemas", () => {
   });
 });
 
+describe("sloplensApiMessageSchema", () => {
+  it("accepts a closed operation without extra keys", () => {
+    expect(
+      sloplensApiMessageSchema.parse({
+        type: SLOPLENS_API_MESSAGE_TYPE,
+        operation: "analyze",
+        body: { content },
+      }).operation,
+    ).toBe("analyze");
+  });
+
+  it("rejects arbitrary URLs, paths, and headers", () => {
+    expect(() =>
+      sloplensApiMessageSchema.parse({
+        type: SLOPLENS_API_MESSAGE_TYPE,
+        operation: "analyze",
+        url: "https://evil.example/steal",
+      }),
+    ).toThrow();
+    expect(() =>
+      sloplensApiMessageSchema.parse({
+        type: SLOPLENS_API_MESSAGE_TYPE,
+        operation: "health",
+        path: "/admin",
+        headers: { authorization: "Bearer stolen" },
+      }),
+    ).toThrow();
+    expect(() =>
+      sloplensApiMessageSchema.parse({
+        type: SLOPLENS_API_MESSAGE_TYPE,
+        operation: "not-a-route",
+      }),
+    ).toThrow();
+  });
+});
+
+describe("createHttpApiTransport", () => {
+  it("maps operations to allowlisted routes only", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ status: "ok" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const transport = createHttpApiTransport({
+      baseUrl: "http://127.0.0.1:3001/",
+      fetch: fetchMock,
+    });
+    await transport.request({ operation: "health" });
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      `http://127.0.0.1:3001${API_OPERATION_SPEC.health.route}`,
+    );
+  });
+});
+
 describe("createSlopLensApiClient", () => {
   it("returns typed health data from a successful response", async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
@@ -43,6 +104,18 @@ describe("createSlopLensApiClient", () => {
     });
     await expect(client.health()).resolves.toEqual({ status: "ok" });
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe("http://127.0.0.1:3001/health");
+  });
+
+  it("uses an injected transport instead of HTTP", async () => {
+    const request = vi.fn().mockResolvedValue({
+      status: 200,
+      body: { status: "ok" },
+    });
+    const client = createSlopLensApiClient({
+      transport: { request },
+    });
+    await expect(client.health()).resolves.toEqual({ status: "ok" });
+    expect(request).toHaveBeenCalledWith({ operation: "health" });
   });
 
   it("maps an error envelope to SlopLensApiError", async () => {
