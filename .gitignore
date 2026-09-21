@@ -12,6 +12,12 @@ dist/
 .output/
 .wxt/
 .turbo/
+coverage/
+*.tsbuildinfo
+
+# SecretStore file fallback (never the primary store)
+.data/
+**/.data/
 
 # Logs
 *.log

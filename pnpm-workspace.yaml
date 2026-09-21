@@ -1,0 +1,13 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+allowBuilds:
+  esbuild: true
+  spawn-sync: false
+
+catalog:
+  "@types/node": "^24.5.2"
+  typescript: "^5.9.2"
+  vitest: "^3.2.4"
+  zod: "^4.1.11"

@@ -10,9 +10,9 @@ Acciones centrales:
 
 ## Estado
 
-Proyecto en fase inicial de diseño e implementación.
+Gate 0: monorepo y contratos compartidos. Aún no hay servidor Hono, overlays ni columnas `vector(N)`.
 
-MVP:
+MVP previsto:
 
 - X / Twitter.
 - YouTube.
@@ -24,6 +24,29 @@ MVP:
 - Jev como clasificador/router inicial.
 - Sin suscripciones ni paywalls.
 - Sin cloud obligatorio.
+- Sin `apps/web` en el MVP.
+
+## Arranque
+
+Requisitos: Node 22+, pnpm 12. Docker Desktop hace falta más adelante para `supabase start`, no para typecheck.
+
+```bash
+pnpm install
+pnpm lint
+pnpm typecheck
+pnpm test
+```
+
+Cuando Docker Desktop esté en marcha (Foundation / G1):
+
+```bash
+supabase start
+pnpm dev
+```
+
+La migración actual solo habilita la extensión `vector`. No crea `vector(N)` ni HNSW.
+
+Los `.env` locales viven en `apps/api/.env` y `apps/extension/.env` (ignorados). Copiar desde los `.env.example`. La extensión solo admite `WXT_API_BASE_URL`; nunca secrets.
 
 ## Documentación
 

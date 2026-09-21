@@ -1,0 +1,23 @@
+{
+  "name": "@sloplens/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --eval \"console.log('[@sloplens/api] Gate 0 stub. Hono server arrives in Foundation.')\"",
+    "build": "tsc --noEmit",
+    "lint": "biome check .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --eval process.exit(0)"
+  },
+  "dependencies": {
+    "@sloplens/ai": "workspace:*",
+    "@sloplens/config": "workspace:*",
+    "@sloplens/core": "workspace:*",
+    "@sloplens/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

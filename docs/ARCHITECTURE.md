@@ -57,6 +57,29 @@ Debe representar la arquitectura actual y las decisiones de implementación vige
 | CI | no GitHub Actions en el MVP |
 | Cloud | no obligatorio |
 
+## Estado de implementación (Gate 0)
+
+El monorepo pnpm + Turborepo existe. Los contratos compartidos están congelados en TypeScript + Zod. Todavía **no** hay servidor Hono, adapters de proveedor, overlays, content scripts ni columnas `vector(N)`.
+
+Implementado ahora:
+
+- Workspace: `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `biome.json`, `tsconfig.base.json`.
+- Apps stub: `apps/api` (sin Hono) y `apps/extension` (WXT mínimo, sin content scripts).
+- Packages: `core`, `ai`, `platforms`, `shared`, `config`; `ui` es un stub de `package.json`.
+- Migración Gate 0: solo `create extension vector`. **No** hay `vector(N)` ni índice HNSW.
+- `supabase/seed.sql` vacío.
+- Scripts raíz: `dev`, `build`, `lint`, `typecheck`, `test`.
+- Vitest en los packages con contratos.
+
+No implementado todavía (gates posteriores):
+
+- Servidor Hono y rutas reales.
+- SecretStore del SO (solo interfaz + fallback de archivo etiquetado).
+- Adapters Jev / OpenRouter / Tavily.
+- Tablas de dominio (`content_items`, `content_embeddings`, etc.).
+- UI beUI, overlays, Analyze / Verify / Trace / Related / Vision.
+- `apps/web` (no creado; no es requisito del MVP).
+
 ## Arquitectura general
 
 ```text
@@ -66,7 +89,7 @@ Debe representar la arquitectura actual y las decisiones de implementación vige
                            │
                            ▼
                     Local Hono API
-                  http://localhost:3001
+                  http://127.0.0.1:3001
                            │
           ┌────────────────┼────────────────┐
           │                │                │
@@ -88,35 +111,24 @@ Debe representar la arquitectura actual y las decisiones de implementación vige
 
 La extensión no debe contener secretos de proveedores.
 
-## Estructura objetivo del repositorio
+## Estructura actual del repositorio
 
 ```text
 sloplens/
 ├── apps/
-│   ├── extension/
-│   │   ├── entrypoints/
-│   │   ├── components/
-│   │   └── platform-adapters/
-│   │
-│   ├── api/
-│   │   └── src/
-│   │       ├── routes/
-│   │       ├── services/
-│   │       ├── providers/
-│   │       └── index.ts
-│   │
-│   └── web/
+│   ├── extension/          # WXT mínimo (background stub). Sin content scripts.
+│   └── api/                # stub; Hono llega en Foundation
 │
 ├── packages/
-│   ├── ui/
-│   ├── core/
-│   ├── ai/
-│   ├── platforms/
-│   ├── shared/
-│   └── config/
+│   ├── core/               # NormalizedContent, ContentDecision
+│   ├── ai/                 # interfaces de providers + registry
+│   ├── platforms/          # contrato PlatformAdapter
+│   ├── shared/             # error envelope, schemas API, cliente HTTP
+│   ├── config/             # ProviderSelection, resolución, SecretStore
+│   └── ui/                 # stub (solo package.json)
 │
 ├── supabase/
-│   ├── migrations/
+│   ├── migrations/         # solo extensión vector
 │   ├── seed.sql
 │   └── config.toml
 │
@@ -129,10 +141,14 @@ sloplens/
 ├── README.md
 ├── pnpm-workspace.yaml
 ├── turbo.json
+├── biome.json
+├── tsconfig.base.json
 └── package.json
 ```
 
-La estructura puede evolucionar cuando exista código real, pero cualquier cambio estructural relevante debe actualizar este documento.
+`apps/web` no existe y no es requisito del MVP. La extensión es la superficie principal.
+
+Cualquier cambio estructural relevante debe actualizar este documento.
 
 ## Responsabilidades
 
@@ -168,29 +184,25 @@ Responsabilidades:
 
 ### `apps/web`
 
-Dashboard/web independiente cuando sea necesario.
-
-No es requisito para obtener valor del MVP; la extensión es la superficie principal.
+No existe en el repositorio. No es requisito del MVP; la extensión es la superficie principal.
 
 ### `packages/ui`
 
-Componentes compartidos basados en beUI.
+Stub en Gate 0 (solo `package.json`). beUI público/gratuito será la fuente visual cuando se implemente la UI.
 
-No debe convertirse en un sistema de diseño paralelo. beUI es la fuente visual.
+No debe convertirse en un sistema de diseño paralelo.
 
 ### `packages/core`
 
-Tipos y lógica de dominio independiente de proveedor y plataforma.
+Tipos y schemas de dominio independientes de proveedor y plataforma: `NormalizedContent`, `ContentDecision`.
+
+### `packages/config`
+
+`ProviderSelection`, resolución user → env → unconfigured, y `SecretStore`.
 
 ### `packages/ai`
 
-Contratos y adapters para:
-
-- decision/classification;
-- embeddings;
-- search;
-- vision;
-- reasoning.
+Contratos de providers (interfaces + registry). Adapters reales en gates posteriores.
 
 ### `packages/platforms`
 
@@ -198,7 +210,7 @@ Normalización y lógica común de adapters de plataformas.
 
 ### `packages/shared`
 
-Utilidades compartidas sin lógica de dominio específica.
+Error envelope, schemas Zod de la API y cliente HTTP tipado extensión ↔ API. Sin lógica de dominio de contenido.
 
 ### `supabase`
 
@@ -276,11 +288,11 @@ platforms/
 └── web/
 ```
 
-Contrato orientativo:
+Contrato congelado en `packages/core` (`NormalizedContent`):
 
 ```ts
 interface NormalizedContent {
-  platform: Platform;
+  platform: Platform; // "x" | "youtube"
   externalId?: string;
   url: string;
   author?: string;
@@ -292,27 +304,34 @@ interface NormalizedContent {
 }
 ```
 
-El core no debe depender del DOM específico de X o YouTube.
+El core no debe depender del DOM específico de X o YouTube. Añadir una plataforma es un cambio explícito de contrato.
 
 ## Backend local
 
 Hono + TypeScript es el backend principal del MVP.
 
-URL orientativa:
+URL:
 
 ```text
-http://localhost:3001
+http://127.0.0.1:3001
 ```
 
-Endpoints iniciales:
+En Gate 0 el proceso aún no escucha; el contrato HTTP ya está congelado.
+
+Endpoints:
 
 ```text
 GET  /health
+GET  /providers
+GET  /settings
+PUT  /settings/providers
 POST /analyze
 POST /verify
 POST /trace
 POST /related
 ```
+
+El cliente tipado vive en `packages/shared` (`createSlopLensApiClient`). La extensión solo puede usar `WXT_API_BASE_URL`; cero secrets en su env.
 
 ### `/analyze`
 
@@ -380,7 +399,7 @@ Regla:
 
 ## Esquema de decisión
 
-Contrato orientativo:
+Contrato congelado en `packages/core` (`ContentDecision`). Los scores son el intervalo cerrado 0–1.
 
 ```ts
 type ContentType =
@@ -410,22 +429,26 @@ interface ContentDecision {
 }
 ```
 
-Los detalles exactos pueden ajustarse tras pruebas. No tratar este ejemplo como API congelada.
-
 ## Provider interfaces
 
 Las integraciones externas deben estar desacopladas.
 
-Contratos conceptuales:
+Contratos congelados en `packages/ai`. No hay llamadas reales a SDKs de vendor en Gate 0; solo interfaces, registry y tipos.
 
 ```ts
 interface DecisionProvider {
   analyze(input: DecisionInput): Promise<ContentDecision>;
 }
 
+interface EmbeddingVector {
+  modelId: string;
+  dimensions: number;
+  values: number[];
+}
+
 interface EmbeddingProvider {
-  embed(text: string): Promise<number[]>;
-  embedMany(texts: string[]): Promise<number[][]>;
+  embed(text: string): Promise<EmbeddingVector>;
+  embedMany(texts: string[]): Promise<EmbeddingVector[]>;
 }
 
 interface SearchProvider {
@@ -441,7 +464,9 @@ interface ReasoningProvider {
 }
 ```
 
-Jev es el `DecisionProvider` inicial, no una dependencia que deba filtrarse por todo el dominio.
+Los embeddings siempre llevan `modelId` y `dimensions`. El dominio no conoce un número mágico de dimensiones. Persistencia futura debe rechazar `values.length !== dim` verificada del modelo (`assertEmbeddingDimensions`).
+
+Jev es el `DecisionProvider` inicial previsto, no una dependencia que deba filtrarse por todo el dominio. El registry se indexa por `providerId`.
 
 ### Configuración dinámica de proveedores
 
@@ -449,14 +474,14 @@ Los proveedores configurados actualmente mediante `.env` son únicamente **defau
 
 La arquitectura final debe permitir que el usuario seleccione y cambie proveedores desde SlopLens sin editar archivos del proyecto.
 
-La resolución de configuración debe seguir, conceptualmente, este orden:
+La resolución de configuración está congelada en `packages/config` (`resolveProviderConfig`) con este orden:
 
 ```text
 Configuración guardada por el usuario
         ↓
 defaults locales / .env
         ↓
-fallback seguro / provider no configurado
+unconfigured / provider_not_configured
 ```
 
 La configuración debe separar siempre:
@@ -501,7 +526,24 @@ interface ProviderSelection {
 
 Las API keys no deben almacenarse como texto plano en tablas generales ni enviarse a la extensión.
 
-Mientras SlopLens sea local-first, las credenciales podrán persistirse mediante un mecanismo local seguro definido durante la implementación. La interfaz debe tratarlas siempre como secretos.
+### SecretStore
+
+Interface congelada: `SecretStore { get, set, delete }`.
+
+Prioridad:
+
+```text
+OS credential store / keychain / Credential Manager
+        ↓ si no es viable en runtime
+FileSecretStore (fallback encapsulado, no equivalente a keychain)
+        ↓
+provider_not_configured
+```
+
+- Primario: credential store del SO. Service name `sloplens`. Solo el backend local accede. Gate 0 congela la interfaz (`OsSecretStore`); la implementación OS llega en Foundation.
+- Fallback: `FileSecretStore` (`kind: "file"`, `isFallback: true`). Path gitignored `.data/secret-store.json`. Permisos restrictivos. No es el diseño objetivo ni almacenamiento seguro definitivo.
+- Tests usan `MemorySecretStore`. Nunca loguear valores.
+- Settings y routes no leen/escriben JSON de secrets directamente.
 
 Reglas:
 
@@ -559,6 +601,10 @@ Flujo esperado:
 
 ```bash
 pnpm install
+pnpm lint
+pnpm typecheck
+pnpm test
+# Foundation / G1 (requiere Docker Desktop en marcha):
 supabase start
 pnpm dev
 ```
@@ -591,7 +637,9 @@ pnpm dev
 
 PostgreSQL es la fuente de verdad.
 
-Tablas iniciales propuestas:
+**Gate 0:** la única migración aplicada en el repo habilita la extensión `vector` en el schema `extensions`. No existe ninguna columna `vector(N)` ni índice HNSW. La dimensión se fijará en una migración posterior tras verificarla (documentación del modelo configurado + respuesta real de API + smoke que mide `embedding.length`). Si docs y API discrepan, prevalece la longitud observada.
+
+Tablas previstas para Foundation (aún no creadas):
 
 ```text
 users
@@ -689,11 +737,16 @@ nearest-neighbor search
 contenido relacionado
 ```
 
-Índice inicial preferido: HNSW.
+Índice previsto: HNSW, **después** de verificar N.
 
 El proveedor de embeddings debe poder cambiar sin reescribir el dominio.
 
-Cuando cambie la dimensión o el modelo de embeddings, tratarlo como una migración de datos explícita.
+Reglas vigentes:
+
+- El dominio no hardcodea 2048 ni ninguna otra dimensión.
+- Cada fila futura de embeddings guardará `model_id` y `dim`.
+- Persistencia rechaza vectores cuya longitud no coincida con la dimensión verificada de ese modelo.
+- Cambiar provider/modelo/dimensión es una migración de datos explícita (re-embed o nueva columna/tabla); nunca mezclar espacios vectoriales.
 
 ## Auth
 
@@ -746,7 +799,7 @@ La caché debe evitar repetir verificaciones o embeddings idénticos cuando el c
 
 ## Seguridad
 
-- Las API keys viven en backend/local env, nunca en el bundle de la extensión.
+- Las API keys viven en SecretStore (OS primero) o en `.env` de bootstrap del API; nunca en el bundle de la extensión.
 - Incluir `.env.example`, nunca secretos reales.
 - Validar inputs con Zod.
 - No confiar en HTML/DOM externo.
