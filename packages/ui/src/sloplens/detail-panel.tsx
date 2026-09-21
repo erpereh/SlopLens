@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { useState } from "react";
 import { Citations } from "@/components/agents/citations";
 import { Button } from "@/components/motion/button/base";
@@ -6,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/motion/ta
 import { useSlopLensI18n } from "@/i18n/context";
 import { cn } from "@/lib/utils";
 import { FeatureStatePanel } from "./feature-state";
-import { ScorePercentSignal } from "./score-signal";
+import { ScorePercentSignal, type ScoreSignalTone, ScoreTextSignal } from "./score-signal";
 import { SlopLensThemeToggleButton } from "./theme-toggle-button";
 import type {
   AnalyzePanelContent,
@@ -97,7 +98,14 @@ export function SlopLensDetailPanel({
 
   if (asDrawer) {
     return (
-      <Drawer open={open} onOpenChange={onOpenChange} side="right" className={className}>
+      <Drawer
+        open={open}
+        onOpenChange={onOpenChange}
+        side="right"
+        ariaLabel={t("app.name")}
+        lockBodyScroll={false}
+        className={cn("w-[min(24rem,85vw)] overflow-hidden", className)}
+      >
         {body}
       </Drawer>
     );
@@ -108,11 +116,13 @@ export function SlopLensDetailPanel({
   return (
     <div
       className={cn(
-        "w-[min(100%,24rem)] rounded-xl border border-border bg-card shadow-xl",
+        "w-[min(100%,24rem)] overflow-hidden rounded-xl border border-border bg-card shadow-xl",
         className,
       )}
       role="dialog"
-      aria-modal="true"
+      aria-modal="false"
+      aria-label={t("app.name")}
+      data-sloplens-panel="true"
     >
       {body}
     </div>
@@ -159,19 +169,33 @@ function PanelBody({
   const { t } = useSlopLensI18n();
 
   return (
-    <div className="flex h-full max-h-[min(80vh,32rem)] flex-col p-4">
-      <header className="mb-3 flex items-center justify-between gap-2">
+    <div
+      className="flex h-full min-h-0 max-h-[min(80vh,32rem)] flex-col overflow-x-hidden p-4"
+      data-sloplens-panel="true"
+    >
+      <header className="mb-3 flex shrink-0 items-center justify-between gap-2">
         <h2 className="text-base font-semibold">{t("app.name")}</h2>
         <div className="flex items-center gap-1">
           <SlopLensThemeToggleButton />
-          <Button type="button" size="sm" variant="ghost" onClick={onClose}>
-            {t("overlay.close")}
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            aria-label={t("overlay.close")}
+            onClick={onClose}
+          >
+            <X className="size-4" aria-hidden />
           </Button>
         </div>
       </header>
 
-      <Tabs value={tab} onValueChange={(v) => onTabChange(v as SlopLensPanelTab)} variant="segment">
-        <TabsList className="w-full flex-wrap">
+      <Tabs
+        value={tab}
+        onValueChange={(v) => onTabChange(v as SlopLensPanelTab)}
+        variant="segment"
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        <TabsList>
           <TabsTrigger value="analyze">{t("tab.analyze")}</TabsTrigger>
           <TabsTrigger value="verify">{t("tab.verify")}</TabsTrigger>
           <TabsTrigger value="trace">{t("tab.trace")}</TabsTrigger>
@@ -179,7 +203,10 @@ function PanelBody({
           <TabsTrigger value="related">{t("tab.related")}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="analyze" className="mt-3 flex-1 overflow-y-auto">
+        <TabsContent
+          value="analyze"
+          className="mt-3 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+        >
           {analyzeState.phase === "success" && analyze?.decision ? (
             <div className="mb-3 space-y-1.5">
               <ScorePercentSignal label={t("signal.aiSlop")} score={analyze.decision.aiSlop} />
@@ -206,9 +233,21 @@ function PanelBody({
           )}
         </TabsContent>
 
-        <TabsContent value="verify" className="mt-3 flex-1 overflow-y-auto">
-          {verifyState.phase === "success" && verify?.summary ? (
-            <p className="text-sm leading-relaxed">{verify.summary}</p>
+        <TabsContent
+          value="verify"
+          className="mt-3 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+        >
+          {verifyState.phase === "success" ? (
+            <div className="space-y-2">
+              {verify?.stance ? (
+                <ScoreTextSignal
+                  label={t("signal.evidence")}
+                  value={t(`signal.stance.${verify.stance}`)}
+                  tone={stanceTone(verify.stance)}
+                />
+              ) : null}
+              {verify?.summary ? <p className="text-sm leading-relaxed">{verify.summary}</p> : null}
+            </div>
           ) : (
             <FeatureStatePanel
               state={verifyState}
@@ -220,7 +259,10 @@ function PanelBody({
           )}
         </TabsContent>
 
-        <TabsContent value="trace" className="mt-3 flex-1 overflow-y-auto">
+        <TabsContent
+          value="trace"
+          className="mt-3 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+        >
           {traceState.phase === "success" && trace?.summary ? (
             <div className="space-y-2 text-sm">
               {trace.originCandidate ? (
@@ -241,7 +283,10 @@ function PanelBody({
           )}
         </TabsContent>
 
-        <TabsContent value="sources" className="mt-3 flex-1 overflow-y-auto">
+        <TabsContent
+          value="sources"
+          className="mt-3 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+        >
           {sourcesState.phase === "success" && sources && sources.length > 0 ? (
             <Citations
               title={t("tab.sources")}
@@ -263,7 +308,10 @@ function PanelBody({
           )}
         </TabsContent>
 
-        <TabsContent value="related" className="mt-3 flex-1 overflow-y-auto">
+        <TabsContent
+          value="related"
+          className="mt-3 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+        >
           {relatedState.phase === "success" && related && related.length > 0 ? (
             <ul className="space-y-2 text-sm">
               {related.map((item) => (
@@ -297,4 +345,18 @@ function PanelBody({
       </Tabs>
     </div>
   );
+}
+
+function stanceTone(stance: NonNullable<VerifyPanelContent["stance"]>): ScoreSignalTone {
+  switch (stance) {
+    case "supported":
+      return "positive";
+    case "contradicted":
+      return "negative";
+    case "mixed":
+      return "warning";
+    case "unverified":
+    case "unknown":
+      return "unknown";
+  }
 }

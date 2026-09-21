@@ -40,6 +40,8 @@ function SlopLensUiSurface({ className, children }: { className?: string; childr
         resolved === "dark" && "dark",
         className,
       )}
+      data-theme={resolved}
+      data-sloplens-root="true"
     >
       {children}
     </div>

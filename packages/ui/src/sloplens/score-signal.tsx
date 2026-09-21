@@ -44,9 +44,12 @@ export function ScorePercentSignal({
   const percent = scoreToPercent(score);
 
   return (
-    <div className={cn("flex items-center justify-between gap-3 text-sm", className)}>
-      <span className="text-muted-foreground">{label}</span>
-      <AnimatedBadge status={toneStatus[resolvedTone]} className="tabular-nums font-medium">
+    <div className={cn("flex min-w-0 items-center justify-between gap-3 text-sm", className)}>
+      <span className="min-w-0 truncate text-muted-foreground">{label}</span>
+      <AnimatedBadge
+        status={toneStatus[resolvedTone]}
+        className="max-w-[11rem] shrink-0 truncate tabular-nums font-medium"
+      >
         <NumberTicker value={percent} suffix="%" duration={0.5} startOnView={false} />
       </AnimatedBadge>
     </div>
@@ -65,9 +68,13 @@ export function ScoreTextSignal({
   className?: string;
 }) {
   return (
-    <div className={cn("flex items-center justify-between gap-3 text-sm", className)}>
-      <span className="text-muted-foreground">{label}</span>
-      <AnimatedBadge status={toneStatus[tone]} className="font-medium">
+    <div className={cn("flex min-w-0 items-center justify-between gap-3 text-sm", className)}>
+      <span className="min-w-0 truncate text-muted-foreground">{label}</span>
+      <AnimatedBadge
+        status={toneStatus[tone]}
+        className="max-w-[11rem] min-w-0 truncate font-medium"
+        title={typeof value === "string" ? value : undefined}
+      >
         {value}
       </AnimatedBadge>
     </div>

@@ -19,6 +19,11 @@ export interface DrawerProps {
   ariaLabel?: string;
   /** Close when the backdrop is clicked. Default true. */
   dismissable?: boolean;
+  /**
+   * Lock `document.body` scroll while open. Overlay drawers must keep this
+   * false so the host page (X/YouTube) is not mutated.
+   */
+  lockBodyScroll?: boolean;
 }
 
 export function Drawer({
@@ -30,6 +35,7 @@ export function Drawer({
   backdropClassName,
   ariaLabel,
   dismissable = true,
+  lockBodyScroll = true,
 }: DrawerProps) {
   const reduce = useReducedMotion();
 
@@ -40,12 +46,16 @@ export function Drawer({
     };
     window.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    if (lockBodyScroll) {
+      document.body.style.overflow = "hidden";
+    }
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
+      if (lockBodyScroll) {
+        document.body.style.overflow = prevOverflow;
+      }
     };
-  }, [open, onOpenChange]);
+  }, [lockBodyScroll, open, onOpenChange]);
 
   const offscreen = side === "right" ? "100%" : "-100%";
 

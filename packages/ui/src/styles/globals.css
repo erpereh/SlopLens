@@ -33,6 +33,12 @@
  * Shadow DOM: use px-based root font-size on the host so rem tokens stay predictable
  * when the host page uses a different root font-size.
  */
+:host {
+  display: block;
+  max-width: 20rem;
+  margin-block: 0.5rem;
+}
+
 :host,
 .sloplens-ui-root {
   font-size: 16px;

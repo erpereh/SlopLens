@@ -68,7 +68,13 @@ export function SlopLensShell({
   return (
     <div className="relative inline-flex flex-col items-end gap-2">
       {!open || asDrawer ? (
-        <SlopLensCompactSurface signals={signals} onOpenDetail={() => setOpen(true)} />
+        <SlopLensCompactSurface
+          signals={signals}
+          analyzeState={analyzeState}
+          onOpenDetail={() => setOpen(true)}
+          onRetryAnalyze={onRetryAnalyze}
+          onOpenSettings={onOpenSettings}
+        />
       ) : null}
 
       <SlopLensDetailPanel

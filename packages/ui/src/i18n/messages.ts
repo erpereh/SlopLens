@@ -23,6 +23,12 @@ export type MessageKey =
   | "signal.similar"
   | "signal.similar.none"
   | "signal.scoreHint"
+  | "signal.evidence"
+  | "signal.stance.supported"
+  | "signal.stance.contradicted"
+  | "signal.stance.mixed"
+  | "signal.stance.unverified"
+  | "signal.stance.unknown"
   | "status.loading"
   | "status.empty"
   | "status.retry"
@@ -73,6 +79,12 @@ const en: Record<MessageKey | ErrorMessageKey, string> = {
   "signal.similar": "Similar items",
   "signal.similar.none": "—",
   "signal.scoreHint": "Signal strength, not a verdict",
+  "signal.evidence": "Evidence",
+  "signal.stance.supported": "Backed by sources",
+  "signal.stance.contradicted": "Contradicted by sources",
+  "signal.stance.mixed": "Conflicting evidence",
+  "signal.stance.unverified": "Unverified",
+  "signal.stance.unknown": "Not enough information",
   "status.loading": "Working…",
   "status.empty": "No data yet",
   "status.retry": "Try again",
@@ -129,6 +141,12 @@ const es: Record<MessageKey | ErrorMessageKey, string> = {
   "signal.similar": "Elementos similares",
   "signal.similar.none": "—",
   "signal.scoreHint": "Intensidad de señal, no un veredicto",
+  "signal.evidence": "Evidencia",
+  "signal.stance.supported": "Respaldado por fuentes",
+  "signal.stance.contradicted": "Contradicho por fuentes",
+  "signal.stance.mixed": "Evidencia contradictoria",
+  "signal.stance.unverified": "Sin verificar",
+  "signal.stance.unknown": "Información insuficiente",
   "status.loading": "Trabajando…",
   "status.empty": "Sin datos aún",
   "status.retry": "Reintentar",
