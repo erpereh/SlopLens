@@ -46,6 +46,7 @@ export function createTavilySearchProvider(config: TavilySearchProviderConfig): 
             include_domains: options?.includeDomains,
             exclude_domains: options?.excludeDomains,
             include_answer: false,
+            ...(options?.topic ? { topic: options.topic } : {}),
           }),
         });
       } catch (error) {

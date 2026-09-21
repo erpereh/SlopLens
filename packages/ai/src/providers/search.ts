@@ -5,6 +5,7 @@ export const searchOptionsSchema = z
     maxResults: z.number().int().positive().optional(),
     includeDomains: z.array(z.string().min(1)).optional(),
     excludeDomains: z.array(z.string().min(1)).optional(),
+    topic: z.enum(["general", "news"]).optional(),
   })
   .strict();
 

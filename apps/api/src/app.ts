@@ -1,6 +1,8 @@
+import type { SecretStore } from "@sloplens/config";
 import { API_ROUTES } from "@sloplens/shared";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import type postgres from "postgres";
 
 import { createSqlClient } from "./db/client";
 import type { ApiEnv } from "./env";
@@ -10,28 +12,52 @@ import {
   postRelatedHandler,
   postTraceHandler,
   postVerifyHandler,
-} from "./routes/feature-stubs";
+} from "./routes/features";
 import { getHealthHandler } from "./routes/health";
 import { getProvidersHandler } from "./routes/providers";
 import { getSettingsHandler, putSettingsProvidersHandler } from "./routes/settings";
 import { createSecretStore } from "./secret-store/create-secret-store";
+import { createFeatureServices, type FeatureServices } from "./services/feature-services";
+import { createProviderRuntime, type ProviderRuntime } from "./services/provider-runtime";
 import { createSettingsService } from "./services/settings-service";
 import type { ApiDependencies } from "./services/types";
 
-export function createApp(env: ApiEnv): Hono {
-  const sql = createSqlClient(env.databaseUrl);
-  const { store: secretStore } = createSecretStore();
-  const settings = createSettingsService({
-    sql,
-    secretStore,
-    env: env.raw,
-  });
+export interface CreateAppOptions {
+  sql?: postgres.Sql | null;
+  secretStore?: SecretStore;
+  settings?: ReturnType<typeof createSettingsService>;
+  runtime?: ProviderRuntime;
+  features?: FeatureServices;
+}
+
+export function createApp(env: ApiEnv, options: CreateAppOptions = {}): Hono {
+  const sql = options.sql !== undefined ? options.sql : createSqlClient(env.databaseUrl);
+  const secretStore = options.secretStore ?? createSecretStore().store;
+  const settings =
+    options.settings ??
+    createSettingsService({
+      sql,
+      secretStore,
+      env: env.raw,
+    });
+
+  const runtime =
+    options.runtime ??
+    createProviderRuntime({
+      settings,
+      secretStore,
+      env: env.raw,
+    });
+
+  const features = options.features ?? createFeatureServices({ sql, runtime });
 
   const deps: ApiDependencies = {
     env,
     sql,
     secretStore,
     settings,
+    features,
+    runtime,
   };
 
   const app = new Hono();
@@ -57,10 +83,10 @@ export function createApp(env: ApiEnv): Hono {
   app.get(API_ROUTES.providers, getProvidersHandler(deps));
   app.get(API_ROUTES.settings, getSettingsHandler(deps));
   app.put(API_ROUTES.settingsProviders, putSettingsProvidersHandler(deps));
-  app.post(API_ROUTES.analyze, postAnalyzeHandler);
-  app.post(API_ROUTES.verify, postVerifyHandler);
-  app.post(API_ROUTES.trace, postTraceHandler);
-  app.post(API_ROUTES.related, postRelatedHandler);
+  app.post(API_ROUTES.analyze, postAnalyzeHandler(features));
+  app.post(API_ROUTES.verify, postVerifyHandler(features));
+  app.post(API_ROUTES.trace, postTraceHandler(features));
+  app.post(API_ROUTES.related, postRelatedHandler(features));
 
   return app;
 }

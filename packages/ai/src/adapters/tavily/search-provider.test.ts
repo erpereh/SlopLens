@@ -21,7 +21,7 @@ describe("createTavilySearchProvider", () => {
     );
 
     const provider = createTavilySearchProvider({ apiKey: "tvly-key", fetchImpl });
-    const results = await provider.search("query", { maxResults: 3 });
+    const results = await provider.search("query", { maxResults: 3, topic: "news" });
 
     expect(results).toHaveLength(1);
     expect(results[0]?.url).toBe("https://example.com/a");
@@ -32,6 +32,12 @@ describe("createTavilySearchProvider", () => {
       expect.objectContaining({
         method: "POST",
         body: expect.stringContaining('"include_answer":false'),
+      }),
+    );
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "https://api.tavily.com/search",
+      expect.objectContaining({
+        body: expect.stringContaining('"topic":"news"'),
       }),
     );
   });
