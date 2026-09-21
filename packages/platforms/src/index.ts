@@ -1,5 +1,5 @@
-export type { PlatformAdapter } from "./types";
 export { detectPlatform, getPlatformAdapter } from "./registry";
+export type { PlatformAdapter } from "./types";
 export { findTweetArticles, xPlatformAdapter } from "./x/adapter";
 export { X_SELECTORS } from "./x/selectors";
 export {

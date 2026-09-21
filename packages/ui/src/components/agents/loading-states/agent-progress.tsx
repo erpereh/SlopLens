@@ -69,10 +69,7 @@ export function AgentProgress({
         className,
       )}
     >
-      <span
-        aria-hidden="true"
-        className="grid size-5 shrink-0 grid-cols-3 gap-[2px]"
-      >
+      <span aria-hidden="true" className="grid size-5 shrink-0 grid-cols-3 gap-[2px]">
         {GRID_CELLS.map(({ id, delay }) => (
           <motion.span
             key={id}
@@ -95,10 +92,7 @@ export function AgentProgress({
         ))}
       </span>
       <span className="font-sans font-medium">{label}</span>
-      <span
-        aria-hidden="true"
-        className="tabular-nums text-muted-foreground/70"
-      >
+      <span aria-hidden="true" className="tabular-nums text-muted-foreground/70">
         {formatElapsed(elapsed)}
       </span>
     </span>

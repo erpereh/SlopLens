@@ -1,16 +1,11 @@
 import { detectPlatform } from "@sloplens/platforms";
-import { LOCALE_STORAGE_KEY, resolveLocale, type Locale } from "../lib/i18n";
+
+import { LOCALE_STORAGE_KEY, resolveLocale } from "../lib/i18n";
 import { OverlayMountManager, type OverlayRuntimeState } from "../lib/mount-overlay";
 import { collectScanTargets } from "../lib/scan-targets";
-import {
-  prefersReducedMotion,
-  readThemePreference,
-  resolveTheme,
-  THEME_STORAGE_KEY,
-  type ThemePreference,
-} from "../lib/theme";
+import { prefersReducedMotion, readThemePreference, THEME_STORAGE_KEY } from "../lib/theme";
 
-import "../components/overlay.css";
+import "@sloplens/ui/styles.css";
 
 export default defineContentScript({
   matches: ["*://x.com/*", "*://twitter.com/*", "*://*.youtube.com/*"],
@@ -75,7 +70,7 @@ async function loadRuntimeState(): Promise<OverlayRuntimeState> {
   const locale = resolveLocale(stored[LOCALE_STORAGE_KEY] as string | undefined);
   return {
     locale,
-    theme: resolveTheme(themePreference),
+    themePreference,
     reducedMotion: prefersReducedMotion(),
   };
 }

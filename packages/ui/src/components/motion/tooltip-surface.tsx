@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion, type Variants } from "motion/react";
-import { useMemo, type ComponentProps, type ReactNode, type Ref } from "react";
+import { type ComponentProps, type ReactNode, type Ref, useMemo } from "react";
 import { EASE_OUT } from "@/lib/ease";
 import { cn } from "@/lib/utils";
 
@@ -71,7 +71,7 @@ export function TooltipSurface({
   ref?: Ref<HTMLSpanElement>;
 }) {
   const reduce = useReducedMotion();
-  const variants = useMemo(() => reduce ? REDUCED_VARIANTS : buildVariants(side), [reduce, side]);
+  const variants = useMemo(() => (reduce ? REDUCED_VARIANTS : buildVariants(side)), [reduce, side]);
   return (
     <motion.span
       ref={ref}

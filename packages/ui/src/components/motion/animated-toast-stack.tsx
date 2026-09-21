@@ -1,30 +1,9 @@
 "use client";
 // beui.dev/components/motion/animated-toast-stack
 
-import {
-  AlertCircle,
-  Bell,
-  Check,
-  Info,
-  LoaderCircle,
-  X,
-  type LucideIcon,
-} from "lucide-react";
-import {
-  AnimatePresence,
-  motion,
-  useReducedMotion,
-  type Transition,
-} from "motion/react";
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { AlertCircle, Bell, Check, Info, LoaderCircle, type LucideIcon, X } from "lucide-react";
+import { AnimatePresence, motion, type Transition, useReducedMotion } from "motion/react";
+import { memo, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { EASE_OUT } from "@/lib/ease";
 import { cn } from "@/lib/utils";
@@ -345,16 +324,8 @@ const ToastItem = memo(function ToastItem({
   return (
     <motion.li
       layout
-      initial={
-        reduce
-          ? { opacity: 0 }
-          : { opacity: 0, y: 22, scale: 0.96, filter: "blur(10px)" }
-      }
-      animate={
-        reduce
-          ? { opacity: 1 }
-          : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
-      }
+      initial={reduce ? { opacity: 0 } : { opacity: 0, y: 22, scale: 0.96, filter: "blur(10px)" }}
+      animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
       exit={
         reduce
           ? { opacity: 0 }
@@ -402,19 +373,13 @@ const ToastItem = memo(function ToastItem({
                 <motion.span
                   key={status}
                   initial={
-                    reduce
-                      ? { opacity: 0 }
-                      : { opacity: 0, y: 8, scale: 0.8, filter: "blur(6px)" }
+                    reduce ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.8, filter: "blur(6px)" }
                   }
                   animate={
-                    reduce
-                      ? { opacity: 1 }
-                      : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
+                    reduce ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
                   }
                   exit={
-                    reduce
-                      ? { opacity: 0 }
-                      : { opacity: 0, y: -8, scale: 0.9, filter: "blur(6px)" }
+                    reduce ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.9, filter: "blur(6px)" }
                   }
                   transition={CONTENT_TRANSITION}
                   className="inline-flex"
@@ -432,21 +397,9 @@ const ToastItem = memo(function ToastItem({
               <AnimatePresence mode="popLayout" initial={false}>
                 <motion.div
                   key={`${toast.id}-${status}-${String(toast.title)}`}
-                  initial={
-                    reduce
-                      ? { opacity: 0 }
-                      : { opacity: 0, y: 8, filter: "blur(6px)" }
-                  }
-                  animate={
-                    reduce
-                      ? { opacity: 1 }
-                      : { opacity: 1, y: 0, filter: "blur(0px)" }
-                  }
-                  exit={
-                    reduce
-                      ? { opacity: 0 }
-                      : { opacity: 0, y: -8, filter: "blur(6px)" }
-                  }
+                  initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8, filter: "blur(6px)" }}
+                  animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, filter: "blur(0px)" }}
+                  exit={reduce ? { opacity: 0 } : { opacity: 0, y: -8, filter: "blur(6px)" }}
                   transition={CONTENT_TRANSITION}
                 >
                   <p
@@ -499,7 +452,6 @@ const ToastItem = memo(function ToastItem({
             ) : null}
           </div>
         )}
-
       </div>
     </motion.li>
   );

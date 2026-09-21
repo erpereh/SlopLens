@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 
 import { OptionsApp } from "./App";
-import "./options.css";
+import "@sloplens/ui/styles.css";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {

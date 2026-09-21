@@ -11,7 +11,8 @@ export const en = {
   popupTheme: "Theme",
   popupOpenOptions: "Settings",
   optionsTitle: "SlopLens settings",
-  optionsIntro: "Provider configuration is stored on the local API. API keys never live in the extension.",
+  optionsIntro:
+    "Provider configuration is stored on the local API. API keys never live in the extension.",
   optionsLoadError: "Could not load settings from the API.",
   optionsProvidersHeading: "Configured providers",
   optionsNoProviders: "No provider metadata returned.",

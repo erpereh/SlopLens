@@ -12,18 +12,22 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@sloplens/config": "workspace:*",
     "@sloplens/core": "workspace:*",
     "@sloplens/platforms": "workspace:*",
     "@sloplens/shared": "workspace:*",
+    "@sloplens/ui": "workspace:*",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.1.13",
     "@types/chrome": "^0.0.306",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@wxt-dev/module-react": "^1.1.5",
     "happy-dom": "^20.0.10",
+    "tailwindcss": "^4.1.13",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "wxt": "^0.20.11"

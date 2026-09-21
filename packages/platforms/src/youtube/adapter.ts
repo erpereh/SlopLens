@@ -4,7 +4,9 @@ import type { PlatformAdapter } from "../types";
 import { getLocationFromDocument } from "./location";
 import { YOUTUBE_SELECTORS } from "./selectors";
 
-export function getYouTubeVideoIdFromLocation(location: Pick<Location, "href" | "pathname">): string | null {
+export function getYouTubeVideoIdFromLocation(
+  location: Pick<Location, "href" | "pathname">,
+): string | null {
   try {
     const url = new URL(location.href);
     const fromQuery = url.searchParams.get("v");

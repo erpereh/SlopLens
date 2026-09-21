@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { createExtensionApiClient } from "../../lib/api-client";
-import { LOCALE_STORAGE_KEY, resolveLocale, translate, type Locale } from "../../lib/i18n";
-import {
-  readThemePreference,
-  type ThemePreference,
-  writeThemePreference,
-} from "../../lib/theme";
+import { LOCALE_STORAGE_KEY, type Locale, resolveLocale, translate } from "../../lib/i18n";
+import { readThemePreference, type ThemePreference, writeThemePreference } from "../../lib/theme";
 
 type HealthState = "checking" | "ok" | "down";
 

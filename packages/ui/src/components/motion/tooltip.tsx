@@ -119,7 +119,9 @@ export function Tooltip({
     const dy = side === "top" ? height : side === "bottom" ? 0 : height / 2;
     next.left = Math.max(GAP + dx, Math.min(next.left, window.innerWidth - GAP - width + dx));
     next.top = Math.max(GAP + dy, Math.min(next.top, window.innerHeight - GAP - height + dy));
-    setCoords(previous => previous?.top === next.top && previous.left === next.left ? previous : next);
+    setCoords((previous) =>
+      previous?.top === next.top && previous.left === next.left ? previous : next,
+    );
   }, [side, anchorRef, anchorPoint]);
 
   const positioned = coords !== null;
@@ -258,7 +260,11 @@ export function Tooltip({
                     ref={surfaceRef}
                     id={id}
                     side={side}
-                    style={{ transformOrigin: transformOrigin[side], maxWidth: "calc(100vw - 16px)", whiteSpace: "normal" }}
+                    style={{
+                      transformOrigin: transformOrigin[side],
+                      maxWidth: "calc(100vw - 16px)",
+                      whiteSpace: "normal",
+                    }}
                     className={className}
                   >
                     {content}

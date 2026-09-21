@@ -1,20 +1,15 @@
 "use client";
 // beui.dev/components/motion/input
 
-import {
-  AnimatePresence,
-  animate,
-  motion,
-  useReducedMotion,
-} from "motion/react";
+import { AnimatePresence, animate, motion, useReducedMotion } from "motion/react";
 import {
   forwardRef,
+  type InputHTMLAttributes,
+  type ReactNode,
   useEffect,
   useId,
   useRef,
   useState,
-  type InputHTMLAttributes,
-  type ReactNode,
 } from "react";
 import { cn } from "@/lib/utils";
 
@@ -29,10 +24,8 @@ export type InputClassNames = {
   errorMessage?: string;
 };
 
-export interface InputProps extends Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  "value" | "defaultValue" | "onChange"
-> {
+export interface InputProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "defaultValue" | "onChange"> {
   label?: string;
   value?: string;
   defaultValue?: string;
@@ -91,11 +84,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   // Shake the field when an error appears.
   useEffect(() => {
     if (!fieldRef.current || reduce || !hasError) return;
-    animate(
-      fieldRef.current,
-      { x: [0, -6, 6, -4, 4, -2, 0] },
-      { duration: 0.45 },
-    );
+    animate(fieldRef.current, { x: [0, -6, 6, -4, 4, -2, 0] }, { duration: 0.45 });
   }, [hasError, reduce]);
 
   const handleChange = (next: string) => {
@@ -104,16 +93,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   };
 
   return (
-    <div
-      className={cn("flex flex-col gap-1.5", className, classNames?.root)}
-    >
+    <div className={cn("flex flex-col gap-1.5", className, classNames?.root)}>
       {label ? (
         <label
           htmlFor={id}
-          className={cn(
-            "px-1 text-sm font-medium text-foreground",
-            classNames?.label,
-          )}
+          className={cn("px-1 text-sm font-medium text-foreground", classNames?.label)}
         >
           {label}
         </label>
@@ -121,15 +105,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
       <div
         ref={fieldRef}
-        data-state={
-          hasError
-            ? "error"
-            : success
-              ? "success"
-              : focused
-                ? "focused"
-                : "idle"
-        }
+        data-state={hasError ? "error" : success ? "success" : focused ? "focused" : "idle"}
         className={cn(
           "relative h-11 overflow-hidden rounded-full border transition-colors duration-200",
           "border-border",
@@ -216,22 +192,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             <motion.p
               id={`${id}-error`}
               role="alert"
-              initial={
-                reduce
-                  ? { opacity: 0 }
-                  : { opacity: 0, y: -4, filter: "blur(4px)" }
-              }
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: -4, filter: "blur(4px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={
-                reduce
-                  ? { opacity: 0 }
-                  : { opacity: 0, y: -4, filter: "blur(4px)" }
-              }
+              exit={reduce ? { opacity: 0 } : { opacity: 0, y: -4, filter: "blur(4px)" }}
               transition={{ duration: 0.2 }}
-              className={cn(
-                "px-1 text-xs text-destructive",
-                classNames?.errorMessage,
-              )}
+              className={cn("px-1 text-xs text-destructive", classNames?.errorMessage)}
             >
               {errorMessage}
             </motion.p>

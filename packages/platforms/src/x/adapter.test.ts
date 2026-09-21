@@ -16,7 +16,7 @@ describe("xPlatformAdapter", () => {
     const window = new Window();
     const document = window.document;
     document.body.innerHTML = TWEET_FIXTURE;
-    const article = findTweetArticles(document)[0];
+    const article = findTweetArticles(document as unknown as ParentNode)[0];
     expect(article).toBeDefined();
 
     const content = xPlatformAdapter.extract(article);

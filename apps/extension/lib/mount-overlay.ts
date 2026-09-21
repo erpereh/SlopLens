@@ -10,7 +10,8 @@ import { hashContentKey } from "./content-key";
 import type { Locale } from "./i18n";
 import { OverlayHostRegistry } from "./overlay-registry";
 import type { ScanTarget } from "./scan-targets";
-import type { ResolvedTheme } from "./theme";
+import type { ThemePreference } from "./theme";
+import { writeThemePreference } from "./theme";
 
 export type OverlayUiHandle = {
   remove: () => Promise<void>;
@@ -20,11 +21,12 @@ type MountedRecord = {
   ui: OverlayUiHandle;
   root: Root;
   contentKey: string;
+  content: NormalizedContent;
 };
 
 export interface OverlayRuntimeState {
   locale: Locale;
-  theme: ResolvedTheme;
+  themePreference: ThemePreference;
   reducedMotion: boolean;
 }
 
@@ -49,6 +51,7 @@ export class OverlayMountManager {
 
     const existing = this.mounted.get(target.host);
     if (existing?.contentKey === contentKey) {
+      this.render(existing.root, existing.content, runtime);
       return;
     }
 
@@ -82,6 +85,20 @@ export class OverlayMountManager {
     return adapter.extract(target.host);
   }
 
+  private render(root: Root, content: NormalizedContent, runtime: OverlayRuntimeState): void {
+    root.render(
+      React.createElement(ContentOverlay, {
+        content,
+        locale: runtime.locale,
+        themePreference: runtime.themePreference,
+        reducedMotion: runtime.reducedMotion,
+        onThemePreferenceChange: (next) => {
+          void writeThemePreference(next);
+        },
+      }),
+    );
+  }
+
   private async mount(
     host: HTMLElement,
     content: NormalizedContent,
@@ -97,14 +114,7 @@ export class OverlayMountManager {
       append: "after",
       onMount: (container) => {
         reactRoot = createRoot(container);
-        reactRoot.render(
-          React.createElement(ContentOverlay, {
-            content,
-            locale: runtime.locale,
-            theme: runtime.theme,
-            reducedMotion: runtime.reducedMotion,
-          }),
-        );
+        this.render(reactRoot, content, runtime);
         return { root: reactRoot };
       },
       onRemove: (mounted) => {
@@ -126,6 +136,7 @@ export class OverlayMountManager {
       },
       root: reactRoot,
       contentKey,
+      content,
     };
   }
 }

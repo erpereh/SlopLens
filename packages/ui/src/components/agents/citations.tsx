@@ -3,12 +3,7 @@
 
 import { BookOpenText, ChevronDown, ExternalLink, Globe2 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import {
-  type ReactNode,
-  useCallback,
-  useId,
-  useState,
-} from "react";
+import { type ReactNode, useCallback, useId, useState } from "react";
 import { AgentDisclosure } from "@/components/agents/agent-disclosure";
 import { EASE_OUT, SPRING_LAYOUT, SPRING_SWAP } from "@/lib/ease";
 import { useFavicon } from "@/lib/hooks/use-favicon";
@@ -55,12 +50,7 @@ function citationTargetId(prefix: string, citationId: string) {
   return `${prefix}-${citationId.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 }
 
-export function Citation({
-  citationId,
-  index,
-  idPrefix,
-  className,
-}: CitationProps) {
+export function Citation({ citationId, index, idPrefix, className }: CitationProps) {
   return (
     <a
       href={`#${citationTargetId(idPrefix, citationId)}`}
@@ -75,25 +65,15 @@ export function Citation({
   );
 }
 
-export function CitationFavicon({
-  url,
-  className,
-}: {
-  url?: string;
-  className?: string;
-}) {
+export function CitationFavicon({ url, className }: { url?: string; className?: string }) {
   const favicon = useFavicon(url);
 
   return (
     <span
       aria-hidden="true"
-      className={cn(
-        "grid size-5 shrink-0 place-items-center text-muted-foreground",
-        className,
-      )}
+      className={cn("grid size-5 shrink-0 place-items-center text-muted-foreground", className)}
     >
       {favicon.src ? (
-        // biome-ignore lint/performance/noImgElement: Dynamic cross-site favicons keep this framework-agnostic registry component portable.
         <img
           ref={favicon.ref}
           src={favicon.src}
@@ -110,16 +90,9 @@ export function CitationFavicon({
   );
 }
 
-export function CitationStack({
-  citations,
-  limit = 3,
-  className,
-}: CitationStackProps) {
+export function CitationStack({ citations, limit = 3, className }: CitationStackProps) {
   return (
-    <span
-      aria-hidden="true"
-      className={cn("flex -space-x-1.5", className)}
-    >
+    <span aria-hidden="true" className={cn("flex -space-x-1.5", className)}>
       {citations.slice(0, limit).map((citation) => (
         <CitationFavicon
           key={citation.id}
@@ -168,13 +141,7 @@ function CitationRow({
   const id = citationTargetId(idPrefix, citation.id);
 
   return citation.url ? (
-    <a
-      id={id}
-      href={citation.url}
-      target="_blank"
-      rel="noreferrer noopener"
-      className={className}
-    >
+    <a id={id} href={citation.url} target="_blank" rel="noreferrer noopener" className={className}>
       {content}
     </a>
   ) : (
@@ -184,15 +151,10 @@ function CitationRow({
   );
 }
 
-export function CitationList({
-  citations,
-  idPrefix,
-  className,
-}: CitationListProps) {
+export function CitationList({ citations, idPrefix, className }: CitationListProps) {
   const reduce = useReducedMotion() ?? false;
   const baseId = useId();
-  const resolvedPrefix =
-    idPrefix ?? `citation-list-${baseId.replace(/:/g, "")}`;
+  const resolvedPrefix = idPrefix ?? `citation-list-${baseId.replace(/:/g, "")}`;
 
   return (
     <div className={cn("grid gap-0.5", className)}>
@@ -214,11 +176,7 @@ export function CitationList({
                   }
             }
           >
-            <CitationRow
-              citation={citation}
-              index={index + 1}
-              idPrefix={resolvedPrefix}
-            />
+            <CitationRow citation={citation} index={index + 1} idPrefix={resolvedPrefix} />
           </motion.div>
         ))}
       </AnimatePresence>
@@ -238,8 +196,7 @@ export function Citations({
   const reduce = useReducedMotion() ?? false;
   const baseId = useId();
   const contentId = `${baseId}-content`;
-  const resolvedPrefix =
-    idPrefix ?? `citation-${baseId.replace(/:/g, "")}`;
+  const resolvedPrefix = idPrefix ?? `citation-${baseId.replace(/:/g, "")}`;
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const currentOpen = open ?? internalOpen;
   const setOpen = useCallback(
@@ -274,15 +231,8 @@ export function Citations({
         </motion.span>
       </button>
 
-      <AgentDisclosure
-        id={contentId}
-        open={currentOpen}
-      >
-        <CitationList
-          citations={citations}
-          idPrefix={resolvedPrefix}
-          className="mt-1"
-        />
+      <AgentDisclosure id={contentId} open={currentOpen}>
+        <CitationList citations={citations} idPrefix={resolvedPrefix} className="mt-1" />
       </AgentDisclosure>
     </div>
   );
