@@ -53,7 +53,10 @@ describe("related service", () => {
         }
         return [];
       },
-      { json: (value: unknown) => value },
+      {
+        json: (value: unknown) => value,
+        unsafe: (text: string) => text,
+      },
     );
 
     const service = createRelatedService({
@@ -70,5 +73,57 @@ describe("related service", () => {
     expect(embedSpy).toHaveBeenCalledOnce();
     expect(persistedModelId).toBe(embedModelId);
     expect(result.items).toEqual([]);
+  });
+
+  it("skips neighbor rows whose url cannot be parsed", async () => {
+    const values = Array.from({ length: PGVECTOR_EMBEDDING_DIMENSIONS }, () => 0.01);
+    const provider = mockEmbeddingProvider(values, "observed-embed-model");
+    const sql = Object.assign(
+      async (strings: TemplateStringsArray) => {
+        const query = strings.join(" ");
+        if (query.includes("from public.content_items")) {
+          return [{ id: "11111111-1111-1111-1111-111111111111" }];
+        }
+        if (query.includes("content_embeddings ce")) {
+          return [
+            {
+              contentItemId: "22222222-2222-2222-2222-222222222222",
+              url: "not a url",
+              platform: "x",
+              title: "Bad",
+              score: 0.9,
+            },
+            {
+              contentItemId: "33333333-3333-3333-3333-333333333333",
+              url: "https://x.com/ok/status/1",
+              platform: "x",
+              title: "Good",
+              score: 0.8,
+            },
+          ];
+        }
+        return [];
+      },
+      { json: (value: unknown) => value, unsafe: (text: string) => text },
+    );
+
+    const service = createRelatedService({
+      sql: sql as never,
+      runtime: mockRuntime({
+        requireEmbedding: async () => ({
+          provider,
+          selection: {
+            capability: "embedding",
+            providerId: "openrouter",
+            modelId: "observed-embed-model",
+          },
+        }),
+      }),
+    });
+
+    const result = await service.related({ content: sampleContent });
+    expect(result.items).toEqual([
+      { url: "https://x.com/ok/status/1", platform: "x", score: 0.8, title: "Good" },
+    ]);
   });
 });

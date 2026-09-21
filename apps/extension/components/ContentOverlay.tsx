@@ -1,91 +1,177 @@
-import type { ContentDecision, NormalizedContent } from "@sloplens/core";
-import { SlopLensApiError } from "@sloplens/shared";
+import type { ContentDecision, NormalizedContent, SlopPresentationSignal } from "@sloplens/core";
+import {
+  deriveSlopSignal,
+  extractCanonicalClaim,
+  slopSignalExceedsThreshold,
+} from "@sloplens/core";
+import { getPlatformAdapter } from "@sloplens/platforms";
 import {
   type FeatureViewState,
   formatAnalyzeSummary,
-  type RelatedItem,
   type SlopLensPanelTab,
   SlopLensShell,
   SlopLensUiRoot,
-  type SourceItem,
   type TracePanelContent,
   type VerifyPanelContent,
 } from "@sloplens/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import type { createAnalyzeScheduler } from "../lib/analyze-scheduler";
 import { createExtensionApiClient } from "../lib/api-client";
+import { hashContentKey } from "../lib/content-key";
 import { toFeatureError } from "../lib/feature-error";
+import type { FeedPreferences } from "../lib/feed-preferences";
 import type { Locale } from "../lib/i18n";
+import { applySlopMarker, clearSlopMarker } from "../lib/slop-marker";
 import type { ThemePreference } from "../lib/theme";
 
 export interface ContentOverlayProps {
   content: NormalizedContent;
+  host: HTMLElement;
   locale: Locale;
   themePreference: ThemePreference;
   onThemePreferenceChange: (next: ThemePreference) => void;
   reducedMotion: boolean;
+  feedPreferences: FeedPreferences;
+  scheduler: ReturnType<typeof createAnalyzeScheduler>;
 }
 
 const idle: FeatureViewState = { phase: "idle" };
 
 export function ContentOverlay({
   content,
+  host,
   locale,
   themePreference,
   onThemePreferenceChange,
   reducedMotion: _reducedMotion,
+  feedPreferences,
+  scheduler,
 }: ContentOverlayProps) {
   const client = useMemo(() => createExtensionApiClient(), []);
+  const contentKey = useMemo(
+    () =>
+      hashContentKey([content.platform, content.url, content.externalId ?? "", content.text ?? ""]),
+    [content],
+  );
   const [detailOpen, setDetailOpen] = useState(false);
   const [tab, setTab] = useState<SlopLensPanelTab>("analyze");
-  const [analyzeState, setAnalyzeState] = useState<FeatureViewState>({ phase: "loading" });
+  const [analyzeState, setAnalyzeState] = useState<FeatureViewState>(
+    feedPreferences.autoAnalyze ? { phase: "loading" } : idle,
+  );
   const [verifyState, setVerifyState] = useState<FeatureViewState>(idle);
   const [traceState, setTraceState] = useState<FeatureViewState>(idle);
-  const [relatedState, setRelatedState] = useState<FeatureViewState>(idle);
-  const [sourcesState, setSourcesState] = useState<FeatureViewState>(idle);
   const [decision, setDecision] = useState<ContentDecision>();
   const [verify, setVerify] = useState<VerifyPanelContent>();
   const [trace, setTrace] = useState<TracePanelContent>();
-  const [sources, setSources] = useState<SourceItem[]>([]);
-  const [related, setRelated] = useState<RelatedItem[]>([]);
-  const [similarCount, setSimilarCount] = useState<number | null>();
-  const [primarySourceLabel, setPrimarySourceLabel] = useState<string | null>();
+  const slopSignal: SlopPresentationSignal | undefined = decision
+    ? deriveSlopSignal(decision)
+    : undefined;
 
-  const runAnalyze = useCallback(async () => {
-    setAnalyzeState({ phase: "loading" });
-    try {
-      const result = await client.analyze({ content });
-      setDecision(result.decision);
-      setAnalyzeState({ phase: "success" });
-    } catch (error) {
-      setAnalyzeState({ phase: "error", error: toFeatureError(error) });
+  const applyMarker = useCallback(
+    (signal: SlopPresentationSignal | undefined) => {
+      const adapter = getPlatformAdapter(content.platform);
+      const regions = adapter.findDimmableRegions(host);
+      if (
+        !signal ||
+        !slopSignalExceedsThreshold(signal, feedPreferences.slopThreshold) ||
+        !(feedPreferences.dimHighSlop || feedPreferences.showSlopStamp)
+      ) {
+        clearSlopMarker(host);
+        return;
+      }
+      applySlopMarker({
+        host,
+        regions,
+        dim: feedPreferences.dimHighSlop,
+        showStamp: feedPreferences.showSlopStamp,
+      });
+    },
+    [content.platform, feedPreferences, host],
+  );
+
+  const analyzeCallbacks = useMemo(
+    () => ({
+      onLoading: () => setAnalyzeState({ phase: "loading" }),
+      onSuccess: (result: { decision: ContentDecision }) => {
+        setDecision(result.decision);
+        setAnalyzeState({ phase: "success" });
+        applyMarker(deriveSlopSignal(result.decision));
+      },
+      onError: (error: unknown) => {
+        setAnalyzeState({ phase: "error", error: toFeatureError(error) });
+        clearSlopMarker(host);
+      },
+    }),
+    [applyMarker, host],
+  );
+
+  useEffect(() => {
+    applyMarker(slopSignal);
+  }, [applyMarker, slopSignal]);
+
+  useEffect(() => {
+    if (!feedPreferences.autoAnalyze) {
+      setAnalyzeState((current) => (current.phase === "loading" ? idle : current));
+      return;
     }
-  }, [client, content]);
+    const stop = scheduler.observe({
+      host,
+      content,
+      contentKey,
+      callbacks: analyzeCallbacks,
+      autoAnalyze: true,
+    });
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          scheduler.scheduleVisible({
+            host,
+            content,
+            contentKey,
+            callbacks: analyzeCallbacks,
+          });
+        }
+      },
+      { rootMargin: "320px 0px", threshold: 0 },
+    );
+    observer.observe(host);
+    return () => {
+      stop();
+      observer.disconnect();
+    };
+  }, [analyzeCallbacks, content, contentKey, feedPreferences.autoAnalyze, host, scheduler]);
+
+  const runAnalyze = useCallback(() => {
+    scheduler.request({
+      host,
+      content,
+      contentKey,
+      callbacks: analyzeCallbacks,
+    });
+  }, [analyzeCallbacks, content, contentKey, host, scheduler]);
 
   const runVerify = useCallback(async () => {
     setVerifyState({ phase: "loading" });
-    setSourcesState({ phase: "loading" });
     try {
-      const claim = claimFromContent(content);
+      const claim = extractCanonicalClaim(content);
       const result = await client.verify({ claim, content });
       const empty = result.status === "insufficient_evidence" && result.sources.length === 0;
       setVerify({
         summary: empty ? undefined : (result.evidence[0]?.summary ?? result.sources[0]?.title),
         stance: stanceFromEvidence(result.evidence.map((item) => item.stance)),
+        claim: result.claim,
+        uncertainty: empty ? result.status : undefined,
+        sources: result.sources.map((source, index) => ({
+          id: source.url || String(index),
+          title: source.title ?? source.url,
+          url: source.url,
+          kind: source.kind,
+        })),
       });
-      const nextSources = result.sources.map((source, index) => ({
-        id: source.url || String(index),
-        title: source.title ?? source.url,
-        url: source.url,
-      }));
-      setSources(nextSources);
-      setPrimarySourceLabel(nextSources[0]?.title ?? null);
       setVerifyState(empty ? { phase: "empty" } : { phase: "success" });
-      setSourcesState(nextSources.length > 0 ? { phase: "success" } : { phase: "empty" });
     } catch (error) {
-      const mapped = toFeatureError(error);
-      setVerifyState({ phase: "error", error: mapped });
-      setSourcesState({ phase: "error", error: mapped });
+      setVerifyState({ phase: "error", error: toFeatureError(error) });
     }
   }, [client, content]);
 
@@ -94,45 +180,39 @@ export function ContentOverlay({
     try {
       const result = await client.trace({ content });
       if (result.status === "insufficient_evidence") {
-        setTrace(undefined);
+        setTrace({
+          uncertainty: result.uncertainty,
+          related: [],
+          derivatives: [],
+          evidence: [],
+        });
         setTraceState({ phase: "empty" });
         return;
       }
       setTrace({
-        summary: result.evidence[0]?.summary ?? result.graph.origin?.title,
-        originCandidate: result.graph.origin?.title ?? result.graph.origin?.url,
+        possibleOrigin: result.possibleOrigin,
+        uncertainty: result.uncertainty,
+        evidence: result.evidence,
+        related: (result.relatedVersions ?? result.graph.similar).map((item, index) => ({
+          id: item.url || String(index),
+          title: item.title ?? item.url,
+          url: item.url,
+          platform: item.platform,
+        })),
+        derivatives: (result.possibleDerivatives ?? result.graph.derivations).map(
+          (item, index) => ({
+            id: item.url || String(index),
+            title: item.title ?? item.url,
+            url: item.url,
+            platform: item.platform,
+          }),
+        ),
       });
       setTraceState({ phase: "success" });
     } catch (error) {
       setTraceState({ phase: "error", error: toFeatureError(error) });
     }
   }, [client, content]);
-
-  const runRelated = useCallback(async () => {
-    setRelatedState({ phase: "loading" });
-    try {
-      const result = await client.related({ content });
-      const items = result.items.map((item, index) => ({
-        id: item.url || String(index),
-        title: item.title ?? item.url,
-        url: item.url,
-        platform: item.platform,
-      }));
-      setRelated(items);
-      setSimilarCount(items.length);
-      setRelatedState(items.length > 0 ? { phase: "success" } : { phase: "empty" });
-    } catch (error) {
-      if (error instanceof SlopLensApiError && error.code === "backend_unavailable") {
-        setRelatedState({ phase: "error", error: toFeatureError(error) });
-        return;
-      }
-      setRelatedState({ phase: "error", error: toFeatureError(error) });
-    }
-  }, [client, content]);
-
-  useEffect(() => {
-    void runAnalyze();
-  }, [runAnalyze]);
 
   useEffect(() => {
     if (!detailOpen) {
@@ -144,23 +224,7 @@ export function ContentOverlay({
     if (tab === "trace" && traceState.phase === "idle") {
       void runTrace();
     }
-    if (tab === "related" && relatedState.phase === "idle") {
-      void runRelated();
-    }
-    if (tab === "sources" && sourcesState.phase === "idle") {
-      void runVerify();
-    }
-  }, [
-    detailOpen,
-    relatedState.phase,
-    runRelated,
-    runTrace,
-    runVerify,
-    sourcesState.phase,
-    tab,
-    traceState.phase,
-    verifyState.phase,
-  ]);
+  }, [detailOpen, runTrace, runVerify, tab, traceState.phase, verifyState.phase]);
 
   const openSettings = () => {
     void chrome.runtime.openOptionsPage();
@@ -173,11 +237,7 @@ export function ContentOverlay({
       onThemePreferenceChange={onThemePreferenceChange}
     >
       <SlopLensShell
-        signals={{
-          decision,
-          primarySourceLabel,
-          similarCount,
-        }}
+        signals={{ slopSignal, decision }}
         detailOpen={detailOpen}
         onDetailOpenChange={setDetailOpen}
         activeTab={tab}
@@ -185,31 +245,21 @@ export function ContentOverlay({
         analyzeState={analyzeState}
         verifyState={verifyState}
         traceState={traceState}
-        sourcesState={sourcesState}
-        relatedState={relatedState}
         analyze={{
           decision,
           summary: decision ? formatAnalyzeSummary(locale, decision) : undefined,
         }}
         verify={verify}
         trace={trace}
-        sources={sources}
-        related={related}
-        onRetryAnalyze={() => void runAnalyze()}
+        onRetryAnalyze={runAnalyze}
+        onAnalyze={runAnalyze}
         onRetryVerify={() => void runVerify()}
         onRetryTrace={() => void runTrace()}
         onOpenSettings={openSettings}
+        forceDrawer
       />
     </SlopLensUiRoot>
   );
-}
-
-function claimFromContent(content: NormalizedContent): string {
-  const parts = [content.title, content.text].filter((part): part is string =>
-    Boolean(part?.trim()),
-  );
-  const claim = parts.join("\n").trim();
-  return (claim.length > 0 ? claim : content.url).slice(0, 1500);
 }
 
 function stanceFromEvidence(

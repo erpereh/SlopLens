@@ -1,4 +1,5 @@
 import type { ReasoningProvider, SearchResult } from "@sloplens/ai";
+import { canonicalizeClaimText, extractCanonicalClaim } from "@sloplens/core";
 import type { VerifyEvidence, VerifyRequest, VerifyResponse, VerifySource } from "@sloplens/shared";
 import type postgres from "postgres";
 
@@ -7,6 +8,7 @@ import { findLatestCachedAnalysisByHash } from "../db/content-cache";
 import { toPostgresJson } from "../db/json";
 import { classifySourceKind, rankSearchResults } from "./primary-sources";
 import type { ProviderRuntime } from "./provider-runtime";
+import { filterAndRerankSearchResults, truncateEvidenceSummary } from "./relevance";
 
 const SUPPORT_RE = /\b(confirm|confirmed|true|according to|official|announced)\b/i;
 const CONTRADICT_RE = /\b(false|not true|debunked|denied|hoax|no evidence|unfounded)\b/i;
@@ -14,26 +16,29 @@ const CONTRADICT_RE = /\b(false|not true|debunked|denied|hoax|no evidence|unfoun
 export function createVerifyService(input: { sql: postgres.Sql | null; runtime: ProviderRuntime }) {
   return {
     async verify(request: VerifyRequest): Promise<VerifyResponse> {
+      const claim = request.content
+        ? extractCanonicalClaim(request.content)
+        : canonicalizeClaimText(request.claim);
       const search = await input.runtime.requireSearch();
-      const results = await search.search(request.claim, {
+      const results = await search.search(claim, {
         maxResults: 8,
         topic: "general",
       });
-      const ranked = rankSearchResults(results);
+      const ranked = rankSearchResults(filterAndRerankSearchResults(claim, results));
 
       if (ranked.length === 0) {
         return {
           status: "insufficient_evidence",
-          claim: request.claim,
+          claim,
           sources: [],
           evidence: [],
         };
       }
 
-      const heuristic = heuristicEvidence(request.claim, ranked);
+      const heuristic = heuristicEvidence(claim, ranked);
       const needsReasoning = await shouldUseReasoning(input, request, heuristic);
       const evidence = needsReasoning
-        ? await reasonAboutEvidence(input.runtime, request.claim, ranked, heuristic)
+        ? await reasonAboutEvidence(input.runtime, claim, ranked, heuristic)
         : heuristic;
 
       const sources: VerifySource[] = ranked.map((result) => ({
@@ -43,13 +48,13 @@ export function createVerifyService(input: { sql: postgres.Sql | null; runtime: 
       }));
 
       if (input.sql && request.content) {
-        await persistClaim(input.sql, request, sources);
+        await persistClaim(input.sql, claim, request, sources);
       }
 
       const hasSignal = evidence.some((item) => item.stance !== "neutral");
       return {
         status: hasSignal ? "ok" : "insufficient_evidence",
-        claim: request.claim,
+        claim,
         sources,
         evidence,
       };
@@ -96,7 +101,7 @@ function heuristicEvidence(claim: string, results: ReadonlyArray<SearchResult>):
     }
     return {
       stance,
-      summary: result.snippet?.trim() || result.title,
+      summary: truncateEvidenceSummary(result.snippet?.trim() || result.title),
       sourceUrl: result.url,
     };
   });
@@ -143,13 +148,27 @@ Results: ${JSON.stringify(results.map((row) => ({ url: row.url, title: row.title
   if (!Array.isArray(parsed.evidence)) {
     return [];
   }
-  return parsed.evidence.filter(
-    (item) =>
-      item &&
-      (item.stance === "supports" || item.stance === "contradicts" || item.stance === "neutral") &&
-      typeof item.summary === "string" &&
-      item.summary.length > 0,
-  );
+  const allowedUrls = new Set(results.map((row) => row.url));
+  return parsed.evidence.flatMap((item) => {
+    if (
+      !item ||
+      (item.stance !== "supports" && item.stance !== "contradicts" && item.stance !== "neutral") ||
+      typeof item.summary !== "string" ||
+      item.summary.length === 0
+    ) {
+      return [];
+    }
+    if (item.sourceUrl && !allowedUrls.has(item.sourceUrl)) {
+      return [];
+    }
+    return [
+      {
+        stance: item.stance,
+        summary: truncateEvidenceSummary(item.summary),
+        ...(item.sourceUrl ? { sourceUrl: item.sourceUrl } : {}),
+      },
+    ];
+  });
 }
 
 function extractJsonObject(text: string): string | null {
@@ -165,6 +184,7 @@ function extractJsonObject(text: string): string | null {
 
 async function persistClaim(
   sql: postgres.Sql,
+  claim: string,
   request: VerifyRequest,
   sources: readonly VerifySource[],
 ): Promise<void> {
@@ -179,13 +199,13 @@ async function persistClaim(
   if (contentItemId) {
     await sql`
       insert into public.claims (content_item_id, claim_text)
-      values (${contentItemId}, ${request.claim})
+      values (${contentItemId}, ${claim})
       on conflict (content_item_id, claim_text) where content_item_id is not null do nothing
     `;
   } else {
     await sql`
       insert into public.claims (content_item_id, claim_text)
-      values (${contentItemId}, ${request.claim})
+      values (${contentItemId}, ${claim})
     `;
   }
 

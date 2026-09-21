@@ -23,16 +23,15 @@ test.describe("theme", () => {
   });
 
   test("system preference follows prefers-color-scheme", async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
     await openHtmlFixture(page, "https://x.com/jane/status/1234567890", tweetFixture);
     await waitForOverlay(page);
     await openDetails(page);
 
     const root = page.locator("[data-sloplens-root]").first();
-    const toggle = page.getByRole("button", { name: /toggle theme/i }).first();
-    // Default stored preference is system; emulate dark.
-    await page.emulateMedia({ colorScheme: "dark" });
     await expect(root).toHaveAttribute("data-theme", "dark");
 
+    const toggle = page.getByRole("button", { name: /toggle theme/i }).first();
     await toggle.click();
     await expect(root).toHaveAttribute("data-theme", "light");
   });

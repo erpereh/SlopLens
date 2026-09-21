@@ -1,6 +1,7 @@
 import { AiProviderError, EmbeddingDimensionMismatchError } from "@sloplens/ai";
 import type { ErrorBody } from "@sloplens/shared";
 import { createErrorEnvelope } from "@sloplens/shared";
+import { ZodError } from "zod";
 
 export type ApiHttpStatus = 400 | 429 | 500 | 501 | 503;
 
@@ -65,6 +66,15 @@ export function mapUnknownError(error: unknown): HttpError {
     return validationError(error.message);
   }
 
+  if (error instanceof ZodError) {
+    return validationError(error.message);
+  }
+
+  if (isDatabaseQueryError(error)) {
+    const message = error instanceof Error ? error.message : "Database query failed";
+    return backendUnavailable(`Database query failed: ${message}`);
+  }
+
   if (error instanceof AiProviderError) {
     if (error.code === "rate_limited") {
       return rateLimited(error.message, error.capability);
@@ -88,4 +98,19 @@ export function mapUnknownError(error: unknown): HttpError {
     message: "Unexpected server error",
     retryable: true,
   });
+}
+
+function isDatabaseQueryError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+  const name = "name" in error && typeof error.name === "string" ? error.name : "";
+  const message = "message" in error && typeof error.message === "string" ? error.message : "";
+  return (
+    name === "PostgresError" ||
+    message.includes("type modifiers") ||
+    message.includes("halfvec") ||
+    message.includes("pgvector") ||
+    /relation .* does not exist/i.test(message)
+  );
 }

@@ -5,6 +5,7 @@ export const YOUTUBE_SELECTORS = {
     "#owner #channel-name a, ytd-channel-name#channel-name a, #upload-info #channel-name a",
   description:
     "#description-inline-expander yt-formatted-string, ytd-text-inline-expander#description-inline-expander, #description yt-formatted-string",
+  player: "#movie_player, ytd-player, #player",
   transcriptSegment: "ytd-transcript-segment-renderer",
   transcriptText: ".segment-text, yt-formatted-string.segment-text",
 } as const;

@@ -16,10 +16,11 @@ export function inOverlay(page: Page, name: string | RegExp): Locator {
 }
 
 export async function openDetails(page: Page): Promise<void> {
-  await page
-    .getByRole("button", { name: /details/i })
-    .first()
-    .click();
+  const compact = page.locator("[data-sloplens-compact]");
+  const opener = compact.getByRole("button", {
+    name: /slop signal|analyzing|details|expand/i,
+  });
+  await opener.first().click();
   await expect(page.getByRole("tab", { name: /analyze/i }).first()).toBeVisible();
 }
 

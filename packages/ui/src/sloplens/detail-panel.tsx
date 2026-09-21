@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
-import { useState } from "react";
 import { Citations } from "@/components/agents/citations";
+import { BouncyAccordion } from "@/components/motion/bouncy-accordion";
 import { Button } from "@/components/motion/button/base";
 import { Drawer } from "@/components/motion/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/motion/tabs";
@@ -15,7 +15,6 @@ import type {
   FeatureViewState,
   RelatedItem,
   SlopLensPanelTab,
-  SourceItem,
   TracePanelContent,
   VerifyPanelContent,
 } from "./types";
@@ -29,13 +28,9 @@ export function SlopLensDetailPanel({
   analyzeState,
   verifyState,
   traceState,
-  sourcesState,
-  relatedState,
   analyze,
   verify,
   trace,
-  sources,
-  related,
   onRetryAnalyze,
   onRetryVerify,
   onRetryTrace,
@@ -50,13 +45,9 @@ export function SlopLensDetailPanel({
   analyzeState: FeatureViewState;
   verifyState: FeatureViewState;
   traceState: FeatureViewState;
-  sourcesState: FeatureViewState;
-  relatedState: FeatureViewState;
   analyze?: AnalyzePanelContent;
   verify?: VerifyPanelContent;
   trace?: TracePanelContent;
-  sources?: SourceItem[];
-  related?: RelatedItem[];
   onRetryAnalyze?: () => void;
   onRetryVerify?: () => void;
   onRetryTrace?: () => void;
@@ -64,31 +55,16 @@ export function SlopLensDetailPanel({
   className?: string;
 }) {
   const { t } = useSlopLensI18n();
-  const [internalTab, setInternalTab] = useState(activeTab);
-  const isControlled = onTabChange !== undefined;
-  const currentTab = isControlled ? activeTab : internalTab;
-  const setCurrentTab = (next: SlopLensPanelTab) => {
-    if (isControlled) {
-      onTabChange(next);
-    } else {
-      setInternalTab(next);
-    }
-  };
-
   const body = (
     <PanelBody
-      tab={currentTab}
-      onTabChange={setCurrentTab}
+      tab={activeTab}
+      onTabChange={(next) => onTabChange?.(next)}
       analyzeState={analyzeState}
       verifyState={verifyState}
       traceState={traceState}
-      sourcesState={sourcesState}
-      relatedState={relatedState}
       analyze={analyze}
       verify={verify}
       trace={trace}
-      sources={sources}
-      related={related}
       onRetryAnalyze={onRetryAnalyze}
       onRetryVerify={onRetryVerify}
       onRetryTrace={onRetryTrace}
@@ -138,13 +114,9 @@ function PanelBody({
   analyzeState,
   verifyState,
   traceState,
-  sourcesState,
-  relatedState,
   analyze,
   verify,
   trace,
-  sources,
-  related,
   onRetryAnalyze,
   onRetryVerify,
   onRetryTrace,
@@ -156,13 +128,9 @@ function PanelBody({
   analyzeState: FeatureViewState;
   verifyState: FeatureViewState;
   traceState: FeatureViewState;
-  sourcesState: FeatureViewState;
-  relatedState: FeatureViewState;
   analyze?: AnalyzePanelContent;
   verify?: VerifyPanelContent;
   trace?: TracePanelContent;
-  sources?: SourceItem[];
-  related?: RelatedItem[];
   onRetryAnalyze?: () => void;
   onRetryVerify?: () => void;
   onRetryTrace?: () => void;
@@ -170,6 +138,8 @@ function PanelBody({
   onClose: () => void;
 }) {
   const { t } = useSlopLensI18n();
+  const decision = analyze?.decision;
+  const sources = verify?.sources ?? [];
 
   return (
     <div
@@ -194,16 +164,14 @@ function PanelBody({
 
       <Tabs
         value={tab}
-        onValueChange={(v) => onTabChange(v as SlopLensPanelTab)}
+        onValueChange={(value) => onTabChange(value as SlopLensPanelTab)}
         variant="segment"
         className="flex min-h-0 flex-1 flex-col"
       >
-        <TabsList className="max-w-full flex-nowrap overflow-x-auto">
+        <TabsList className="w-full">
           <TabsTrigger value="analyze">{t("tab.analyze")}</TabsTrigger>
           <TabsTrigger value="verify">{t("tab.verify")}</TabsTrigger>
           <TabsTrigger value="trace">{t("tab.trace")}</TabsTrigger>
-          <TabsTrigger value="sources">{t("tab.sources")}</TabsTrigger>
-          <TabsTrigger value="related">{t("tab.related")}</TabsTrigger>
         </TabsList>
 
         <TabsContent
@@ -213,26 +181,20 @@ function PanelBody({
           {analyzeState.phase === "success" && analyze?.summary ? (
             <p className="mb-3 text-sm leading-relaxed text-foreground">{analyze.summary}</p>
           ) : null}
-          {analyzeState.phase === "success" && analyze?.decision ? (
+          {analyzeState.phase === "success" && decision ? (
             <div className="space-y-1.5">
               <p className="text-[11px] text-muted-foreground">{t("signal.scoreHint")}</p>
-              <ScorePercentSignal label={t("signal.aiSlop")} score={analyze.decision.aiSlop} />
-              <ScorePercentSignal
-                label={t("signal.clickbait")}
-                score={analyze.decision.clickbait}
-              />
+              <ScorePercentSignal label={t("signal.aiSlop")} score={decision.aiSlop} />
+              <ScorePercentSignal label={t("signal.clickbait")} score={decision.clickbait} />
               <ScorePercentSignal
                 label={t("signal.engagementBait")}
-                score={analyze.decision.engagementBait}
+                score={decision.engagementBait}
               />
+              <ScorePercentSignal label={t("signal.spam")} score={decision.spam} />
               <ScoreTextSignal
                 label={t("signal.claim")}
-                value={
-                  analyze.decision.containsClaim
-                    ? t("signal.claim.detected")
-                    : t("signal.claim.none")
-                }
-                tone={analyze.decision.containsClaim ? "info" : "neutral"}
+                value={decision.containsClaim ? t("signal.claim.detected") : t("signal.claim.none")}
+                tone={decision.containsClaim ? "info" : "neutral"}
               />
             </div>
           ) : analyzeState.phase !== "success" ? (
@@ -259,19 +221,27 @@ function PanelBody({
                   tone={stanceTone(verify.stance)}
                 />
               ) : null}
+              {verify?.claim ? (
+                <p className="text-xs text-muted-foreground">{verify.claim}</p>
+              ) : null}
               {verify?.summary ? <p className="text-sm leading-relaxed">{verify.summary}</p> : null}
-              {sources && sources.length > 0 ? (
+              {verify?.uncertainty ? (
+                <p className="text-xs text-muted-foreground">{verify.uncertainty}</p>
+              ) : null}
+              {sources.length > 0 ? (
                 <Citations
                   title={t("tab.sources")}
-                  citations={sources.map((s) => ({
-                    id: s.id,
-                    title: s.title,
-                    url: s.url,
-                    domain: s.url,
+                  citations={sources.map((source) => ({
+                    id: source.id,
+                    title: source.title,
+                    url: source.url,
+                    domain: hostnameOf(source.url),
                   }))}
                   defaultOpen
                 />
-              ) : null}
+              ) : (
+                <p className="text-sm text-muted-foreground">{t("empty.sources")}</p>
+              )}
             </div>
           ) : (
             <FeatureStatePanel
@@ -290,15 +260,8 @@ function PanelBody({
           value="trace"
           className="mt-3 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
         >
-          {traceState.phase === "success" && trace?.summary ? (
-            <div className="space-y-2 text-sm">
-              {trace.originCandidate ? (
-                <p className="text-muted-foreground">
-                  <span className="font-medium text-foreground">{trace.originCandidate}</span>
-                </p>
-              ) : null}
-              <p className="leading-relaxed">{trace.summary}</p>
-            </div>
+          {traceState.phase === "success" ? (
+            <TraceSections trace={trace} />
           ) : (
             <FeatureStatePanel
               state={traceState}
@@ -311,72 +274,122 @@ function PanelBody({
             />
           )}
         </TabsContent>
-
-        <TabsContent
-          value="sources"
-          className="mt-3 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
-        >
-          {sourcesState.phase === "success" && sources && sources.length > 0 ? (
-            <Citations
-              title={t("tab.sources")}
-              citations={sources.map((s) => ({
-                id: s.id,
-                title: s.title,
-                url: s.url,
-                domain: s.url,
-              }))}
-              defaultOpen
-            />
-          ) : (
-            <FeatureStatePanel
-              state={sourcesState}
-              emptyMessage={t("empty.sources")}
-              loadingLabel={t("loading.searchingSources")}
-              onOpenSettings={onOpenSettings}
-            />
-          )}
-        </TabsContent>
-
-        <TabsContent
-          value="related"
-          className="mt-3 min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
-        >
-          {relatedState.phase === "success" && related && related.length > 0 ? (
-            <ul className="space-y-2 text-sm">
-              {related.map((item) => {
-                const href = safeExternalHttpUrl(item.url);
-                return (
-                  <li key={item.id} className="overflow-hidden rounded-md border border-border p-2">
-                    {href ? (
-                      <a
-                        href={href}
-                        className="break-words font-medium text-primary underline-offset-2 hover:underline"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {item.title}
-                      </a>
-                    ) : (
-                      <span className="font-medium">{item.title}</span>
-                    )}
-                    {item.platform ? (
-                      <p className="text-xs text-muted-foreground">{item.platform}</p>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <FeatureStatePanel
-              state={relatedState}
-              emptyMessage={t("empty.related")}
-              loadingLabel={t("status.loading")}
-            />
-          )}
-        </TabsContent>
       </Tabs>
     </div>
   );
+}
+
+function TraceSections({ trace }: { trace?: TracePanelContent }) {
+  const { t } = useSlopLensI18n();
+  const origin = trace?.possibleOrigin;
+  const originHref = safeExternalHttpUrl(origin?.url);
+
+  const items = [
+    {
+      id: "origin",
+      title: t("trace.possibleOrigin"),
+      description: origin ? (
+        <div className="space-y-2 text-sm text-foreground">
+          {originHref ? (
+            <a
+              href={originHref}
+              className="break-words font-medium text-primary underline-offset-2 hover:underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {origin.title ?? origin.url}
+            </a>
+          ) : (
+            <p className="font-medium">{origin.title ?? origin.url}</p>
+          )}
+          {origin.publishedAt ? (
+            <p className="text-xs text-muted-foreground">{origin.publishedAt}</p>
+          ) : null}
+          <p>{origin.whyThisMayBeTheOrigin}</p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            {t(`trace.confidence.${origin.confidence}`)}
+          </p>
+        </div>
+      ) : (
+        <p>{t("trace.noOrigin")}</p>
+      ),
+    },
+    {
+      id: "evidence",
+      title: t("trace.evidence"),
+      description:
+        trace?.evidence && trace.evidence.length > 0 ? (
+          <ul className="space-y-2 text-sm">
+            {trace.evidence.map((item) => (
+              <li key={`${item.sourceUrl ?? item.summary}`} className="leading-relaxed">
+                {item.summary}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>{t("empty.sources")}</p>
+        ),
+    },
+    {
+      id: "related",
+      title: t("tab.related"),
+      description: <RelatedList items={trace?.related ?? []} empty={t("empty.related")} />,
+    },
+    {
+      id: "derivatives",
+      title: t("trace.derivatives"),
+      description: (
+        <RelatedList items={trace?.derivatives ?? []} empty={t("trace.noDerivatives")} />
+      ),
+    },
+    {
+      id: "uncertainty",
+      title: t("trace.uncertainty"),
+      description: <p>{trace?.uncertainty ?? t("empty.trace.insufficient")}</p>,
+    },
+  ];
+
+  return <BouncyAccordion items={items} defaultValue="origin" />;
+}
+
+function RelatedList({ items, empty }: { items: RelatedItem[]; empty: string }) {
+  if (items.length === 0) {
+    return <p>{empty}</p>;
+  }
+  return (
+    <ul className="space-y-2 text-sm">
+      {items.map((item) => {
+        const href = safeExternalHttpUrl(item.url);
+        return (
+          <li key={item.id} className="overflow-hidden rounded-md border border-border p-2">
+            {href ? (
+              <a
+                href={href}
+                className="break-words font-medium text-primary underline-offset-2 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {item.title}
+              </a>
+            ) : (
+              <span className="font-medium">{item.title}</span>
+            )}
+            {item.platform ? (
+              <p className="text-xs text-muted-foreground">{item.platform}</p>
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function hostnameOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
 }
 
 function stanceTone(stance: NonNullable<VerifyPanelContent["stance"]>): ScoreSignalTone {

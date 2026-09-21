@@ -126,4 +126,17 @@ export const youtubePlatformAdapter: PlatformAdapter = {
       metadata,
     };
   },
+  findDimmableRegions(host: HTMLElement): HTMLElement[] {
+    const root = host.ownerDocument;
+    const selectors = [
+      YOUTUBE_SELECTORS.watchTitle,
+      YOUTUBE_SELECTORS.description,
+      YOUTUBE_SELECTORS.player,
+    ];
+    return selectors.flatMap((selector) =>
+      Array.from(root.querySelectorAll<HTMLElement>(selector)).filter((node) => {
+        return !node.closest("#owner") && !node.closest("#actions") && !node.closest("#comments");
+      }),
+    );
+  },
 };

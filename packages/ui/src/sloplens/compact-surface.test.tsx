@@ -28,7 +28,7 @@ describe("SlopLensCompactSurface", () => {
         />,
       ),
     );
-    expect(screen.getByText(/analyzing/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /analyzing/i })).toBeInTheDocument();
     expect(screen.queryByText("No data yet")).not.toBeInTheDocument();
   });
 
@@ -50,33 +50,33 @@ describe("SlopLensCompactSurface", () => {
     expect(screen.getByRole("button", { name: /try again/i })).toBeInTheDocument();
   });
 
-  it("does not claim a missing primary source before Verify has run", () => {
-    render(
-      wrap(
-        <SlopLensCompactSurface
-          signals={{ decision: undefined }}
-          analyzeState={{ phase: "idle" }}
-          onOpenDetail={() => undefined}
-        />,
-      ),
-    );
-    expect(screen.queryByText("Primary source")).not.toBeInTheDocument();
-    expect(screen.queryByText("None found")).not.toBeInTheDocument();
-  });
-
-  it("renders Analyze Verify Trace shortcuts on the compact chip", () => {
+  it("offers Analyze when idle instead of claiming missing sources", () => {
     render(
       wrap(
         <SlopLensCompactSurface
           signals={{}}
           analyzeState={{ phase: "idle" }}
           onOpenDetail={() => undefined}
-          onOpenDetailTab={() => undefined}
+          onAnalyze={() => undefined}
         />,
       ),
     );
     expect(screen.getByRole("button", { name: /^analyze$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^verify$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^trace$/i })).toBeInTheDocument();
+    expect(screen.queryByText("Primary source")).not.toBeInTheDocument();
+  });
+
+  it("renders a compact slop signal, not Analyze/Verify/Trace shortcuts", () => {
+    render(
+      wrap(
+        <SlopLensCompactSurface
+          signals={{ slopSignal: { value: 0.82, label: "slop", source: "aiSlop" } }}
+          analyzeState={{ phase: "success" }}
+          onOpenDetail={() => undefined}
+        />,
+      ),
+    );
+    expect(screen.getByRole("button", { name: /slop signal · 82%/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^verify$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^trace$/i })).not.toBeInTheDocument();
   });
 });

@@ -1,3 +1,4 @@
+export { canonicalizeClaimText, extractCanonicalClaim } from "./canonical-claim";
 export {
   type NormalizedContent,
   normalizedContentSchema,
@@ -23,3 +24,12 @@ export {
   type ContentRelationType,
   contentRelationTypeSchema,
 } from "./relations";
+export {
+  deriveSlopSignal,
+  SLOP_SIGNAL_SOURCES,
+  type SlopPresentationSignal,
+  type SlopSignalSource,
+  slopPresentationSignalSchema,
+  slopSignalExceedsThreshold,
+  slopSignalSourceSchema,
+} from "./slop-signal";

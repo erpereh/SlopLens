@@ -1,11 +1,11 @@
 import type { ContentDecision } from "@sloplens/core";
+import { deriveSlopSignal } from "@sloplens/core";
 import {
   type FeatureViewState,
   formatAnalyzeSummary,
   type RelatedItem,
   SlopLensShell,
   SlopLensUiRoot,
-  type SourceItem,
   type ThemePreference,
   type TracePanelContent,
   type VerifyPanelContent,
@@ -34,20 +34,24 @@ const loading: FeatureViewState = { phase: "loading" };
 const verify: VerifyPanelContent = {
   summary: "The claim is backed by the cited note.",
   stance: "supported",
+  sources: [{ id: "1", title: "Primary research note", url: "https://example.com/source" }],
 };
-
-const trace: TracePanelContent = {
-  summary: "Candidate origin found via similar embeddings.",
-  originCandidate: "Origin article",
-};
-
-const sources: SourceItem[] = [
-  { id: "1", title: "Primary research note", url: "https://example.com/source" },
-];
 
 const related: RelatedItem[] = [
   { id: "1", title: "Related post", url: "https://x.com/other/status/99", platform: "x" },
 ];
+
+const trace: TracePanelContent = {
+  possibleOrigin: {
+    url: "https://example.com/origin",
+    title: "Origin article",
+    whyThisMayBeTheOrigin: "Candidate earlier source, not a confirmed origin.",
+    confidence: "low",
+  },
+  uncertainty: "This is a possible earlier source, not a confirmed origin.",
+  related,
+  evidence: [{ summary: "Short evidence blurb.", sourceUrl: "https://example.com/origin" }],
+};
 
 type Scene = "tweet" | "youtube" | "states";
 
@@ -67,6 +71,7 @@ export function App() {
   const [scene, setScene] = useState<Scene>(sceneFromLocation);
   const [themePreference, setThemePreference] = useState<ThemePreference>(themeFromLocation);
   const [detailOpen, setDetailOpen] = useState(false);
+  const slopSignal = deriveSlopSignal(decision);
 
   const overlay = useMemo(
     () => (
@@ -76,27 +81,20 @@ export function App() {
         onThemePreferenceChange={setThemePreference}
       >
         <SlopLensShell
-          signals={{
-            decision,
-            primarySourceLabel: "Primary research note",
-            similarCount: 1,
-          }}
+          signals={{ slopSignal, decision }}
           detailOpen={detailOpen}
           onDetailOpenChange={setDetailOpen}
           analyzeState={success}
           verifyState={success}
           traceState={success}
-          sourcesState={success}
-          relatedState={success}
           analyze={{ decision, summary: formatAnalyzeSummary("en", decision) }}
           verify={verify}
           trace={trace}
-          sources={sources}
-          related={related}
+          forceDrawer
         />
       </SlopLensUiRoot>
     ),
-    [detailOpen, themePreference],
+    [detailOpen, slopSignal, themePreference],
   );
 
   return (
@@ -176,14 +174,7 @@ function StatesGallery({
           themePreference={themePreference}
           onThemePreferenceChange={onTheme}
         >
-          <SlopLensShell
-            signals={{}}
-            analyzeState={loading}
-            verifyState={idle}
-            traceState={idle}
-            sourcesState={idle}
-            relatedState={idle}
-          />
+          <SlopLensShell signals={{}} analyzeState={loading} verifyState={idle} traceState={idle} />
         </SlopLensUiRoot>
       </section>
       <section>
@@ -198,8 +189,6 @@ function StatesGallery({
             analyzeState={error}
             verifyState={idle}
             traceState={idle}
-            sourcesState={idle}
-            relatedState={idle}
             onRetryAnalyze={() => undefined}
           />
         </SlopLensUiRoot>
@@ -212,14 +201,13 @@ function StatesGallery({
           onThemePreferenceChange={onTheme}
         >
           <SlopLensShell
-            signals={{ decision, primarySourceLabel: null, similarCount: 0 }}
+            signals={{ slopSignal: deriveSlopSignal(decision), decision }}
             analyzeState={success}
             verifyState={success}
             traceState={{ phase: "empty" }}
-            sourcesState={{ phase: "empty" }}
-            relatedState={{ phase: "empty" }}
             analyze={{ decision, summary: formatAnalyzeSummary("en", decision) }}
             verify={{ stance: "unverified", summary: "No corroborating sources yet." }}
+            forceDrawer
           />
         </SlopLensUiRoot>
       </section>

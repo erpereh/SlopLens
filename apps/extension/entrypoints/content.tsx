@@ -1,5 +1,8 @@
 import { detectPlatform } from "@sloplens/platforms";
 
+import { createAnalyzeScheduler } from "../lib/analyze-scheduler";
+import { createExtensionApiClient } from "../lib/api-client";
+import { FEED_PREFS_STORAGE_KEY, readFeedPreferences } from "../lib/feed-preferences";
 import { LOCALE_STORAGE_KEY, resolveLocale } from "../lib/i18n";
 import { OverlayMountManager, type OverlayRuntimeState } from "../lib/mount-overlay";
 import { createScanScheduler } from "../lib/scan-scheduler";
@@ -19,7 +22,11 @@ export default defineContentScript({
     }
 
     const manager = new OverlayMountManager(ctx);
-    let runtime = await loadRuntimeState();
+    const scheduler = createAnalyzeScheduler({
+      analyze: (content) => createExtensionApiClient().analyze({ content }),
+      concurrency: 2,
+    });
+    let runtime = await loadRuntimeState(scheduler);
 
     const scheduleScan = createScanScheduler(() => scanPage(manager, platform, runtime));
 
@@ -36,7 +43,11 @@ export default defineContentScript({
       if (area !== "local") {
         return;
       }
-      if (changes[THEME_STORAGE_KEY] || changes[LOCALE_STORAGE_KEY]) {
+      if (
+        changes[THEME_STORAGE_KEY] ||
+        changes[LOCALE_STORAGE_KEY] ||
+        changes[FEED_PREFS_STORAGE_KEY]
+      ) {
         void reloadRuntime().then((next) => {
           runtime = next;
           scheduleScan();
@@ -45,7 +56,7 @@ export default defineContentScript({
     });
 
     async function reloadRuntime() {
-      runtime = await loadRuntimeState();
+      runtime = await loadRuntimeState(scheduler);
       return runtime;
     }
 
@@ -53,16 +64,21 @@ export default defineContentScript({
   },
 });
 
-async function loadRuntimeState(): Promise<OverlayRuntimeState> {
-  const [themePreference, stored] = await Promise.all([
+async function loadRuntimeState(
+  scheduler: OverlayRuntimeState["scheduler"],
+): Promise<OverlayRuntimeState> {
+  const [themePreference, stored, feedPreferences] = await Promise.all([
     readThemePreference(),
     chrome.storage.local.get(LOCALE_STORAGE_KEY),
+    readFeedPreferences(),
   ]);
   const locale = resolveLocale(stored[LOCALE_STORAGE_KEY] as string | undefined);
   return {
     locale,
     themePreference,
     reducedMotion: prefersReducedMotion(),
+    feedPreferences,
+    scheduler,
   };
 }
 

@@ -51,6 +51,23 @@ export const MOCK_TRACE = {
     ],
     derivations: [],
   },
+  possibleOrigin: {
+    url: "https://example.com/origin",
+    title: "Origin article",
+    whyThisMayBeTheOrigin:
+      "This was the strongest remaining match after relevance filtering. It is a candidate, not a confirmed origin.",
+    confidence: "low" as const,
+  },
+  relatedVersions: [
+    {
+      url: "https://x.com/other/status/99",
+      title: "Related post",
+      platform: "x" as const,
+      score: 0.81,
+    },
+  ],
+  possibleDerivatives: [],
+  uncertainty: "This is a possible earlier source, not a confirmed origin.",
   evidence: [
     {
       summary: "Candidate origin found via similar embeddings.",

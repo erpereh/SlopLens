@@ -5,9 +5,7 @@ import type {
   AnalyzePanelContent,
   CompactSignals,
   FeatureViewState,
-  RelatedItem,
   SlopLensPanelTab,
-  SourceItem,
   TracePanelContent,
   VerifyPanelContent,
 } from "./types";
@@ -22,18 +20,14 @@ export type SlopLensShellProps = {
   analyzeState: FeatureViewState;
   verifyState: FeatureViewState;
   traceState: FeatureViewState;
-  sourcesState: FeatureViewState;
-  relatedState: FeatureViewState;
   analyze?: AnalyzePanelContent;
   verify?: VerifyPanelContent;
   trace?: TracePanelContent;
-  sources?: SourceItem[];
-  related?: RelatedItem[];
   onRetryAnalyze?: () => void;
   onRetryVerify?: () => void;
   onRetryTrace?: () => void;
+  onAnalyze?: () => void;
   onOpenSettings?: () => void;
-  /** Override responsive drawer behavior (e.g. host width in shadow root). */
   forceDrawer?: boolean;
 };
 
@@ -41,43 +35,40 @@ export function SlopLensShell({
   signals,
   detailOpen,
   onDetailOpenChange,
-  activeTab = "analyze",
+  activeTab,
   onTabChange,
   analyzeState,
   verifyState,
   traceState,
-  sourcesState,
-  relatedState,
   analyze,
   verify,
   trace,
-  sources,
-  related,
   onRetryAnalyze,
   onRetryVerify,
   onRetryTrace,
+  onAnalyze,
   onOpenSettings,
   forceDrawer,
 }: SlopLensShellProps) {
   const narrow = useNarrowLayout();
   const asDrawer = forceDrawer ?? narrow;
   const [internalOpen, setInternalOpen] = useState(false);
+  const [internalTab, setInternalTab] = useState<SlopLensPanelTab>("analyze");
   const open = detailOpen ?? internalOpen;
   const setOpen = onDetailOpenChange ?? setInternalOpen;
+  const tab = activeTab ?? internalTab;
+  const setTab = onTabChange ?? setInternalTab;
 
   return (
-    <div className="relative inline-flex flex-col items-end gap-2">
+    <div className="relative inline-flex flex-col items-start gap-2">
       {!open || asDrawer ? (
         <SlopLensCompactSurface
           signals={signals}
           analyzeState={analyzeState}
           onOpenDetail={() => setOpen(true)}
-          onOpenDetailTab={(tab) => {
-            onTabChange?.(tab);
-            setOpen(true);
-          }}
           onRetryAnalyze={onRetryAnalyze}
           onOpenSettings={onOpenSettings}
+          onAnalyze={onAnalyze}
         />
       ) : null}
 
@@ -85,18 +76,14 @@ export function SlopLensShell({
         open={open}
         onOpenChange={setOpen}
         asDrawer={asDrawer}
-        activeTab={activeTab}
-        onTabChange={onTabChange}
+        activeTab={tab}
+        onTabChange={setTab}
         analyzeState={analyzeState}
         verifyState={verifyState}
         traceState={traceState}
-        sourcesState={sourcesState}
-        relatedState={relatedState}
         analyze={analyze}
         verify={verify}
         trace={trace}
-        sources={sources}
-        related={related}
         onRetryAnalyze={onRetryAnalyze}
         onRetryVerify={onRetryVerify}
         onRetryTrace={onRetryTrace}

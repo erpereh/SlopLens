@@ -81,12 +81,18 @@ export function createRelatedService(input: {
       return {
         items: neighbors.flatMap((row) => {
           const platform = platformSchema.safeParse(row.platform);
-          if (!platform.success) {
+          if (!platform.success || !Number.isFinite(row.score)) {
+            return [];
+          }
+          let url: string;
+          try {
+            url = new URL(row.url).toString();
+          } catch {
             return [];
           }
           return [
             {
-              url: row.url,
+              url,
               platform: platform.data satisfies Platform,
               score: row.score,
               ...(row.title ? { title: row.title } : {}),

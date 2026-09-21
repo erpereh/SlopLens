@@ -275,15 +275,23 @@ La extensión utilizará Manifest V3.
 
 - content scripts;
 - background/service worker;
-- popup cuando aporte valor;
-- options/settings;
+- popup compacto (salud, preferencias de feed, tema, idioma, resumen de providers);
+- options/settings para edición avanzada de proveedores y secretos;
 - side panel cuando sea útil.
 
 No crear superficies por defecto si no aportan valor.
 
-## Shadow DOM
+## Overlay y feed
 
 El content script serializa los scans del MutationObserver (un pase en vuelo + uno en cola) y el `OverlayMountManager` encadena mounts por host. Sin eso, el propio insert del overlay dispara otro scan y duplica `sloplens-root`.
+
+Auto Analyze no dispara una llamada por cada nodo del feed. `createAnalyzeScheduler` encola solo hosts visibles o con `rootMargin` de 320px, limita la concurrencia a 2, reutiliza in-flight y cache por `contentKey`/`content_hash`, y cancela o ignora jobs cuyo host se desconectó.
+
+El chip, el atenuado y el sello leen `deriveSlopSignal(decision)` (`packages/core`), no `decision.aiSlop` directo. En esta iteración la señal deriva de `aiSlop`; otras combinaciones deben entrar por ese helper.
+
+El atenuado y el sello se aplican con clases/atributos en el DOM del host (`slop-marker.ts`) sobre regiones que expone `findDimmableRegions` del adapter. No se envuelven nodos React de X/YouTube.
+
+## Shadow DOM
 
 La UI inyectada en páginas externas debe vivir dentro de Shadow DOM siempre que sea compatible con el caso de uso.
 
@@ -379,18 +387,20 @@ El cliente tipado vive en `packages/shared` (`createSlopLensApiClient`). La exte
 
 ### `/verify`
 
+- extrae una claim canónica corta del contenido (no usa el post entero como query);
 - busca evidencia con `SearchProvider` (Tavily);
+- filtra y reordena por solapamiento léxico con la claim antes del ranking de fuente primaria;
 - ordena fuentes primarias primero (gov/edu/agencias antes que posts);
 - nunca trata el campo `answer` de búsqueda como veredicto;
 - llama al LLM de razonamiento solo si `needsPowerfulModel` (análisis cacheado) o la evidencia es ambigua;
-- `insufficient_evidence` cuando no hay resultados o solo hay señales neutrales.
+- `insufficient_evidence` cuando no hay resultados relevantes o solo hay señales neutrales.
 
 ### `/trace`
 
 Trace **básico** del MVP:
 
 - búsqueda opcional (`topic: news` si el provider está configurado) + vecinos pgvector + `content_relations`;
-- grafo parcial: origen candidato (desde búsqueda cuando hay), similares, derivaciones;
+- respuesta estructurada: `possibleOrigin` (candidato + por qué + confianza baja/media, nunca certeza), evidencia corta, `relatedVersions`, `possibleDerivatives`, `uncertainty`;
 - `insufficient_evidence` solo si búsqueda, vecinos y relaciones están vacíos;
 - deduplica `originates_from` antes de insertar en `content_relations`;
 - no hay mapa de propagación.
@@ -399,6 +409,8 @@ Trace **básico** del MVP:
 
 - genera o reutiliza embedding por `model_id` de settings o el devuelto por `embed()`;
 - consulta HNSW (`halfvec`) en la dimensión verificada;
+- los casts `vector(N)` / `halfvec(N)` se interpolan con `sql.unsafe` porque postgres.js parametriza `${N}` y pgvector exige type modifiers constantes;
+- omite vecinos cuya URL no sea parseable para no convertir un 500 de Zod en fallo de Related;
 - rechaza persistir si `values.length !== PGVECTOR_EMBEDDING_DIMENSIONS`;
 - agrupa en `clusters` cuando hay ≥2 vecinos con score alto.
 
@@ -762,6 +774,8 @@ contenido relacionado
 
 Índice actual: HNSW sobre `embedding::halfvec(2048)` (`halfvec_cosine_ops`). La columna sigue siendo `vector(2048)`; el cast es solo del índice porque HNSW en `vector` maxea a 2000 dims.
 
+Las consultas de persistencia y vecinos interpolan `extensions.vector(2048)` / `extensions.halfvec(2048)` como SQL literal (`pgvectorTypmodSql`). Parametrizar el type modifier produce `vector($2)` y el error `type modifiers must be simple constants or identifiers`.
+
 El proveedor de embeddings debe poder cambiar sin reescribir el dominio.
 
 Reglas vigentes:
@@ -867,7 +881,7 @@ Playwright con el **Chromium empaquetado** (`launchPersistentContext` + `--load-
 
 La extensión se construye primero (`apps/extension/.output/chrome-mv3`). Los tests usan páginas HTML de fixture que imitan un tweet de X (`article[data-testid=tweet]`) y un watch de YouTube; no dependen de X/YouTube en vivo.
 
-El API local se intercepta con `browserContext.route` (mock de Analyze/Verify/Related/Trace). El fetch lo hace el **service worker**, no el document. Los tests auditan `request.serviceWorker()`: page→localhost = 0; SW→localhost = rutas esperadas. Analyze se dispara al montar el overlay y el mock cubre ese POST. Un modo offline aborta `http://127.0.0.1:3001` para el error `backend_unavailable`.
+El API local se intercepta con `browserContext.route` (mock de Analyze/Verify/Related/Trace). El fetch lo hace el **service worker**, no el document. Los tests auditan `request.serviceWorker()`: page→localhost = 0; SW→localhost = rutas esperadas. Analyze se dispara al montar el overlay (salvo Auto Analyze desactivado) y el mock cubre ese POST. Un modo offline aborta `http://127.0.0.1:3001` para el error `backend_unavailable`. Playwright cubre el chip `Slop signal`, el drawer de 3 tabs, Sources anidadas en Verify, Related en Trace, el sello/dimming y el popup compacto.
 
 Comando: `pnpm test:e2e` (requiere `pnpm exec playwright install chromium` la primera vez).
 

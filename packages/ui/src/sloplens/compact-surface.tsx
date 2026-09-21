@@ -1,38 +1,40 @@
 import { LoaderCircle } from "lucide-react";
 import { AnimatedBadge } from "@/components/motion/animated-badge";
 import { Button } from "@/components/motion/button/base";
+import { NumberTicker } from "@/components/motion/number-ticker";
+import { Tooltip } from "@/components/motion/tooltip";
 import { useSlopLensI18n } from "@/i18n/context";
 import { cn } from "@/lib/utils";
-import { compactSignalLabel } from "./analyze-summary";
 import { FeatureErrorPanel } from "./feature-state";
-import type { CompactSignals, FeatureViewState, SlopLensPanelTab } from "./types";
+import { scoreToPercent, toneFromScore } from "./score-signal";
+import type { CompactSignals, FeatureViewState } from "./types";
 
 export function SlopLensCompactSurface({
   signals,
   analyzeState = { phase: "idle" },
   onOpenDetail,
-  onOpenDetailTab,
   onRetryAnalyze,
   onOpenSettings,
+  onAnalyze,
   className,
 }: {
   signals: CompactSignals;
   analyzeState?: FeatureViewState;
   onOpenDetail: () => void;
-  onOpenDetailTab?: (tab: SlopLensPanelTab) => void;
   onRetryAnalyze?: () => void;
   onOpenSettings?: () => void;
+  onAnalyze?: () => void;
   className?: string;
 }) {
-  const { locale, t } = useSlopLensI18n();
-  const decision = signals.decision;
-  const analyzeReady = analyzeState.phase === "success" && Boolean(decision);
+  const { t } = useSlopLensI18n();
+  const slopSignal = signals.slopSignal;
+  const analyzeReady = analyzeState.phase === "success" && Boolean(slopSignal);
 
   if (analyzeState.phase === "error") {
     return (
       <div
         className={cn(
-          "inline-flex max-w-[min(100%,20rem)] flex-col gap-1.5 rounded-2xl border border-border bg-card/95 p-1.5 shadow-md backdrop-blur-sm",
+          "inline-flex max-w-[min(100%,16rem)] flex-col gap-1.5 rounded-2xl border border-border bg-card/95 p-1.5 shadow-md backdrop-blur-sm",
           className,
         )}
         data-sloplens-compact="true"
@@ -57,69 +59,83 @@ export function SlopLensCompactSurface({
     );
   }
 
-  const chipLabel =
-    analyzeReady && decision
-      ? compactSignalLabel(locale, decision)
-      : analyzeState.phase === "loading"
-        ? t("overlay.loading")
-        : t("status.empty");
+  if (analyzeState.phase === "idle") {
+    return (
+      <div
+        className={cn(
+          "inline-flex items-center gap-1 rounded-2xl border border-border bg-card/95 p-1 shadow-md",
+          className,
+        )}
+        data-sloplens-compact="true"
+      >
+        <Button
+          type="button"
+          size="sm"
+          className="h-7 rounded-full px-3 text-xs"
+          onClick={onAnalyze}
+        >
+          {t("overlay.analyze")}
+        </Button>
+      </div>
+    );
+  }
 
+  const percent = slopSignal ? scoreToPercent(slopSignal.value) : 0;
   const chipStatus =
     analyzeState.phase === "loading"
       ? "loading"
-      : analyzeReady && decision?.containsClaim
-        ? "info"
+      : analyzeReady
+        ? toneFromScore(slopSignal?.value ?? 0) === "warning"
+          ? "warning"
+          : "neutral"
         : "neutral";
+
+  const accessibleLabel = analyzeReady
+    ? t("signal.slop.accessible", { percent })
+    : t("overlay.loading");
 
   return (
     <div
       className={cn(
-        "inline-flex max-w-[min(100%,20rem)] flex-col items-stretch gap-0.5 rounded-2xl border border-border bg-card/95 p-1 shadow-md backdrop-blur-sm",
+        "inline-flex items-center gap-1 rounded-2xl border border-border bg-card/95 p-1 shadow-md backdrop-blur-sm",
         className,
       )}
       data-sloplens-compact="true"
     >
-      <div className="inline-flex min-w-0 items-center gap-1 pl-1.5">
-        {analyzeState.phase === "loading" ? (
-          <LoaderCircle className="size-3.5 shrink-0 animate-spin text-primary" aria-hidden />
-        ) : null}
-        <AnimatedBadge
-          status={chipStatus}
-          size="sm"
-          showIcon={analyzeState.phase !== "loading"}
-          className="min-w-0 max-w-[14rem] border-0 bg-transparent px-1 shadow-none"
-        >
-          <span className="truncate" role="status" aria-live="polite">
-            {chipLabel}
-          </span>
-        </AnimatedBadge>
-        <Button
+      <Tooltip content={t("signal.notVerdict")} side="top">
+        <button
           type="button"
-          size="sm"
-          variant="ghost"
-          className="h-7 shrink-0 rounded-full px-2.5 text-xs"
+          className="inline-flex min-w-0 items-center gap-1 rounded-full px-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={onOpenDetail}
+          aria-label={accessibleLabel}
+          data-sloplens-slop-chip="true"
         >
-          {t("overlay.expand")}
-        </Button>
-      </div>
-
-      {onOpenDetailTab ? (
-        <div className="flex flex-wrap justify-end gap-0.5">
-          {(["analyze", "verify", "trace"] as const).map((tab) => (
-            <Button
-              key={tab}
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="h-6 rounded-full px-2 text-[11px] text-foreground"
-              onClick={() => onOpenDetailTab(tab)}
-            >
-              {t(`tab.${tab}`)}
-            </Button>
-          ))}
-        </div>
-      ) : null}
+          {analyzeState.phase === "loading" ? (
+            <LoaderCircle className="size-3.5 shrink-0 animate-spin text-primary" aria-hidden />
+          ) : null}
+          <AnimatedBadge
+            status={chipStatus}
+            size="sm"
+            showIcon={analyzeState.phase !== "loading"}
+            className="min-w-0 border-0 bg-transparent px-1 shadow-none"
+          >
+            <span className="inline-flex items-baseline gap-1" role="status" aria-live="polite">
+              <span>{t("signal.slop.label")}</span>
+              {analyzeReady ? (
+                <>
+                  <span aria-hidden>·</span>
+                  <NumberTicker
+                    value={percent}
+                    suffix="%"
+                    startOnView={false}
+                    className="tabular-nums"
+                  />
+                </>
+              ) : null}
+            </span>
+          </AnimatedBadge>
+        </button>
+      </Tooltip>
     </div>
   );
 }

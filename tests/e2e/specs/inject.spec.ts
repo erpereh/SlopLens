@@ -10,8 +10,8 @@ test.describe("extension injection", () => {
     const host = hosts.first();
     await expect.poll(async () => host.evaluate((el) => Boolean(el.shadowRoot))).toBe(true);
 
-    await expect(page.getByRole("button", { name: /details/i })).toBeVisible();
-    await expect(page.getByText(/verifiable claim/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /slop signal/i })).toBeVisible();
+    await expect(page.getByText(/^slop$/i).first()).toBeVisible();
   });
 
   test("opens and closes the detail panel without duplicating overlays", async ({ page }) => {
@@ -24,7 +24,7 @@ test.describe("extension injection", () => {
     await expect(page.getByRole("tab", { name: "Trace" })).toBeVisible();
 
     await closeDetails(page);
-    await expect(page.getByRole("button", { name: /details/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /slop signal/i })).toBeVisible();
     await expect(overlayHosts(page)).toHaveCount(1);
   });
 
@@ -34,7 +34,7 @@ test.describe("extension injection", () => {
     await waitForOverlay(page);
     await openDetails(page);
     await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByRole("button", { name: /details/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /slop signal/i })).toBeVisible();
     await expect(overlayHosts(page)).toHaveCount(1);
     expect(await page.evaluate(() => document.body.style.overflow)).not.toBe("hidden");
   });

@@ -2,6 +2,7 @@ import { assertEmbeddingDimensions, type EmbeddingVector } from "@sloplens/ai";
 import type postgres from "postgres";
 
 import { PGVECTOR_EMBEDDING_DIMENSIONS } from "./embedding-dimensions";
+import { pgvectorTypmodSql } from "./pgvector-typmod";
 
 export function toVectorLiteral(values: ReadonlyArray<number>): string {
   if (values.length === 0 || values.some((value) => !Number.isFinite(value))) {
@@ -57,13 +58,14 @@ export async function persistEmbedding(input: {
   assertPersistableEmbedding(input.embedding);
 
   const literal = toVectorLiteral(input.embedding.values);
+  const vectorType = pgvectorTypmodSql(input.sql, "vector");
   await input.sql`
     insert into public.content_embeddings (content_item_id, model_id, dim, embedding)
     values (
       ${input.contentItemId},
       ${input.embedding.modelId},
       ${input.embedding.dimensions},
-      ${literal}::extensions.vector(${PGVECTOR_EMBEDDING_DIMENSIONS})
+      ${literal}::${vectorType}
     )
     on conflict (content_item_id, model_id) do update
       set dim = excluded.dim,
@@ -82,6 +84,8 @@ export async function findNearestNeighbors(input: {
 
   const literal = toVectorLiteral(input.embedding.values);
   const excludeId = input.excludeContentItemId ?? null;
+  const vectorType = pgvectorTypmodSql(input.sql, "vector");
+  const halfvecType = pgvectorTypmodSql(input.sql, "halfvec");
 
   const rows = await input.sql<NeighborRow[]>`
     select
@@ -89,15 +93,15 @@ export async function findNearestNeighbors(input: {
       ci.url,
       ci.platform,
       ci.title,
-      (1 - ((ce.embedding::extensions.halfvec(${PGVECTOR_EMBEDDING_DIMENSIONS})) <=>
-        ((${literal}::extensions.vector(${PGVECTOR_EMBEDDING_DIMENSIONS}))::extensions.halfvec(${PGVECTOR_EMBEDDING_DIMENSIONS}))))::float as score
+      (1 - ((ce.embedding::${halfvecType}) <=>
+        ((${literal}::${vectorType})::${halfvecType})))::float as score
     from public.content_embeddings ce
     inner join public.content_items ci on ci.id = ce.content_item_id
     where ce.model_id = ${input.embedding.modelId}
       and ce.dim = ${PGVECTOR_EMBEDDING_DIMENSIONS}
       and (${excludeId}::uuid is null or ce.content_item_id <> ${excludeId}::uuid)
-    order by (ce.embedding::extensions.halfvec(${PGVECTOR_EMBEDDING_DIMENSIONS})) <=>
-      ((${literal}::extensions.vector(${PGVECTOR_EMBEDDING_DIMENSIONS}))::extensions.halfvec(${PGVECTOR_EMBEDDING_DIMENSIONS}))
+    order by (ce.embedding::${halfvecType}) <=>
+      ((${literal}::${vectorType})::${halfvecType})
     limit ${input.limit}
   `;
 

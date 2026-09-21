@@ -11,7 +11,7 @@ import {
   tweetFixture,
 } from "../helpers/extension";
 import { localhostApiRequests } from "../helpers/mock-api";
-import { waitForOverlay } from "../helpers/overlay";
+import { openDetails, waitForOverlay } from "../helpers/overlay";
 
 const SECRET_PATTERNS = [
   "OPENROUTER_API_KEY",
@@ -60,7 +60,7 @@ base.describe("secrets stay out of the extension", () => {
     try {
       await openHtmlFixture(page, "https://x.com/jane/status/1234567890", tweetFixture);
       await waitForOverlay(page);
-      await page.getByRole("button", { name: /details/i }).click();
+      await openDetails(page);
       await page.getByRole("tab", { name: "Verify" }).click();
       await expect(page.getByText("Backed by sources")).toBeVisible();
 

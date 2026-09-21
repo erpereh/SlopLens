@@ -27,6 +27,12 @@ function payloadFor(pathname: string): unknown {
   if (pathname.endsWith("/health")) {
     return { status: "ok", checks: { database: true, pgvector: true } };
   }
+  if (pathname.endsWith("/settings")) {
+    return { selections: [], secrets: [] };
+  }
+  if (pathname.endsWith("/providers")) {
+    return { capabilities: [] };
+  }
   return null;
 }
 

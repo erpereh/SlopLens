@@ -1,8 +1,8 @@
 import type { ProviderCapability, ProviderSelection } from "@sloplens/config/browser";
-import type { ContentDecision } from "@sloplens/core";
+import type { ContentDecision, SlopPresentationSignal } from "@sloplens/core";
 import type { ErrorCode } from "@sloplens/shared";
 
-export type SlopLensPanelTab = "analyze" | "verify" | "trace" | "sources" | "related";
+export type SlopLensPanelTab = "analyze" | "verify" | "trace";
 
 export type FeaturePhase = "idle" | "loading" | "success" | "empty" | "error";
 
@@ -20,9 +20,8 @@ export type FeatureViewState =
   | { phase: "error"; error: FeatureError };
 
 export type CompactSignals = {
+  slopSignal?: SlopPresentationSignal;
   decision?: ContentDecision;
-  primarySourceLabel?: string | null;
-  similarCount?: number | null;
 };
 
 export type AnalyzePanelContent = {
@@ -33,11 +32,25 @@ export type AnalyzePanelContent = {
 export type VerifyPanelContent = {
   summary?: string;
   stance?: "supported" | "contradicted" | "mixed" | "unknown" | "unverified";
+  claim?: string;
+  sources?: SourceItem[];
+  uncertainty?: string;
+};
+
+export type TraceOriginCandidate = {
+  url: string;
+  title?: string;
+  publishedAt?: string;
+  whyThisMayBeTheOrigin: string;
+  confidence: "low" | "medium";
 };
 
 export type TracePanelContent = {
-  summary?: string;
-  originCandidate?: string;
+  possibleOrigin?: TraceOriginCandidate;
+  uncertainty?: string;
+  evidence?: Array<{ summary: string; sourceUrl?: string }>;
+  related?: RelatedItem[];
+  derivatives?: RelatedItem[];
 };
 
 export type SourceItem = {
@@ -45,6 +58,7 @@ export type SourceItem = {
   title: string;
   url: string;
   snippet?: string;
+  kind?: string;
 };
 
 export type RelatedItem = {
@@ -66,3 +80,6 @@ export type SettingsFormValues = {
 };
 
 export const NARROW_LAYOUT_MAX_WIDTH = 1024;
+
+/** Dimmed content stays readable. Tune in-browser inside 0.45–0.65. */
+export const MARKED_CONTENT_OPACITY = 0.55;

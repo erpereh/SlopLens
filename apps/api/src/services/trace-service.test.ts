@@ -45,8 +45,8 @@ describe("trace service", () => {
           mockSearchProvider([
             {
               url: "https://blog.example.com/story",
-              title: "Story",
-              snippet: "Background context",
+              title: "Public report background",
+              snippet: "A verifiable claim about a public report.",
             },
           ]),
         requireEmbedding: async () => {
@@ -67,8 +67,18 @@ describe("trace service", () => {
       runtime: mockRuntime({
         requireSearch: async () =>
           mockSearchProvider([
-            { url: "https://blog.example.com/copy", title: "Copy", publishedAt: "2024-06-01" },
-            { url: "https://www.who.int/news", title: "WHO notice", publishedAt: "2023-01-01" },
+            {
+              url: "https://blog.example.com/copy",
+              title: "Blog copy of the public report",
+              snippet: "A later write-up of the public report.",
+              publishedAt: "2024-06-01",
+            },
+            {
+              url: "https://www.who.int/news",
+              title: "WHO public report",
+              snippet: "The public report was issued by the agency.",
+              publishedAt: "2023-01-01",
+            },
           ]),
         requireEmbedding: async () => {
           throw new Error("skip related");
@@ -79,6 +89,11 @@ describe("trace service", () => {
     const result = await service.trace({ content: sampleContent });
     expect(result.status).toBe("ok");
     expect(result.graph.origin?.url).toBe("https://www.who.int/news");
+    expect(result.possibleOrigin?.url).toBe("https://www.who.int/news");
+    expect(result.possibleOrigin?.confidence).toBe("medium");
+    expect(result.possibleOrigin?.whyThisMayBeTheOrigin).toMatch(/heuristic|not proof/i);
+    expect(result.uncertainty).toMatch(/not a confirmed origin/i);
     expect(result.evidence.length).toBeGreaterThan(0);
+    expect(result.evidence[0]?.summary.length).toBeLessThanOrEqual(240);
   });
 });

@@ -103,4 +103,13 @@ export const test = base.extend<Fixtures>({
   },
 });
 
+export async function openExtensionPopup(context: BrowserContext, page: Page): Promise<void> {
+  let [worker] = context.serviceWorkers();
+  if (!worker) {
+    worker = await context.waitForEvent("serviceworker", { timeout: 20_000 });
+  }
+  const extensionId = new URL(worker.url()).host;
+  await page.goto(`chrome-extension://${extensionId}/popup.html`);
+}
+
 export { expect } from "@playwright/test";

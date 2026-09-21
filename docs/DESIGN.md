@@ -24,19 +24,19 @@ La interfaz debe priorizar información y contexto sobre decoración.
 ## Estado actual de la UI
 
 - Kit beUI público en `packages/ui`, montado en la extensión dentro de `sloplens-root` (Shadow DOM).
-- Superficies: `SlopLensUiRoot` → `SlopLensShell` (chip/badge compacto por defecto + panel/drawer bajo demanda con tabs Analyze · Verify · Trace · Sources · Related).
+- Superficies: `SlopLensUiRoot` → `SlopLensShell` (chip compacto `Slop · XX%` + drawer de detalle con tabs Analyze · Verify · Trace).
 - Options usa `SlopLensSettingsForm`; las keys se envían al API y no se persisten en la extensión.
+- El popup (`SlopLensPopupControl`) es un centro de control compacto: backend, Auto Analyze, dim, sello, umbral, tema, idioma, resumen de providers y CTA a Options. No incluye el formulario de API keys.
 - En Shadow DOM el control de tema es `SlopLensThemeToggleButton` (el Theme Toggle de beUI opera sobre `document.documentElement` y no sirve aislado).
-- Sustitutos locales porque el registry público devolvió 404: `button-base`, `number-ticker`, `agent-progress`. El resto del kit se instaló desde `@beui`.
-- i18n en/es. Light / dark / system persistido en `chrome.storage.local`.
-- Viewport estrecho (≤1024): el detalle pasa a drawer.
-- El overlay compacto muestra loading/error de Analyze (no un vacío falso). Primary source y similares solo aparecen cuando Verify/Related han corrido.
+- Sustitutos locales porque el registry público devolvió 404: `button-base`, `number-ticker`, `agent-progress`. El resto del kit se instaló desde `@beui` (incluidos `range-slider` y `bouncy-accordion`).
+- i18n en/es. Light / dark / system persistido en `chrome.storage.local`. Preferencias de feed (auto analyze, dim, stamp, umbral) también en `chrome.storage.local`.
+- El detalle del overlay se abre siempre como drawer (`forceDrawer`) para no competir con el layout de X/YouTube.
+- El overlay compacto muestra loading/error de Analyze (no un vacío falso). Sources viven dentro de Verify; Related dentro de Trace.
 - Verify muestra una señal de evidencia (`Backed by sources` / `Unverified` / etc.), nunca un veredicto absoluto.
-- El panel de detalle en viewport ancho es un diálogo no modal (`aria-modal=false`) para no bloquear la página; a ≤1024 usa drawer.
 - El drawer del overlay no bloquea el scroll de la página anfitriona y usa un scrim ligero (`lightBackdrop`) para no atrapar la atención en el host.
-- El chip compacto muestra una sola señal resumida y accesos rápidos Analyze · Verify · Trace; las métricas y el resumen “qué estás viendo” viven en el panel expandido.
-- El chip compacto (señal, Details y atajos) lleva su propio `bg-card`, para que las etiquetas se lean sobre fondos oscuros del host y no queden como pastillas vacías.
-- `sloplens-root` se limita a ~20rem de ancho para no empujar el layout del host.
+- El chip compacto muestra `Slop · XX%` (accesible: `Slop signal · XX%`) y abre el detalle al clic. No hay atajos Analyze/Verify/Trace en el chip.
+- `sloplens-root` se limita a ~16rem de ancho para no empujar el layout del host.
+- El atenuado de contenido marcado usa opacidad 0.55 (rango legible 0.45–0.65). Hover/focus/tap restauran 1 y bajan el sello SLOP a ~0.12. El sello es HTML/CSS sobre el host, `pointer-events: none`, con animación de stamp y `prefers-reduced-motion`.
 
 No existe `apps/web` ni dashboard.
 
@@ -328,9 +328,9 @@ Para:
 Analyze
 Verify
 Trace
-Sources
-Related
 ```
+
+Sources no es un tab: se listan dentro de Verify. Related no es un tab: se listan dentro de Trace (accordion).
 
 ### Drawer
 

@@ -73,4 +73,21 @@ export const xPlatformAdapter: PlatformAdapter = {
       },
     };
   },
+  findDimmableRegions(host: HTMLElement): HTMLElement[] {
+    return findXDimmableRegions(host);
+  },
 };
+
+export function findXDimmableRegions(host: HTMLElement): HTMLElement[] {
+  const selectors = [
+    X_SELECTORS.tweetText,
+    '[data-testid="tweetPhoto"]',
+    '[data-testid="videoPlayer"]',
+    '[data-testid="card.wrapper"]',
+  ];
+  return selectors.flatMap((selector) =>
+    Array.from(host.querySelectorAll<HTMLElement>(selector)).filter((node) => {
+      return !node.closest(X_SELECTORS.userName) && !node.closest('[role="group"]');
+    }),
+  );
+}

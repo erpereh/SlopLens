@@ -148,6 +148,16 @@ export const traceNodeSchema = z
   })
   .strict();
 
+export const traceOriginCandidateSchema = z
+  .object({
+    url: z.string().url(),
+    title: z.string().optional(),
+    publishedAt: z.string().optional(),
+    whyThisMayBeTheOrigin: z.string().min(1),
+    confidence: z.enum(["low", "medium"]),
+  })
+  .strict();
+
 export const traceResponseSchema = z
   .object({
     status: z.enum(["ok", "insufficient_evidence"]),
@@ -158,6 +168,10 @@ export const traceResponseSchema = z
         derivations: z.array(traceNodeSchema),
       })
       .strict(),
+    possibleOrigin: traceOriginCandidateSchema.optional(),
+    relatedVersions: z.array(traceNodeSchema).optional(),
+    possibleDerivatives: z.array(traceNodeSchema).optional(),
+    uncertainty: z.string().min(1).optional(),
     evidence: z.array(
       z
         .object({

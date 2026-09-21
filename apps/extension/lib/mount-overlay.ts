@@ -6,7 +6,9 @@ import type { ContentScriptContext } from "wxt/utils/content-script-context";
 import { createShadowRootUi } from "wxt/utils/content-script-ui/shadow-root";
 
 import { ContentOverlay } from "../components/ContentOverlay";
+import type { createAnalyzeScheduler } from "./analyze-scheduler";
 import { hashContentKey } from "./content-key";
+import type { FeedPreferences } from "./feed-preferences";
 import type { Locale } from "./i18n";
 import { OverlayHostRegistry } from "./overlay-registry";
 import type { ScanTarget } from "./scan-targets";
@@ -20,6 +22,7 @@ export type OverlayUiHandle = {
 type MountedRecord = {
   ui: OverlayUiHandle;
   root: Root;
+  host: HTMLElement;
   contentKey: string;
   content: NormalizedContent;
 };
@@ -28,6 +31,8 @@ export interface OverlayRuntimeState {
   locale: Locale;
   themePreference: ThemePreference;
   reducedMotion: boolean;
+  feedPreferences: FeedPreferences;
+  scheduler: ReturnType<typeof createAnalyzeScheduler>;
 }
 
 export class OverlayMountManager {
@@ -73,7 +78,7 @@ export class OverlayMountManager {
 
     const existing = this.mounted.get(target.host);
     if (existing?.contentKey === contentKey) {
-      this.render(existing.root, existing.content, runtime);
+      this.render(existing.root, existing.host, existing.content, runtime);
       return;
     }
 
@@ -107,13 +112,21 @@ export class OverlayMountManager {
     return adapter.extract(target.host);
   }
 
-  private render(root: Root, content: NormalizedContent, runtime: OverlayRuntimeState): void {
+  private render(
+    root: Root,
+    host: HTMLElement,
+    content: NormalizedContent,
+    runtime: OverlayRuntimeState,
+  ): void {
     root.render(
       React.createElement(ContentOverlay, {
         content,
+        host,
         locale: runtime.locale,
         themePreference: runtime.themePreference,
         reducedMotion: runtime.reducedMotion,
+        feedPreferences: runtime.feedPreferences,
+        scheduler: runtime.scheduler,
         onThemePreferenceChange: (next) => {
           void writeThemePreference(next);
         },
@@ -138,11 +151,11 @@ export class OverlayMountManager {
         const rootNode = container.getRootNode();
         if (rootNode instanceof ShadowRoot && rootNode.host instanceof HTMLElement) {
           rootNode.host.style.display = "block";
-          rootNode.host.style.maxWidth = "20rem";
+          rootNode.host.style.maxWidth = "16rem";
           rootNode.host.style.marginBlock = "0.5rem";
         }
         reactRoot = createRoot(container);
-        this.render(reactRoot, content, runtime);
+        this.render(reactRoot, host, content, runtime);
         return { root: reactRoot };
       },
       onRemove: (mounted) => {
@@ -163,6 +176,7 @@ export class OverlayMountManager {
         },
       },
       root: reactRoot,
+      host,
       contentKey,
       content,
     };

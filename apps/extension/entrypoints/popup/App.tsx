@@ -1,21 +1,38 @@
+import { PROVIDER_CAPABILITIES } from "@sloplens/config/browser";
+import {
+  type PopupFeedPreferences,
+  type PopupHealth,
+  type PopupProviderRow,
+  SlopLensPopupControl,
+  SlopLensUiRoot,
+} from "@sloplens/ui";
 import { useCallback, useEffect, useState } from "react";
 
 import { createExtensionApiClient } from "../../lib/api-client";
-import { LOCALE_STORAGE_KEY, type Locale, resolveLocale, translate } from "../../lib/i18n";
+import {
+  DEFAULT_FEED_PREFERENCES,
+  type FeedPreferences,
+  readFeedPreferences,
+  writeFeedPreferences,
+} from "../../lib/feed-preferences";
+import { LOCALE_STORAGE_KEY, type Locale, resolveLocale } from "../../lib/i18n";
 import { readThemePreference, type ThemePreference, writeThemePreference } from "../../lib/theme";
-
-type HealthState = "checking" | "ok" | "down";
 
 export function PopupApp() {
   const [locale, setLocale] = useState<Locale>("en");
-  const [theme, setTheme] = useState<ThemePreference>("system");
-  const [health, setHealth] = useState<HealthState>("checking");
+  const [themePreference, setThemePreference] = useState<ThemePreference>("system");
+  const [health, setHealth] = useState<PopupHealth>("checking");
+  const [feed, setFeed] = useState<FeedPreferences>(DEFAULT_FEED_PREFERENCES);
+  const [providers, setProviders] = useState<PopupProviderRow[]>(
+    PROVIDER_CAPABILITIES.map((capability) => ({ capability, configured: false })),
+  );
 
   useEffect(() => {
     void chrome.storage.local.get([LOCALE_STORAGE_KEY]).then((stored) => {
       setLocale(resolveLocale(stored[LOCALE_STORAGE_KEY] as string | undefined));
     });
-    void readThemePreference().then(setTheme);
+    void readThemePreference().then(setThemePreference);
+    void readFeedPreferences().then(setFeed);
   }, []);
 
   const checkHealth = useCallback(async () => {
@@ -29,79 +46,70 @@ export function PopupApp() {
     }
   }, []);
 
+  const loadProviders = useCallback(async () => {
+    try {
+      const client = createExtensionApiClient();
+      const [settings, catalog] = await Promise.all([client.getSettings(), client.getProviders()]);
+      const configured = new Set(
+        settings.secrets.filter((secret) => secret.configured).map((secret) => secret.capability),
+      );
+      const fromCatalog = catalog.capabilities.map((entry) => ({
+        capability: entry.capability,
+        configured:
+          configured.has(entry.capability) ||
+          entry.providers.some((provider) => provider.configured),
+      }));
+      setProviders(
+        fromCatalog.length > 0
+          ? fromCatalog
+          : PROVIDER_CAPABILITIES.map((capability) => ({
+              capability,
+              configured: configured.has(capability),
+            })),
+      );
+    } catch {
+      setProviders(PROVIDER_CAPABILITIES.map((capability) => ({ capability, configured: false })));
+    }
+  }, []);
+
   useEffect(() => {
     void checkHealth();
-  }, [checkHealth]);
+    void loadProviders();
+  }, [checkHealth, loadProviders]);
 
-  const onThemeChange = async (next: ThemePreference) => {
-    setTheme(next);
-    await writeThemePreference(next);
+  const onFeedChange = async (next: PopupFeedPreferences) => {
+    const parsed = {
+      autoAnalyze: next.autoAnalyze,
+      dimHighSlop: next.dimHighSlop,
+      showSlopStamp: next.showSlopStamp,
+      slopThreshold: next.slopThreshold,
+    };
+    setFeed(parsed);
+    await writeFeedPreferences(parsed);
   };
-
-  const onLocaleChange = async (next: Locale) => {
-    setLocale(next);
-    await chrome.storage.local.set({ [LOCALE_STORAGE_KEY]: next });
-  };
-
-  const healthLabel =
-    health === "checking"
-      ? translate(locale, "popupHealthChecking")
-      : health === "ok"
-        ? translate(locale, "popupHealthOk")
-        : translate(locale, "popupHealthDown");
 
   return (
-    <main className="popup">
-      <h1 className="popup__title">{translate(locale, "popupTitle")}</h1>
-
-      <section className="popup__section">
-        <div className="popup__row">
-          <span>{translate(locale, "popupHealth")}</span>
-          <strong data-health={health}>{healthLabel}</strong>
-        </div>
-        <button type="button" className="popup__button" onClick={() => void checkHealth()}>
-          {translate(locale, "popupHealthRefresh")}
-        </button>
-      </section>
-
-      <section className="popup__section">
-        <label className="popup__label" htmlFor="theme-select">
-          {translate(locale, "popupTheme")}
-        </label>
-        <select
-          id="theme-select"
-          className="popup__select"
-          value={theme}
-          onChange={(event) => void onThemeChange(event.target.value as ThemePreference)}
-        >
-          <option value="light">{translate(locale, "themeLight")}</option>
-          <option value="dark">{translate(locale, "themeDark")}</option>
-          <option value="system">{translate(locale, "themeSystem")}</option>
-        </select>
-      </section>
-
-      <section className="popup__section">
-        <label className="popup__label" htmlFor="locale-select">
-          {translate(locale, "language")}
-        </label>
-        <select
-          id="locale-select"
-          className="popup__select"
-          value={locale}
-          onChange={(event) => void onLocaleChange(event.target.value as Locale)}
-        >
-          <option value="en">{translate(locale, "langEn")}</option>
-          <option value="es">{translate(locale, "langEs")}</option>
-        </select>
-      </section>
-
-      <button
-        type="button"
-        className="popup__button popup__button--primary"
-        onClick={() => chrome.runtime.openOptionsPage()}
-      >
-        {translate(locale, "popupOpenOptions")}
-      </button>
-    </main>
+    <SlopLensUiRoot
+      locale={locale}
+      themePreference={themePreference}
+      onThemePreferenceChange={async (next) => {
+        setThemePreference(next);
+        await writeThemePreference(next);
+      }}
+    >
+      <SlopLensPopupControl
+        health={health}
+        onRefreshHealth={() => void checkHealth()}
+        feed={feed}
+        onFeedChange={(next) => void onFeedChange(next)}
+        locale={locale}
+        onLocaleChange={async (next) => {
+          setLocale(next);
+          await chrome.storage.local.set({ [LOCALE_STORAGE_KEY]: next });
+        }}
+        providers={providers}
+        onManageProviders={() => chrome.runtime.openOptionsPage()}
+      />
+    </SlopLensUiRoot>
   );
 }

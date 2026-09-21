@@ -2,7 +2,10 @@ import type { ErrorCode } from "@sloplens/shared";
 import { createContext, type ReactNode, useContext, useMemo } from "react";
 import { type Locale, type MessageKey, t } from "./messages";
 
-export type Translate = (key: MessageKey | `error.${ErrorCode}`) => string;
+export type Translate = (
+  key: MessageKey | `error.${ErrorCode}`,
+  vars?: Record<string, string | number>,
+) => string;
 
 const I18nContext = createContext<{ locale: Locale; translate: Translate } | null>(null);
 
@@ -16,7 +19,8 @@ export function SlopLensI18nProvider({
   const value = useMemo(
     () => ({
       locale,
-      translate: (key: MessageKey | `error.${ErrorCode}`) => t(locale, key),
+      translate: (key: MessageKey | `error.${ErrorCode}`, vars?: Record<string, string | number>) =>
+        t(locale, key, vars),
     }),
     [locale],
   );

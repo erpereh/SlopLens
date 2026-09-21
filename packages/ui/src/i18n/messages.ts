@@ -8,6 +8,7 @@ export type MessageKey =
   | "overlay.close"
   | "overlay.expand"
   | "overlay.loading"
+  | "overlay.analyze"
   | "analyze.look"
   | "analyze.look.withClaim"
   | "contentType.news"
@@ -30,6 +31,10 @@ export type MessageKey =
   | "tab.sources"
   | "tab.related"
   | "signal.aiSlop"
+  | "signal.spam"
+  | "signal.slop.label"
+  | "signal.slop.accessible"
+  | "signal.notVerdict"
   | "signal.clickbait"
   | "signal.engagementBait"
   | "signal.claim"
@@ -61,6 +66,31 @@ export type MessageKey =
   | "empty.trace.insufficient"
   | "empty.sources"
   | "empty.related"
+  | "trace.possibleOrigin"
+  | "trace.noOrigin"
+  | "trace.evidence"
+  | "trace.derivatives"
+  | "trace.noDerivatives"
+  | "trace.uncertainty"
+  | "trace.confidence.low"
+  | "trace.confidence.medium"
+  | "popup.feed"
+  | "popup.autoAnalyze"
+  | "popup.dimHighSlop"
+  | "popup.showStamp"
+  | "popup.threshold"
+  | "popup.appearance"
+  | "popup.providers"
+  | "popup.manageProviders"
+  | "popup.configured"
+  | "popup.notConfigured"
+  | "popup.backend"
+  | "popup.online"
+  | "popup.offline"
+  | "popup.checking"
+  | "popup.language"
+  | "popup.langEn"
+  | "popup.langEs"
   | "settings.title"
   | "settings.capability"
   | "settings.provider"
@@ -83,6 +113,7 @@ const en: Record<MessageKey | ErrorMessageKey, string> = {
   "overlay.close": "Close",
   "overlay.expand": "Details",
   "overlay.loading": "Analyzing…",
+  "overlay.analyze": "Analyze",
   "analyze.look": "You're looking at {type}.",
   "analyze.look.withClaim": "You're looking at {type} with a verifiable claim.",
   "contentType.news": "news-style content",
@@ -105,6 +136,10 @@ const en: Record<MessageKey | ErrorMessageKey, string> = {
   "tab.sources": "Sources",
   "tab.related": "Related",
   "signal.aiSlop": "AI / slop signal",
+  "signal.spam": "Spam signal",
+  "signal.slop.label": "Slop",
+  "signal.slop.accessible": "Slop signal · {percent}%",
+  "signal.notVerdict": "Signal, not a verdict.",
   "signal.clickbait": "Clickbait signal",
   "signal.engagementBait": "Engagement bait",
   "signal.claim": "Verifiable claim",
@@ -138,6 +173,31 @@ const en: Record<MessageKey | ErrorMessageKey, string> = {
     "Trace finished, but there wasn't enough evidence to suggest an origin.",
   "empty.sources": "No sources to show yet.",
   "empty.related": "No related items yet.",
+  "trace.possibleOrigin": "Possible origin",
+  "trace.noOrigin": "No earlier source candidate with enough evidence.",
+  "trace.evidence": "Evidence",
+  "trace.derivatives": "Possible derivatives",
+  "trace.noDerivatives": "No derivative versions found.",
+  "trace.uncertainty": "Uncertainty",
+  "trace.confidence.low": "Low confidence",
+  "trace.confidence.medium": "Medium confidence",
+  "popup.feed": "Feed behavior",
+  "popup.autoAnalyze": "Auto Analyze",
+  "popup.dimHighSlop": "Dim high-slop content",
+  "popup.showStamp": "Show Slop stamp",
+  "popup.threshold": "Slop threshold",
+  "popup.appearance": "Appearance",
+  "popup.providers": "Providers",
+  "popup.manageProviders": "Manage providers",
+  "popup.configured": "Configured",
+  "popup.notConfigured": "Not configured",
+  "popup.backend": "Backend",
+  "popup.online": "Online",
+  "popup.offline": "Offline",
+  "popup.checking": "Checking…",
+  "popup.language": "Language",
+  "popup.langEn": "English",
+  "popup.langEs": "Spanish",
   "settings.title": "Provider settings",
   "settings.capability": "Capability",
   "settings.provider": "Provider",
@@ -166,6 +226,7 @@ const es: Record<MessageKey | ErrorMessageKey, string> = {
   "overlay.close": "Cerrar",
   "overlay.expand": "Detalle",
   "overlay.loading": "Analizando…",
+  "overlay.analyze": "Analizar",
   "analyze.look": "Estás viendo {type}.",
   "analyze.look.withClaim": "Estás viendo {type} con una afirmación verificable.",
   "contentType.news": "contenido tipo noticia",
@@ -188,6 +249,10 @@ const es: Record<MessageKey | ErrorMessageKey, string> = {
   "tab.sources": "Fuentes",
   "tab.related": "Relacionados",
   "signal.aiSlop": "Señal IA / slop",
+  "signal.spam": "Señal spam",
+  "signal.slop.label": "Slop",
+  "signal.slop.accessible": "Señal slop · {percent}%",
+  "signal.notVerdict": "Señal, no un veredicto.",
   "signal.clickbait": "Señal clickbait",
   "signal.engagementBait": "Cebo de engagement",
   "signal.claim": "Afirmación verificable",
@@ -221,6 +286,31 @@ const es: Record<MessageKey | ErrorMessageKey, string> = {
     "Rastrear terminó, pero no hubo evidencia suficiente para sugerir un origen.",
   "empty.sources": "Aún no hay fuentes.",
   "empty.related": "Aún no hay relacionados.",
+  "trace.possibleOrigin": "Posible origen",
+  "trace.noOrigin": "No hay un candidato anterior con evidencia suficiente.",
+  "trace.evidence": "Evidencia",
+  "trace.derivatives": "Posibles derivados",
+  "trace.noDerivatives": "No se encontraron versiones derivadas.",
+  "trace.uncertainty": "Incertidumbre",
+  "trace.confidence.low": "Confianza baja",
+  "trace.confidence.medium": "Confianza media",
+  "popup.feed": "Comportamiento del feed",
+  "popup.autoAnalyze": "Analizar automáticamente",
+  "popup.dimHighSlop": "Atenuar contenido high-slop",
+  "popup.showStamp": "Mostrar sello Slop",
+  "popup.threshold": "Umbral de slop",
+  "popup.appearance": "Apariencia",
+  "popup.providers": "Proveedores",
+  "popup.manageProviders": "Gestionar proveedores",
+  "popup.configured": "Configurado",
+  "popup.notConfigured": "Sin configurar",
+  "popup.backend": "Backend",
+  "popup.online": "En línea",
+  "popup.offline": "Desconectado",
+  "popup.checking": "Comprobando…",
+  "popup.language": "Idioma",
+  "popup.langEn": "Inglés",
+  "popup.langEs": "Español",
   "settings.title": "Ajustes de proveedores",
   "settings.capability": "Capacidad",
   "settings.provider": "Proveedor",

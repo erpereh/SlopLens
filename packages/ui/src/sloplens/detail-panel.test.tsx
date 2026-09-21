@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import { SlopLensI18nProvider } from "@/i18n/context";
@@ -32,8 +32,6 @@ describe("SlopLensDetailPanel", () => {
           analyzeState={success}
           verifyState={success}
           traceState={idle}
-          sourcesState={idle}
-          relatedState={idle}
           verify={{
             summary: "The claim is backed by the cited note.",
             stance: "supported",
@@ -58,8 +56,6 @@ describe("SlopLensDetailPanel", () => {
           analyzeState={success}
           verifyState={{ phase: "empty" }}
           traceState={idle}
-          sourcesState={idle}
-          relatedState={idle}
         />,
       ),
     );
@@ -74,28 +70,29 @@ describe("SlopLensDetailPanel", () => {
           open
           onOpenChange={() => undefined}
           asDrawer={false}
-          activeTab="related"
+          activeTab="trace"
           analyzeState={idle}
           verifyState={idle}
-          traceState={idle}
-          sourcesState={idle}
-          relatedState={success}
-          related={[
-            {
-              id: "r1",
-              title: "Unsafe",
-              url: "javascript:alert(1)",
-            },
-            {
-              id: "r2",
-              title: "Safe",
-              url: "https://example.com/article",
-            },
-          ]}
+          traceState={success}
+          trace={{
+            related: [
+              {
+                id: "r1",
+                title: "Unsafe",
+                url: "javascript:alert(1)",
+              },
+              {
+                id: "r2",
+                title: "Safe",
+                url: "https://example.com/article",
+              },
+            ],
+          }}
         />,
       ),
     );
 
+    fireEvent.click(screen.getByRole("button", { name: /^related$/i }));
     expect(screen.queryByRole("link", { name: "Unsafe" })).not.toBeInTheDocument();
     const safe = screen.getByRole("link", { name: "Safe" });
     expect(safe.getAttribute("href")).toBe("https://example.com/article");
