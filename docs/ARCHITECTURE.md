@@ -276,8 +276,8 @@ La extensión utilizará Manifest V3.
 
 - content scripts;
 - background/service worker;
-- popup mínimo (salud, Auto Analyze, umbral, tema, CTA dashboard);
-- dashboard/options a pestaña completa (Overview, Feed, Providers, Appearance, Diagnostics);
+- popup de controles de feed (salud, Auto Analyze, atenuar, sello, umbral, tema, CTA dashboard);
+- dashboard/options a pestaña completa (Resumen, X, YouTube, Ajustes);
 - side panel cuando sea útil.
 
 No crear superficies por defecto si no aportan valor.
@@ -369,6 +369,7 @@ Endpoints:
 ```text
 GET  /health
 GET  /metrics
+GET  /content
 GET  /providers
 GET  /settings
 PUT  /settings/providers
@@ -384,9 +385,18 @@ El cliente tipado vive en `packages/shared` (`createSlopLensApiClient`). La exte
 
 - GET, read-only, sin token de emparejamiento.
 - Responde siempre 200: si PostgreSQL/pgvector falla, `status` degradado/unavailable y conteos `null`.
-- Contrato: solo `status`, checks (`database`, `pgvector`), conteos agregados (`contentItems`, `cachedAnalyses`, `clusters`, `relations`) y `lastActivityAt`.
+- Contrato: solo `status`, checks (`database`, `pgvector`), conteos agregados (`contentItems`, `cachedAnalyses`, `clusters`, `relations`, `byPlatform.x`, `byPlatform.youtube`, `claims`, `averageSlop`) y `lastActivityAt`.
 - No devuelve `localToken`, API keys, URLs sensibles, texto de posts, hashes, SQL ni filas.
-- Un fallo de métricas no tumba `/health` ni el dashboard Overview.
+- Un fallo de métricas no tumba `/health` ni el dashboard Resumen.
+
+### `/content`
+
+- GET, read-only, sin token de emparejamiento. Misma confianza loopback que `/metrics`.
+- Query: `platform=x|youtube`, `q`, `sort=recent|slop`, `signal=claim|highSlop`, `limit` (máx. 50), `cursor`.
+- Lee `content_items` + último `content_analysis` + último `claims.claim_text`.
+- Cada fila devuelve autor, texto truncado, url, fechas, slop derivado con `deriveSlopSignal`, clickbait, engagement bait, flags de claim y thumbnail de YouTube reconstruido desde el video id. `@username` de X solo si la URL del status lo contiene.
+- No devuelve `content_hash`, API keys ni un veredicto de evidencia: Verify no persiste stance, solo el texto del claim. No hay campo de visión almacenado, así que la fila no inventa una descripción visual.
+- Si no hay base de datos, responde 200 con `items: []`. Un filtro de plataforma desconocido es 400.
 
 ### `/analyze`
 
@@ -893,7 +903,7 @@ Playwright con el **Chromium empaquetado** (`launchPersistentContext` + `--load-
 
 La extensión se construye primero (`apps/extension/.output/chrome-mv3`). Los tests usan páginas HTML de fixture que imitan un tweet de X (`article[data-testid=tweet]`) y un watch de YouTube; no dependen de X/YouTube en vivo.
 
-El API local se intercepta con `browserContext.route` (mock de Analyze/Verify/Related/Trace/Health/Metrics). El fetch lo hace el **service worker**, no el document. Los tests auditan `request.serviceWorker()`: page→localhost = 0; SW→localhost = rutas esperadas. Analyze se dispara al montar el overlay (salvo Auto Analyze desactivado) y el mock cubre ese POST. Un modo offline aborta `http://127.0.0.1:3001` para el error `backend_unavailable`. Playwright cubre el chip `Slop signal`, el panel anclado de 3 tabs, Sources anidadas en Verify, Related en Trace, el sello/dimming, tema/reduced-motion, el popup mínimo y el dashboard.
+El API local se intercepta con `browserContext.route` (mock de Analyze/Verify/Related/Trace/Health/Metrics). El fetch lo hace el **service worker**, no el document. Los tests auditan `request.serviceWorker()`: page→localhost = 0; SW→localhost = rutas esperadas. Analyze se dispara al montar el overlay (salvo Auto Analyze desactivado) y el mock cubre ese POST. Un modo offline aborta `http://127.0.0.1:3001` para el error `backend_unavailable`. Playwright cubre el chip `Slop signal`, el panel anclado de 3 tabs, Sources anidadas en Verify, Related en Trace, el sello/dimming, tema/reduced-motion, el popup de feed y el dashboard (Resumen, X, YouTube, Ajustes).
 
 Comando: `pnpm test:e2e` (requiere `pnpm exec playwright install chromium` la primera vez).
 

@@ -75,7 +75,14 @@ describe("SlopLensCompactSurface", () => {
         />,
       ),
     );
-    expect(screen.getByRole("button", { name: /slop signal · 82%/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /slop signal · 82%/i })).toHaveAttribute(
+      "data-state",
+      "closed",
+    );
+    expect(screen.getByRole("button", { name: /slop signal · 82%/i })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
     expect(screen.queryByRole("button", { name: /^verify$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^trace$/i })).not.toBeInTheDocument();
   });

@@ -249,7 +249,7 @@ export function ContentOverlay({
   }, [themePreference]);
 
   const openSettings = () => {
-    void writeDashboardSection("providers").then(() => openDashboardPage());
+    void writeDashboardSection("settings").then(() => openDashboardPage());
   };
 
   return (

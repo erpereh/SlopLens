@@ -20,7 +20,11 @@ export { SlopLensI18nProvider, useSlopLensI18n } from "./i18n/context";
 export { type Locale, messages, t } from "./i18n/messages";
 export { compactSignalLabel, formatAnalyzeSummary } from "./sloplens/analyze-summary";
 export { SlopLensCompactSurface } from "./sloplens/compact-surface";
-export { type DashboardSection, SlopLensDashboardApp } from "./sloplens/dashboard-app";
+export {
+  type DashboardHistory,
+  type DashboardSection,
+  SlopLensDashboardApp,
+} from "./sloplens/dashboard-app";
 export { DashboardCard } from "./sloplens/dashboard-card";
 export { SlopLensDetailPanel } from "./sloplens/detail-panel";
 export { FeatureErrorPanel, FeatureStatePanel } from "./sloplens/feature-state";

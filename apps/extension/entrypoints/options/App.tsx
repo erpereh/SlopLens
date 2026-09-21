@@ -1,18 +1,21 @@
 import { PROVIDER_CAPABILITIES, type ProviderCapability } from "@sloplens/config/browser";
-import type {
-  HealthResponse,
-  MetricsResponse,
-  ProvidersResponse,
-  SettingsResponse,
+import {
+  type ContentListQuery,
+  EMPTY_METRICS_COUNTS,
+  type HealthResponse,
+  type MetricsResponse,
+  type ProvidersResponse,
+  type SettingsResponse,
 } from "@sloplens/shared";
 import {
+  type DashboardHistory,
   type DashboardSection,
   type SettingsFormSubmitPayload,
   type SettingsFormValues,
   SlopLensDashboardApp,
   SlopLensUiRoot,
 } from "@sloplens/ui";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { createExtensionApiClient } from "../../lib/api-client";
 import {
@@ -21,12 +24,6 @@ import {
   readDashboardSection,
   writeDashboardSection,
 } from "../../lib/dashboard";
-import {
-  DEFAULT_FEED_PREFERENCES,
-  type FeedPreferences,
-  readFeedPreferences,
-  writeFeedPreferences,
-} from "../../lib/feed-preferences";
 import { LOCALE_STORAGE_KEY, type Locale, resolveLocale } from "../../lib/i18n";
 import {
   type MotionPreference,
@@ -40,12 +37,7 @@ import {
 const unavailableMetrics: MetricsResponse = {
   status: "unavailable",
   checks: { database: false, pgvector: false },
-  counts: {
-    contentItems: null,
-    cachedAnalyses: null,
-    clusters: null,
-    relations: null,
-  },
+  counts: EMPTY_METRICS_COUNTS,
   lastActivityAt: null,
 };
 
@@ -57,7 +49,13 @@ export function OptionsApp() {
   const [version, setVersion] = useState("0.0.0");
   const [health, setHealth] = useState<HealthResponse["status"] | "checking">("checking");
   const [metrics, setMetrics] = useState<MetricsResponse | null>(unavailableMetrics);
-  const [feed, setFeed] = useState<FeedPreferences>(DEFAULT_FEED_PREFERENCES);
+  const [history, setHistory] = useState<DashboardHistory>({
+    items: [],
+    nextCursor: null,
+    phase: "loading",
+  });
+  const historyQuery = useRef<ContentListQuery>({ limit: 8, sort: "recent" });
+  const historyRequest = useRef(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formValues, setFormValues] = useState<SettingsFormValues | null>(null);
@@ -71,7 +69,6 @@ export function OptionsApp() {
     });
     void readThemePreference().then(setThemePreference);
     void readMotionPreference().then(setMotionPreference);
-    void readFeedPreferences().then(setFeed);
     void readDashboardSection().then(setSection);
     setVersion(chrome.runtime.getManifest().version);
   }, []);
@@ -125,6 +122,52 @@ export function OptionsApp() {
     void loadSettings();
   }, [loadHealthAndMetrics, loadSettings]);
 
+  const onHistoryQueryChange = useCallback(async (query: ContentListQuery) => {
+    const requestId = ++historyRequest.current;
+    historyQuery.current = query;
+    setHistory((prev) => ({ ...prev, phase: "loading" }));
+    try {
+      const page = await createExtensionApiClient().listContent(query);
+      if (requestId !== historyRequest.current) {
+        return;
+      }
+      setHistory({ items: page.items, nextCursor: page.nextCursor, phase: "ready" });
+    } catch {
+      if (requestId !== historyRequest.current) {
+        return;
+      }
+      setHistory({ items: [], nextCursor: null, phase: "error" });
+    }
+  }, []);
+
+  const onHistoryLoadMore = useCallback(async () => {
+    const cursor = history.nextCursor;
+    if (!cursor) {
+      return;
+    }
+    const requestId = ++historyRequest.current;
+    setHistory((prev) => ({ ...prev, phase: "loading" }));
+    try {
+      const page = await createExtensionApiClient().listContent({
+        ...historyQuery.current,
+        cursor,
+      });
+      if (requestId !== historyRequest.current) {
+        return;
+      }
+      setHistory((prev) => ({
+        items: [...prev.items, ...page.items],
+        nextCursor: page.nextCursor,
+        phase: "ready",
+      }));
+    } catch {
+      if (requestId !== historyRequest.current) {
+        return;
+      }
+      setHistory((prev) => ({ ...prev, phase: "error" }));
+    }
+  }, [history.nextCursor]);
+
   const onSubmitCapability = async (payload: SettingsFormSubmitPayload) => {
     const client = createExtensionApiClient();
     const next = await client.putProviderSelections({
@@ -175,11 +218,9 @@ export function OptionsApp() {
         version={version}
         health={health}
         metrics={metrics}
-        feed={feed}
-        onFeedChange={(next) => {
-          setFeed(next);
-          void writeFeedPreferences(next);
-        }}
+        history={history}
+        onHistoryQueryChange={onHistoryQueryChange}
+        onHistoryLoadMore={onHistoryLoadMore}
         locale={locale}
         onLocaleChange={async (next) => {
           setLocale(next);

@@ -4,6 +4,7 @@ export type Locale = "en" | "es";
 
 export type MessageKey =
   | "app.name"
+  | "app.tagline"
   | "overlay.open"
   | "overlay.close"
   | "overlay.expand"
@@ -117,6 +118,33 @@ export type MessageKey =
   | "dashboard.theme"
   | "dashboard.language"
   | "dashboard.noPaidPings"
+  | "dashboard.x"
+  | "dashboard.youtube"
+  | "dashboard.settings"
+  | "dashboard.xAnalyzed"
+  | "dashboard.youtubeAnalyzed"
+  | "dashboard.averageSlop"
+  | "dashboard.verifications"
+  | "dashboard.recentHistory"
+  | "history.empty"
+  | "history.error"
+  | "history.openOriginal"
+  | "history.search"
+  | "history.sort.recent"
+  | "history.sort.slop"
+  | "history.signal.all"
+  | "history.signal.claim"
+  | "history.signal.highSlop"
+  | "history.loadMore"
+  | "history.needsVerification"
+  | "history.noClaim"
+  | "settings.capability.decision"
+  | "settings.capability.embedding"
+  | "settings.capability.search"
+  | "settings.capability.vision"
+  | "settings.capability.reasoning"
+  | "settings.appearance"
+  | "settings.providers"
   | "motion.label"
   | "motion.system"
   | "motion.reduce"
@@ -138,6 +166,7 @@ type ErrorMessageKey = `error.${ErrorCode}`;
 
 const en: Record<MessageKey | ErrorMessageKey, string> = {
   "app.name": "SlopLens",
+  "app.tagline": "See beyond the slop.",
   "overlay.open": "Open",
   "overlay.close": "Close",
   "overlay.expand": "Details",
@@ -254,6 +283,33 @@ const en: Record<MessageKey | ErrorMessageKey, string> = {
   "dashboard.language": "Language",
   "dashboard.noPaidPings":
     "Diagnostics only check the local backend. Provider adapters are not pinged.",
+  "dashboard.x": "X",
+  "dashboard.youtube": "YouTube",
+  "dashboard.settings": "Settings",
+  "dashboard.xAnalyzed": "X analyzed",
+  "dashboard.youtubeAnalyzed": "YouTube analyzed",
+  "dashboard.averageSlop": "Average slop",
+  "dashboard.verifications": "Verifications",
+  "dashboard.recentHistory": "Recent analyses",
+  "history.empty": "Nothing analyzed yet.",
+  "history.error": "Could not load analyzed content.",
+  "history.openOriginal": "Open original",
+  "history.search": "Search author or text",
+  "history.sort.recent": "Recent",
+  "history.sort.slop": "Highest slop",
+  "history.signal.all": "All signals",
+  "history.signal.claim": "Has a claim",
+  "history.signal.highSlop": "High slop",
+  "history.loadMore": "Load more",
+  "history.needsVerification": "Needs verification",
+  "history.noClaim": "No claim stored",
+  "settings.capability.decision": "Decision",
+  "settings.capability.embedding": "Embedding",
+  "settings.capability.search": "Search",
+  "settings.capability.vision": "Vision",
+  "settings.capability.reasoning": "Reasoning",
+  "settings.appearance": "Appearance",
+  "settings.providers": "Providers",
   "motion.label": "Motion",
   "motion.system": "Match system",
   "motion.reduce": "Reduce",
@@ -281,6 +337,7 @@ const en: Record<MessageKey | ErrorMessageKey, string> = {
 
 const es: Record<MessageKey | ErrorMessageKey, string> = {
   "app.name": "SlopLens",
+  "app.tagline": "Ver más allá del slop.",
   "overlay.open": "Abrir",
   "overlay.close": "Cerrar",
   "overlay.expand": "Detalle",
@@ -370,7 +427,7 @@ const es: Record<MessageKey | ErrorMessageKey, string> = {
   "popup.language": "Idioma",
   "popup.langEn": "Inglés",
   "popup.langEs": "Español",
-  "popup.openDashboard": "Abrir panel",
+  "popup.openDashboard": "Abrir dashboard",
   "popup.thresholdSummary": "Umbral de slop {percent}%",
   "dashboard.overview": "Resumen",
   "dashboard.feed": "Feed",
@@ -397,6 +454,33 @@ const es: Record<MessageKey | ErrorMessageKey, string> = {
   "dashboard.language": "Idioma",
   "dashboard.noPaidPings":
     "El diagnóstico solo comprueba el backend local. No se hacen pings de pago a proveedores.",
+  "dashboard.x": "X",
+  "dashboard.youtube": "YouTube",
+  "dashboard.settings": "Ajustes",
+  "dashboard.xAnalyzed": "X analizados",
+  "dashboard.youtubeAnalyzed": "YouTube analizados",
+  "dashboard.averageSlop": "Slop medio",
+  "dashboard.verifications": "Verificaciones",
+  "dashboard.recentHistory": "Análisis recientes",
+  "history.empty": "Todavía no hay contenido analizado.",
+  "history.error": "No se pudo cargar el contenido analizado.",
+  "history.openOriginal": "Abrir original",
+  "history.search": "Buscar autor o texto",
+  "history.sort.recent": "Recientes",
+  "history.sort.slop": "Mayor slop",
+  "history.signal.all": "Todas las señales",
+  "history.signal.claim": "Con afirmación",
+  "history.signal.highSlop": "Slop alto",
+  "history.loadMore": "Cargar más",
+  "history.needsVerification": "Necesita verificación",
+  "history.noClaim": "Sin afirmación guardada",
+  "settings.capability.decision": "Decisión",
+  "settings.capability.embedding": "Embedding",
+  "settings.capability.search": "Búsqueda",
+  "settings.capability.vision": "Visión",
+  "settings.capability.reasoning": "Razonamiento",
+  "settings.appearance": "Apariencia",
+  "settings.providers": "Proveedores",
   "motion.label": "Movimiento",
   "motion.system": "Seguir el sistema",
   "motion.reduce": "Reducir",

@@ -76,7 +76,7 @@ export function SlopLensAnchoredPanel({
             transition={reduce ? { duration: 0 } : SPRING_PANEL}
             style={{ transformOrigin: side === "top" ? "bottom left" : "top left" }}
             className={cn(
-              "absolute z-50 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-xl",
+              "absolute z-50 w-[min(20rem,calc(100vw-1.5rem))] overflow-x-hidden overflow-y-hidden rounded-lg border border-border bg-card text-card-foreground shadow-xl",
               side === "top" ? "bottom-[calc(100%+0.5rem)]" : "top-[calc(100%+0.5rem)]",
               className,
             )}

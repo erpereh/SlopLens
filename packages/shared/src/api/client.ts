@@ -6,6 +6,10 @@ import {
   type AnalyzeResponse,
   analyzeRequestSchema,
   analyzeResponseSchema,
+  type ContentListQuery,
+  type ContentListResponse,
+  contentListQuerySchema,
+  contentListResponseSchema,
   type HealthResponse,
   healthResponseSchema,
   type MetricsResponse,
@@ -56,6 +60,7 @@ export class SlopLensApiError extends Error {
 export interface SlopLensApiClient {
   health(): Promise<HealthResponse>;
   metrics(): Promise<MetricsResponse>;
+  listContent(query?: ContentListQuery): Promise<ContentListResponse>;
   getProviders(): Promise<ProvidersResponse>;
   getSettings(): Promise<SettingsResponse>;
   putProviderSelections(input: PutProviderSelectionsRequest): Promise<SettingsResponse>;
@@ -92,6 +97,8 @@ export function createSlopLensApiClient(options: SlopLensApiClientOptions): Slop
   return {
     health: () => call("health", healthResponseSchema),
     metrics: () => call("metrics", metricsResponseSchema),
+    listContent: (query) =>
+      call("listContent", contentListResponseSchema, contentListQuerySchema.parse(query ?? {})),
     getProviders: () => call("providers", providersResponseSchema),
     getSettings: () => call("getSettings", settingsResponseSchema),
     putProviderSelections: (input) =>

@@ -25,17 +25,23 @@ describe("SlopLensPopupControl", () => {
         <SlopLensPopupControl
           health="ok"
           onRefreshHealth={() => undefined}
-          autoAnalyze
-          onAutoAnalyzeChange={() => undefined}
-          thresholdPercent={70}
+          feed={{
+            autoAnalyze: true,
+            dimHighSlop: true,
+            showSlopStamp: false,
+            slopThreshold: 0.7,
+          }}
+          onFeedChange={() => undefined}
           onOpenDashboard={onOpenDashboard}
         />,
       ),
     );
 
     expect(screen.getByRole("switch", { name: /auto analyze/i })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: /dim high-slop/i })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: /show slop stamp/i })).toBeInTheDocument();
     expect(screen.getByText(/slop threshold 70%/i)).toBeInTheDocument();
-    expect(screen.queryByRole("switch", { name: /dim high-slop/i })).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/slop threshold/i)).toBeInTheDocument();
     expect(screen.queryByText(/language/i)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/api key/i)).not.toBeInTheDocument();
     screen.getByRole("button", { name: /open dashboard/i }).click();

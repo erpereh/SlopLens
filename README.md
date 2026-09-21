@@ -10,7 +10,7 @@ Acciones centrales:
 
 ## Estado
 
-MVP local en `main`: extensión WXT (X / YouTube) con chip `Slop · XX%`, sello/atenuado opcionales y panel Analyze · Verify · Trace; backend Hono; Supabase Local + pgvector (`vector(2048)` + HNSW `halfvec`); popup mínimo; dashboard de extensión (Overview / Feed / Providers / Appearance / Diagnostics) con SecretStore OS-first.
+MVP local en `main`: extensión WXT (X / YouTube) con chip `Slop · XX%`, sello/atenuado opcionales y panel Analyze · Verify · Trace; backend Hono; Supabase Local + pgvector (`vector(2048)` + HNSW `halfvec`); popup de controles del feed; dashboard de extensión (Resumen / X / YouTube / Ajustes) con historial local y SecretStore OS-first.
 
 No existe `apps/web`; no es requisito del MVP.
 

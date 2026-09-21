@@ -48,10 +48,21 @@ export function createHttpApiTransport(options: HttpApiTransportOptions): ApiTra
         }
       }
 
-      const response = await fetchImpl(new URL(spec.route, `${baseUrl}/`).toString(), {
+      const url = new URL(spec.route, `${baseUrl}/`);
+      const isGet = spec.method === "GET";
+      if (isGet && input.body && typeof input.body === "object") {
+        for (const [key, value] of Object.entries(input.body as Record<string, unknown>)) {
+          if (value === undefined || value === null || value === "") {
+            continue;
+          }
+          url.searchParams.set(key, String(value));
+        }
+      }
+
+      const response = await fetchImpl(url.toString(), {
         method: spec.method,
-        headers: Object.keys(headers).length > 0 ? headers : undefined,
-        body: input.body === undefined ? undefined : JSON.stringify(input.body),
+        headers: !isGet && Object.keys(headers).length > 0 ? headers : undefined,
+        body: isGet || input.body === undefined ? undefined : JSON.stringify(input.body),
       });
 
       return {

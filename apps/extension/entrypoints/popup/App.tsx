@@ -63,13 +63,11 @@ export function PopupApp() {
       <SlopLensPopupControl
         health={health}
         onRefreshHealth={() => void checkHealth()}
-        autoAnalyze={feed.autoAnalyze}
-        onAutoAnalyzeChange={(autoAnalyze) => {
-          const next = { ...feed, autoAnalyze };
+        feed={feed}
+        onFeedChange={(next) => {
           setFeed(next);
           void writeFeedPreferences(next);
         }}
-        thresholdPercent={Math.round(feed.slopThreshold * 100)}
         onOpenDashboard={() => {
           void writeDashboardSection("overview").then(() => openDashboardPage());
         }}

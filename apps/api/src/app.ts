@@ -7,6 +7,7 @@ import type postgres from "postgres";
 import { createSqlClient } from "./db/client";
 import type { ApiEnv } from "./env";
 import { registerErrorHandler } from "./middleware/error-handler";
+import { getContentHandler } from "./routes/content";
 import {
   postAnalyzeHandler,
   postRelatedHandler,
@@ -88,6 +89,7 @@ export function createApp(env: ApiEnv, options: CreateAppOptions = {}): Hono {
 
   app.get(API_ROUTES.health, getHealthHandler(deps));
   app.get(API_ROUTES.metrics, getMetricsHandler(deps));
+  app.get(API_ROUTES.content, getContentHandler(deps));
   app.get(API_ROUTES.providers, getProvidersHandler(deps));
   app.get(API_ROUTES.settings, getSettingsHandler(deps));
   app.put(API_ROUTES.settingsProviders, putSettingsProvidersHandler(deps));

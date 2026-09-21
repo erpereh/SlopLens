@@ -13,10 +13,11 @@ test.describe("popup control center", () => {
     await openExtensionPopup(context, popup);
 
     await expect(popup.getByRole("switch", { name: /auto analyze/i })).toBeVisible();
+    await expect(popup.getByRole("switch", { name: /dim high-slop/i })).toBeVisible();
+    await expect(popup.getByRole("switch", { name: /show slop stamp/i })).toBeVisible();
     await expect(popup.getByText(/slop threshold 70%/i)).toBeVisible();
     await expect(popup.getByRole("button", { name: /open dashboard/i })).toBeVisible();
-    await expect(popup.getByRole("switch", { name: /dim high-slop/i })).toHaveCount(0);
-    await expect(popup.getByText(/language/i)).toHaveCount(0);
+    await expect(popup.getByText(/^language$/i)).toHaveCount(0);
     await expect(popup.getByPlaceholder(/enter a new key/i)).toHaveCount(0);
     await expect(popup.getByLabel(/api key/i)).toHaveCount(0);
   });

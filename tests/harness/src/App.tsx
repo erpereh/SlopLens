@@ -289,9 +289,13 @@ function PopupScene({
         <SlopLensPopupControl
           health="ok"
           onRefreshHealth={() => undefined}
-          autoAnalyze
-          onAutoAnalyzeChange={() => undefined}
-          thresholdPercent={70}
+          feed={{
+            autoAnalyze: true,
+            dimHighSlop: true,
+            showSlopStamp: true,
+            slopThreshold: 0.7,
+          }}
+          onFeedChange={() => undefined}
           onOpenDashboard={() => undefined}
         />
       </SlopLensUiRoot>
@@ -336,6 +340,9 @@ function DashboardScene({
                   cachedAnalyses: null,
                   clusters: null,
                   relations: null,
+                  byPlatform: { x: null, youtube: null },
+                  claims: null,
+                  averageSlop: null,
                 },
                 lastActivityAt: null,
               }
@@ -347,17 +354,61 @@ function DashboardScene({
                   cachedAnalyses: 9,
                   clusters: 3,
                   relations: 4,
+                  byPlatform: { x: 8, youtube: 4 },
+                  claims: 2,
+                  averageSlop: 0.41,
                 },
                 lastActivityAt: "2026-09-21T12:00:00.000Z",
               }
         }
-        feed={{
-          autoAnalyze: true,
-          dimHighSlop: true,
-          showSlopStamp: true,
-          slopThreshold: 0.7,
-        }}
-        onFeedChange={() => undefined}
+        history={
+          degraded
+            ? { items: [], nextCursor: null, phase: "ready" }
+            : {
+                phase: "ready",
+                nextCursor: null,
+                items: [
+                  {
+                    id: "11111111-1111-4111-8111-111111111111",
+                    platform: "x",
+                    url: "https://x.com/jane/status/123",
+                    author: "Jane Doe",
+                    handle: "@jane",
+                    title: null,
+                    text: "A stored post from the local history fixture.",
+                    publishedAt: "2026-09-21T11:00:00.000Z",
+                    capturedAt: "2026-09-21T12:00:00.000Z",
+                    slop: 0.82,
+                    clickbait: 0.2,
+                    engagementBait: 0.66,
+                    containsClaim: true,
+                    needsVerification: true,
+                    claimText: "The launch happened on Monday.",
+                    thumbnailUrl: null,
+                  },
+                  {
+                    id: "22222222-2222-4222-8222-222222222222",
+                    platform: "youtube",
+                    url: "https://www.youtube.com/watch?v=abcdefghijk",
+                    author: "Creator Channel",
+                    handle: null,
+                    title: "A stored video",
+                    text: "Description captured with the analysis.",
+                    publishedAt: null,
+                    capturedAt: "2026-09-21T12:05:00.000Z",
+                    slop: 0.4,
+                    clickbait: 0.71,
+                    engagementBait: 0.1,
+                    containsClaim: false,
+                    needsVerification: false,
+                    claimText: null,
+                    thumbnailUrl: "https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg",
+                  },
+                ],
+              }
+        }
+        onHistoryQueryChange={() => undefined}
+        onHistoryLoadMore={() => undefined}
         locale="en"
         onLocaleChange={() => undefined}
         motionPreference={motionPreference}

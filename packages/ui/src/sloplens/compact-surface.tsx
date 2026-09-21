@@ -1,4 +1,5 @@
-import { LoaderCircle } from "lucide-react";
+import { ChevronUp, LoaderCircle } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 import { AnimatedBadge } from "@/components/motion/animated-badge";
 import { Button } from "@/components/motion/button/base";
 import { NumberTicker } from "@/components/motion/number-ticker";
@@ -29,6 +30,7 @@ export function SlopLensCompactSurface({
   expanded?: boolean;
 }) {
   const { t } = useSlopLensI18n();
+  const reduceMotion = useReducedMotion() ?? false;
   const slopSignal = signals.slopSignal;
   const analyzeReady = analyzeState.phase === "success" && Boolean(slopSignal);
 
@@ -99,7 +101,8 @@ export function SlopLensCompactSurface({
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1 rounded-2xl border border-border bg-card/95 p-1 shadow-md backdrop-blur-sm",
+        "inline-flex items-center rounded-lg border border-border bg-card/95 shadow-md backdrop-blur-sm",
+        expanded && "border-foreground/25 bg-muted/80",
         className,
       )}
       data-sloplens-compact="true"
@@ -107,11 +110,12 @@ export function SlopLensCompactSurface({
       <Tooltip content={t("signal.notVerdict")} side="top">
         <button
           type="button"
-          className="inline-flex min-w-0 items-center gap-1 rounded-full px-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex min-w-0 items-center gap-1 rounded-lg px-2 py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={onOpenDetail}
           aria-label={accessibleLabel}
           aria-expanded={expanded}
           data-sloplens-slop-chip="true"
+          data-state={expanded ? "open" : "closed"}
         >
           {analyzeState.phase === "loading" ? (
             <LoaderCircle className="size-3.5 shrink-0 animate-spin text-primary" aria-hidden />
@@ -137,6 +141,16 @@ export function SlopLensCompactSurface({
               ) : null}
             </span>
           </AnimatedBadge>
+          <motion.span
+            aria-hidden
+            animate={{ rotate: expanded ? 180 : 0 }}
+            transition={
+              reduceMotion ? { duration: 0 } : { type: "spring", duration: 0.35, bounce: 0.2 }
+            }
+            className="grid size-4 shrink-0 place-items-center text-muted-foreground"
+          >
+            <ChevronUp className="size-3.5" />
+          </motion.span>
         </button>
       </Tooltip>
     </div>

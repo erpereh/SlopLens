@@ -19,7 +19,9 @@ function json(status: number, body: unknown) {
   };
 }
 
-function payloadFor(pathname: string): unknown {
+function payloadFor(requestUrl: string): unknown {
+  const url = new URL(requestUrl);
+  const { pathname } = url;
   if (pathname.endsWith("/analyze")) return MOCK_ANALYZE;
   if (pathname.endsWith("/verify")) return MOCK_VERIFY;
   if (pathname.endsWith("/trace")) return MOCK_TRACE;
@@ -36,6 +38,9 @@ function payloadFor(pathname: string): unknown {
         cachedAnalyses: 2,
         clusters: 0,
         relations: 1,
+        byPlatform: { x: 2, youtube: 1 },
+        claims: 1,
+        averageSlop: 0.4,
       },
       lastActivityAt: "2026-09-21T12:00:00.000Z",
     };
@@ -45,6 +50,58 @@ function payloadFor(pathname: string): unknown {
       selections: [{ capability: "decision", providerId: "typesafe", modelId: "jev-latest" }],
       secrets: [{ capability: "decision", providerId: "typesafe", configured: true }],
     };
+  }
+  if (pathname.endsWith("/content")) {
+    const platform = url.searchParams.get("platform");
+    const q = url.searchParams.get("q")?.toLowerCase() ?? "";
+    const signal = url.searchParams.get("signal");
+    const items = [
+      {
+        id: "11111111-1111-4111-8111-111111111111",
+        platform: "x",
+        url: "https://x.com/jane/status/123",
+        author: "Jane Doe",
+        handle: "@jane",
+        title: null,
+        text: "Stored post from the mock history.",
+        publishedAt: "2026-09-21T11:00:00.000Z",
+        capturedAt: "2026-09-21T12:00:00.000Z",
+        slop: 0.82,
+        clickbait: 0.2,
+        engagementBait: 0.66,
+        containsClaim: true,
+        needsVerification: true,
+        claimText: "The launch happened on Monday.",
+        thumbnailUrl: null,
+      },
+      {
+        id: "22222222-2222-4222-8222-222222222222",
+        platform: "youtube",
+        url: "https://www.youtube.com/watch?v=abcdefghijk",
+        author: "Creator Channel",
+        handle: null,
+        title: "Stored video",
+        text: "Description captured with the analysis.",
+        publishedAt: null,
+        capturedAt: "2026-09-21T12:05:00.000Z",
+        slop: 0.4,
+        clickbait: 0.71,
+        engagementBait: 0.1,
+        containsClaim: false,
+        needsVerification: false,
+        claimText: null,
+        thumbnailUrl: "https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg",
+      },
+    ].filter((item) => {
+      if (platform && item.platform !== platform) return false;
+      if (signal === "claim" && !item.containsClaim && !item.claimText) return false;
+      if (signal === "highSlop" && (item.slop ?? 0) < 0.7) return false;
+      if (!q) return true;
+      return `${item.author ?? ""} ${item.text ?? ""} ${item.title ?? ""}`
+        .toLowerCase()
+        .includes(q);
+    });
+    return { items, nextCursor: null };
   }
   if (pathname.endsWith("/providers")) {
     return {
@@ -90,6 +147,9 @@ export async function installApiMock(
             cachedAnalyses: null,
             clusters: null,
             relations: null,
+            byPlatform: { x: null, youtube: null },
+            claims: null,
+            averageSlop: null,
           },
           lastActivityAt: null,
         }),
@@ -97,7 +157,7 @@ export async function installApiMock(
       return;
     }
 
-    const payload = payloadFor(pathname);
+    const payload = payloadFor(request.url());
     if (!payload) {
       await route.fulfill(
         json(404, {

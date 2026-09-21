@@ -43,6 +43,9 @@ describe("API schemas", () => {
         cachedAnalyses: 2,
         clusters: 0,
         relations: 1,
+        byPlatform: { x: 2, youtube: 1 },
+        claims: 1,
+        averageSlop: 0.4,
       },
       lastActivityAt: "2026-09-21T12:00:00.000Z",
     });
@@ -120,6 +123,31 @@ describe("createHttpApiTransport", () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
       `http://127.0.0.1:3001${API_OPERATION_SPEC.health.route}`,
     );
+  });
+
+  it("sends content filters as a query string and never as a request body", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ items: [], nextCursor: null }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    const transport = createHttpApiTransport({
+      baseUrl: "http://127.0.0.1:3001/",
+      fetch: fetchMock,
+    });
+    await transport.request({
+      operation: "listContent",
+      body: { platform: "x", sort: "slop", q: "launch", limit: 20 },
+    });
+    const url = String(fetchMock.mock.calls[0]?.[0]);
+    expect(url).toContain("/content?");
+    expect(url).toContain("platform=x");
+    expect(url).toContain("sort=slop");
+    expect(url).toContain("q=launch");
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(init.method).toBe("GET");
+    expect(init.body).toBeUndefined();
   });
 });
 

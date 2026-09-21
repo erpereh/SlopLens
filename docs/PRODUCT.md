@@ -620,12 +620,13 @@ Implementado ahora:
 - Extensión WXT en X / YouTube con overlay compacto (`Slop · XX%`). El chip abre un panel anclado hacia arriba (Analyze · Verify · Trace), no un drawer a pantalla.
 - Chip, atenuado y sello SLOP leen `slopSignal` (hoy derivado de `aiSlop`; preparado para otras señales sin rehacer la UX). El atenuado es opcional, se aplica solo a regiones visuales del host y permanece legible (~0.55). Hover, foco o tap restauran opacidad 1 y atenúan el sello. El sello es decorativo (`pointer-events: none`) y no sustituye el texto accesible `Slop signal · XX%`. El marker es idempotente: el mismo nodo HTML del sello se reutiliza entre rescans.
 - Auto Analyze usa un scheduler de feed infinito: solo contenido visible o cercano al viewport, cola, concurrencia 2, deduplicación, cache por hash y cancelación/ignoración de nodos que desaparecen.
-- Popup mínimo: estado del backend, Auto Analyze, umbral resumido, tema y CTA “Open Dashboard”. Feed, idioma, reduced motion y providers se editan en el dashboard de la extensión (Options a pestaña completa: Overview, Feed, Providers, Appearance, Diagnostics).
+- Popup compacto: estado del backend, Auto Analyze, atenuar high-slop, sello Slop, umbral, tema y CTA “Open Dashboard”. Idioma, reduced motion y providers viven en Ajustes del dashboard.
+- El dashboard de la extensión (Options a pestaña completa) es un historial real: Resumen, X, YouTube y, separado, Ajustes. Resumen usa `GET /metrics` (agregados) y `GET /content` (filas persistidas). No inventa cifras ni verificaciones. Feed ya no es una sección del dashboard.
 - Reduced motion persistido como `system` | `reduce`; `reduce` aplaca springs y la animación del sello aunque el OS no pida `prefers-reduced-motion`.
 - Clasificación Decision vía TypeSafe AI oficial (modelo Jev `jev-latest`), no Vercel AI Gateway.
 - El overlay, popup y dashboard hablan con Hono a través del service worker; la página de X o YouTube no hace fetch a localhost.
-- Backend local Hono con esas rutas (ya no son stubs 501), incluido `GET /metrics` de solo lectura (estados y conteos agregados, sin secrets ni texto).
-- Settings de proveedores en el dashboard; keys en SecretStore del SO (archivo local solo como fallback etiquetado).
+- Backend local Hono con esas rutas (ya no son stubs 501), incluido `GET /metrics` (agregados, sin texto) y `GET /content` (historial local de filas ya analizadas).
+- Settings de proveedores en Ajustes del dashboard, en filas que se expanden para editar. La API key solo aparece al editar y no se rellena con la key guardada. Keys en SecretStore del SO (archivo local solo como fallback etiquetado).
 - Vision del thumbnail de YouTube cuando el DecisionProvider lo pide o la plataforma es YouTube.
 - Verify: claim canónica → búsqueda → filtro/rerank de relevancia → ranking de fuente primaria → evidencia opcional. No usa el post entero como query ni vuelca ruido off-topic de Tavily.
 - Related vía embeddings pgvector (N=2048 verificada). Los casts `vector(N)`/`halfvec(N)` van como constantes SQL (`sql.unsafe`); postgres.js no puede parametrizar type modifiers.
@@ -652,7 +653,7 @@ Implementado ahora:
 - light/dark/system;
 - reduced motion `system | reduce`;
 - interfaz no intrusiva integrada en las páginas;
-- dashboard de extensión como centro de configuración.
+- dashboard de extensión como historial de lo analizado (Resumen, X, YouTube) y ajustes avanzados;
 
 ### Proyecto
 

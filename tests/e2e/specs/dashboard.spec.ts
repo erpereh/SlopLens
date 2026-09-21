@@ -20,26 +20,31 @@ test.describe("extension dashboard", () => {
     }
   });
 
-  test("navigates Feed, Appearance, and Providers without echoing a stored key", async ({
+  test("navigates X, YouTube and Settings without echoing a stored key", async ({
     context,
     page,
   }) => {
     await openExtensionDashboard(context, page);
     await expect(page.getByRole("heading", { name: /overview/i })).toBeVisible();
+    await expect(page.getByText("Jane Doe")).toBeVisible();
 
-    await page.getByRole("button", { name: /^feed$/i }).click();
-    await expect(page.getByRole("heading", { name: /^feed$/i })).toBeVisible();
-    await expect(page.getByRole("switch", { name: /auto analyze/i })).toBeVisible();
-    await expect(page.getByRole("switch", { name: /dim high-slop/i })).toBeVisible();
+    await page.getByRole("button", { name: /^x$/i }).click();
+    await expect(page.getByRole("heading", { name: /^x$/i })).toBeVisible();
+    await expect(page.getByText("@jane")).toBeVisible();
+    await expect(page.getByLabel(/search author or text/i)).toBeVisible();
 
-    await page.getByRole("button", { name: /^appearance$/i }).click();
-    await expect(page.getByRole("heading", { name: /appearance/i })).toBeVisible();
+    await page.getByRole("button", { name: /^youtube$/i }).click();
+    await expect(page.getByRole("heading", { name: /youtube/i })).toBeVisible();
+    await expect(page.getByText("Stored video")).toBeVisible();
+    await expect(page.getByText("@jane")).toHaveCount(0);
+
+    await page.getByRole("button", { name: /^settings$/i }).click();
+    await expect(page.getByRole("heading", { name: /settings/i })).toBeVisible();
     await expect(page.getByRole("heading", { name: /^motion$/i })).toBeVisible();
-
-    await page.getByRole("button", { name: /^providers$/i }).click();
-    await expect(page.getByRole("heading", { name: /providers/i })).toBeVisible();
-    await expect(page.getByPlaceholder(/enter a new key/i).first()).toHaveValue("");
-    await expect(page.getByText(/a key is stored/i).first()).toBeVisible();
+    await expect(page.getByLabel(/api key/i)).toHaveCount(0);
+    await page.getByRole("button", { name: /decision/i }).click();
+    await expect(page.getByLabel(/api key/i)).toHaveValue("");
+    await expect(page.getByText(/a key is stored/i)).toBeVisible();
   });
 
   test("popup Open Dashboard reaches the options page", async ({ context }) => {

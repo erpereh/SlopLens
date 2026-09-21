@@ -24,17 +24,17 @@ La interfaz debe priorizar información y contexto sobre decoración.
 ## Estado actual de la UI
 
 - Kit beUI público en `packages/ui`, montado en la extensión dentro de `sloplens-root` (Shadow DOM).
-- Superficies: `SlopLensUiRoot` → `SlopLensShell` (chip compacto `Slop · XX%` + panel anclado hacia arriba con tabs Analyze · Verify · Trace).
-- El dashboard de la extensión (página Options a pestaña completa) usa Animated Sidebar + cards: Overview, Feed, Providers, Appearance y Diagnostics. `SlopLensSettingsForm` vive por card de provider; las keys se envían al API y no se persisten en la extensión.
-- El popup (`SlopLensPopupControl`) es mínimo: badge de backend, Auto Analyze, umbral resumido, theme toggle y CTA al dashboard. Feed avanzado, idioma, motion y providers viven en el dashboard.
+- Superficies: `SlopLensUiRoot` → `SlopLensShell` (chip `Slop · XX%` con chevron, radio `rounded-lg` como los controles, no una cápsula). El panel anclado se abre hacia arriba con tabs Analyze · Verify · Trace y el mismo radio. Estado abierto: chevron girado y fondo distinto. El host sigue siendo tamaño-chip; el panel no desplaza el feed.
+- El dashboard (Options a pestaña completa) usa Animated Sidebar: Resumen, X, YouTube y, abajo separado, Ajustes. Resumen muestra métricas reales y el historial reciente. X es una lista densa; YouTube usa cards con thumbnail. Ajustes agrupa apariencia (tema, idioma, motion) y providers en filas expandibles (`bouncy-accordion`). La API key solo se monta al editar y nunca se rehidrata.
+- El popup (`SlopLensPopupControl`) es el control rápido del feed: badge de backend, Auto Analyze, atenuar, sello, umbral, theme toggle y CTA al dashboard. Idioma, motion y providers no viven en el popup.
 - En Shadow DOM el control de tema es `SlopLensThemeToggleButton`. El tema resuelto se aplica al cascade root real (`html` en popup/dashboard, host `sloplens-root` en overlay) para que `:host(.dark)` y `html.dark` pinten.
 - Instalable desde `@beui`: `animated-sidebar`, `popover` (lenguaje Morph; el panel del chip no porta a `document.body`), `range-slider`, `bouncy-accordion`, tabs, switch, tooltip, toast, select, loader, theme-toggle. El panel del overlay es un shell local con `SPRING_PANEL` porque Morph/Gooey del popover público escapa al `body`.
 - i18n en/es. Light / dark / system persistido en `chrome.storage.local`. Preferencia de motion `system | reduce`. Preferencias de feed (auto analyze, dim, stamp, umbral) también en `chrome.storage.local`.
-- El chip abre un panel out-of-flow anclado (`side` preferido `top`, flip a `bottom` si no cabe). No hay drawer de detalle del post. El host `sloplens-root` permanece tamaño-chip; el panel no desplaza el feed ni bloquea el scroll de X/YouTube.
+- El chip abre un panel out-of-flow anclado (`side` preferido `top`, flip a `bottom` si no cabe), con radio `rounded-lg` y sin scroll horizontal. No hay drawer de detalle del post. El host `sloplens-root` permanece tamaño-chip; el panel no desplaza el feed ni bloquea el scroll de X/YouTube.
 - El overlay compacto muestra loading/error de Analyze (no un vacío falso). Sources viven dentro de Verify; Related dentro de Trace.
 - Verify muestra una señal de evidencia (`Backed by sources` / `Unverified` / etc.), nunca un veredicto absoluto.
 - Cierre del panel: Escape, clic fuera y segundo clic en el chip. Foco inicial razonable; al cerrar vuelve al chip.
-- El chip compacto muestra `Slop · XX%` (accesible: `Slop signal · XX%`). No hay atajos Analyze/Verify/Trace en el chip.
+- El chip compacto muestra `Slop · XX%` más un chevron (accesible: `Slop signal · XX%`, `aria-expanded`). No hay atajos Analyze/Verify/Trace en el chip. Abierto, el chevron rota y el fondo del control cambia.
 - `sloplens-root` se limita a ~16rem de ancho para no empujar el layout del host.
 - El atenuado de contenido marcado usa opacidad 0.55 (rango legible 0.45–0.65). Hover/focus/tap restauran 1 y bajan el sello SLOP a ~0.12. El sello es HTML/CSS sobre el host, `pointer-events: none`.
 - Reduced motion real: `MotionConfig` (`always` si la preferencia resuelta es reduce) y `data-reduce-motion` en el cascade root. `reduce` gana al OS; `system` sigue `prefers-reduced-motion` en vivo. El sello degrada a fade.
@@ -51,12 +51,15 @@ Receta vigente:
 - Sin Morphing Modal (bloquearía el feed).
 - Reduced motion: fade/instant, no spring.
 
-### Dashboard (estilo Folio / beUI)
+### Dashboard (historial + ajustes)
 
-- Sidebar izquierda clara, item activo como pill suave, logo + nav + footer (versión / backend).
-- Canvas con aire: título de sección a la izquierda; CTA o theme toggle a la derecha.
-- Hero card ancha (backend + última actividad) y cards de apoyo. Cifras grandes con Number Ticker **solo** si el dato es real; si `/metrics` falla, copy “Unavailable”, nunca un número inventado.
-- Cards `bg-card`, radio generoso, borde sutil, sombra mínima. Fondo de página `background`.
+- Sidebar izquierda: Resumen, X, YouTube; Ajustes separado abajo con borde. Item activo como pill suave. Footer con versión y backend.
+- Canvas con aire: título de sección a la izquierda; en Resumen, “Probar backend” y theme toggle a la derecha.
+- Resumen: hero de backend y cards de métricas reales (`NumberTicker` solo si el número no es `null`). Si `/metrics` falla, copy “Unavailable”, nunca un número inventado. Debajo, historial reciente con cards distintas para X y YouTube.
+- X: lista, búsqueda, orden reciente/slop y filtro claim o slop alto.
+- YouTube: thumbnail, canal, título, extracto, slop, clickbait, claim y enlace. Sin descripción de visión inventada.
+- Ajustes: tema, idioma y motion en una fila; providers como filas que se expanden. La key no se muestra hasta editar y el campo nace vacío.
+- Cards `bg-card`, radio `rounded-lg` en listas y `rounded-2xl` en cards de métricas, borde sutil, sombra mínima. Fondo de página `background`.
 - Sidebar fija ≥1280px; sheet/collapsible bajo 1280 (p. ej. 1024×768).
 - Primitive local `DashboardCard` (no Tilt Card).
 

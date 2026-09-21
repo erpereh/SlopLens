@@ -1,16 +1,13 @@
 export const DASHBOARD_SECTION_STORAGE_KEY = "sloplens.dashboardSection";
 
-export type DashboardSection = "overview" | "feed" | "providers" | "appearance" | "diagnostics";
+export type DashboardSection = "overview" | "x" | "youtube" | "settings";
 
-const SECTIONS: ReadonlySet<string> = new Set([
-  "overview",
-  "feed",
-  "providers",
-  "appearance",
-  "diagnostics",
-]);
+const SECTIONS: ReadonlySet<string> = new Set(["overview", "x", "youtube", "settings"]);
 
 export function parseDashboardSection(value: unknown): DashboardSection {
+  if (value === "providers" || value === "appearance") {
+    return "settings";
+  }
   if (typeof value === "string" && SECTIONS.has(value)) {
     return value as DashboardSection;
   }

@@ -37,9 +37,59 @@ export const metricsResponseSchema = z
         cachedAnalyses: z.number().int().nonnegative().nullable(),
         clusters: z.number().int().nonnegative().nullable(),
         relations: z.number().int().nonnegative().nullable(),
+        byPlatform: z
+          .object({
+            x: z.number().int().nonnegative().nullable(),
+            youtube: z.number().int().nonnegative().nullable(),
+          })
+          .strict(),
+        claims: z.number().int().nonnegative().nullable(),
+        /** Mean `aiSlop` of stored analyses, 0–1. Null when unknown. */
+        averageSlop: z.number().min(0).max(1).nullable(),
       })
       .strict(),
     lastActivityAt: z.string().min(1).nullable(),
+  })
+  .strict();
+
+const contentHistoryScoreSchema = z.number().min(0).max(1).nullable();
+
+export const contentListQuerySchema = z
+  .object({
+    platform: platformSchema.optional(),
+    q: z.string().trim().min(1).max(120).optional(),
+    sort: z.enum(["recent", "slop"]).optional(),
+    signal: z.enum(["claim", "highSlop"]).optional(),
+    limit: z.number().int().min(1).max(50).optional(),
+    cursor: z.string().min(1).max(500).optional(),
+  })
+  .strict();
+
+export const contentHistoryItemSchema = z
+  .object({
+    id: z.string().uuid(),
+    platform: platformSchema,
+    url: z.string().url(),
+    author: z.string().min(1).nullable(),
+    handle: z.string().min(1).nullable(),
+    title: z.string().min(1).nullable(),
+    text: z.string().min(1).nullable(),
+    publishedAt: z.string().min(1).nullable(),
+    capturedAt: z.string().min(1),
+    slop: contentHistoryScoreSchema,
+    clickbait: contentHistoryScoreSchema,
+    engagementBait: contentHistoryScoreSchema,
+    containsClaim: z.boolean().nullable(),
+    needsVerification: z.boolean().nullable(),
+    claimText: z.string().min(1).nullable(),
+    thumbnailUrl: z.string().url().nullable(),
+  })
+  .strict();
+
+export const contentListResponseSchema = z
+  .object({
+    items: z.array(contentHistoryItemSchema),
+    nextCursor: z.string().min(1).nullable(),
   })
   .strict();
 
@@ -228,6 +278,19 @@ export const relatedResponseSchema = z
 
 export type HealthResponse = z.infer<typeof healthResponseSchema>;
 export type MetricsResponse = z.infer<typeof metricsResponseSchema>;
+export type ContentListQuery = z.infer<typeof contentListQuerySchema>;
+
+export const EMPTY_METRICS_COUNTS: MetricsResponse["counts"] = {
+  contentItems: null,
+  cachedAnalyses: null,
+  clusters: null,
+  relations: null,
+  byPlatform: { x: null, youtube: null },
+  claims: null,
+  averageSlop: null,
+};
+export type ContentHistoryItem = z.infer<typeof contentHistoryItemSchema>;
+export type ContentListResponse = z.infer<typeof contentListResponseSchema>;
 export type ProvidersResponse = z.infer<typeof providersResponseSchema>;
 export type SettingsResponse = z.infer<typeof settingsResponseSchema>;
 export type PutProviderSelectionsRequest = z.infer<typeof putProviderSelectionsRequestSchema>;
