@@ -1,3 +1,9 @@
+export {
+  type EnvLookup as SecretEnvLookup,
+  envSecretKeysForProvider,
+  isProviderSecretConfiguredInEnv,
+  readEnvSecretForProvider,
+} from "./env-secrets";
 export { FileSecretStore } from "./file-secret-store";
 export {
   CONFIG_SOURCES,
