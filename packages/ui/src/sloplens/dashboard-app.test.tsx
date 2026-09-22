@@ -77,6 +77,24 @@ const readyHistory = {
       claimText: "The launch happened on Monday.",
       thumbnailUrl: null,
     },
+    {
+      id: "22222222-2222-4222-8222-222222222222",
+      platform: "youtube" as const,
+      url: "https://www.youtube.com/watch?v=abcdefghijk",
+      author: "Creator Channel",
+      handle: null,
+      title: null,
+      text: "Stored video description.",
+      publishedAt: null,
+      capturedAt: "2026-09-21T12:05:00.000Z",
+      slop: 0.4,
+      clickbait: 0.71,
+      engagementBait: 0.1,
+      containsClaim: false,
+      needsVerification: false,
+      claimText: null,
+      thumbnailUrl: null,
+    },
   ],
 };
 
@@ -197,6 +215,17 @@ describe("SlopLensDashboardApp", () => {
     expect(screen.getByText("Jane Doe")).toBeInTheDocument();
     expect(screen.getByText("@jane")).toBeInTheDocument();
     expect(screen.getByText("The launch happened on Monday.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /open on x/i })).toHaveAttribute(
+      "href",
+      "https://x.com/jane/status/123",
+    );
+    expect(screen.getByRole("heading", { name: "Creator Channel" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /open on youtube/i })).toHaveAttribute(
+      "href",
+      "https://www.youtube.com/watch?v=abcdefghijk",
+    );
+    expect(screen.getByText(/verifications 1/i)).toBeInTheDocument();
+    expect(screen.getByText(/2 of 3/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /^x$/i }));
     fireEvent.click(screen.getByRole("button", { name: /^youtube$/i }));
     fireEvent.click(screen.getByRole("button", { name: /^settings$/i }));

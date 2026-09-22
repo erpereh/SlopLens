@@ -57,6 +57,23 @@ const trace: TracePanelContent = {
   evidence: [{ summary: "Short evidence blurb.", sourceUrl: "https://example.com/origin" }],
 };
 
+const HARNESS_SLOP_SERIES = [
+  { day: "2026-09-08", slop: 0.34, x: 0.28, youtube: 0.41 },
+  { day: "2026-09-09", slop: 0.36, x: 0.3, youtube: 0.44 },
+  { day: "2026-09-10", slop: 0.33, x: 0.27, youtube: 0.4 },
+  { day: "2026-09-11", slop: 0.38, x: 0.31, youtube: 0.46 },
+  { day: "2026-09-12", slop: 0.42, x: 0.35, youtube: 0.5 },
+  { day: "2026-09-13", slop: 0.4, x: 0.33, youtube: 0.48 },
+  { day: "2026-09-14", slop: 0.45, x: 0.37, youtube: 0.54 },
+  { day: "2026-09-15", slop: 0.43, x: 0.36, youtube: 0.51 },
+  { day: "2026-09-16", slop: 0.48, x: 0.4, youtube: 0.57 },
+  { day: "2026-09-17", slop: 0.51, x: 0.43, youtube: 0.6 },
+  { day: "2026-09-18", slop: 0.49, x: 0.41, youtube: 0.58 },
+  { day: "2026-09-19", slop: 0.54, x: 0.46, youtube: 0.63 },
+  { day: "2026-09-20", slop: 0.56, x: 0.48, youtube: 0.66 },
+  { day: "2026-09-21", slop: 0.58, x: 0.5, youtube: 0.68 },
+];
+
 type Scene = "tweet" | "youtube" | "states" | "popup" | "dashboard";
 
 function sceneFromLocation(): Scene {
@@ -360,7 +377,7 @@ function DashboardScene({
                   averageSlop: 0.41,
                 },
                 lastActivityAt: "2026-09-21T12:00:00.000Z",
-                slopSeries: [{ day: "2026-09-21", slop: 0.41, x: 0.3, youtube: 0.6 }],
+                slopSeries: HARNESS_SLOP_SERIES,
               }
         }
         history={
@@ -404,7 +421,7 @@ function DashboardScene({
                     containsClaim: false,
                     needsVerification: false,
                     claimText: null,
-                    thumbnailUrl: "https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg",
+                    thumbnailUrl: "https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg",
                   },
                 ],
               }

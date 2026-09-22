@@ -25,7 +25,7 @@ La interfaz debe priorizar información y contexto sobre decoración.
 
 - Kit beUI público en `packages/ui`, montado en la extensión dentro de `sloplens-root` (Shadow DOM).
 - Superficies: `SlopLensUiRoot` → `SlopLensShell` (chip `Slop · XX%` sobre negro `#000`, con icono a la izquierda según el umbral: por debajo, cerca o por encima). Sin flecha. El panel anclado tiene alto fijo en las tres pestañas; el scroll interno no enseña barra.
-- El dashboard (Options a pestaña completa) usa Animated Sidebar: Resumen, X, YouTube y, abajo separado, Ajustes. Resumen muestra métricas reales y el historial reciente. X es una lista densa; YouTube usa cards con thumbnail. Ajustes agrupa apariencia (tema, idioma, motion) y providers en filas expandibles (`bouncy-accordion`). La API key solo se monta al editar y nunca se rehidrata.
+- El dashboard (Options a pestaña completa) usa Animated Sidebar: Resumen, X, YouTube y, abajo separado, Ajustes. Resumen es hero, dos cards de plataforma, gráfica de área e historial. X es una lista con marca; YouTube usa cards con thumbnail. El enlace al original es el icono de la plataforma. Ajustes agrupa apariencia (tema, idioma, motion) y providers en filas expandibles (`bouncy-accordion`). La API key solo se monta al editar y nunca se rehidrata.
 - El popup (`SlopLensPopupControl`) es el control rápido del feed: badge de backend, Auto Analyze, atenuar, sello, umbral, theme toggle y CTA al dashboard. Idioma, motion y providers no viven en el popup.
 - En Shadow DOM el control de tema es `SlopLensThemeToggleButton`. El tema resuelto se aplica al cascade root real (`html` en popup/dashboard, host `sloplens-root` en overlay) para que `:host(.dark)` y `html.dark` pinten.
 - Instalable desde `@beui`: `animated-sidebar`, `popover` (lenguaje Morph; el panel del chip no porta a `document.body`), `range-slider`, `bouncy-accordion`, tabs, switch, tooltip, toast, select, loader, theme-toggle. El panel del overlay es un shell local con `SPRING_PANEL` porque Morph/Gooey del popover público escapa al `body`.
@@ -53,13 +53,14 @@ Receta vigente:
 
 ### Dashboard (historial + ajustes)
 
-- Sidebar izquierda: Resumen, X, YouTube; Ajustes separado abajo con borde. Item activo como pill suave. Footer con versión y backend.
+- Sidebar izquierda: Resumen, X, YouTube; Ajustes separado abajo con borde. Item activo con fondo suave `rounded-xl`. Footer con versión y backend.
 - Canvas con aire: título de sección a la izquierda; en Resumen, “Probar backend” y theme toggle a la derecha.
-- Resumen: hero con icono y la cifra real de contenidos analizados, cards de apoyo con icono, gráfica de slop en el tiempo (`slopSeries`) y el historial, que pide la página siguiente al llegar abajo. `NumberTicker` solo si el número no es `null`. Si no hay días, la gráfica dice que no hay datos.
-- X: lista, búsqueda, orden reciente/slop y filtro claim o slop alto.
-- YouTube: thumbnail, canal, título, extracto, slop, clickbait, claim y enlace. Sin descripción de visión inventada.
+- Resumen, de arriba a abajo: hero (pozo de icono `rounded-lg`, contenidos analizados, estado, última actividad, verificaciones y relaciones, sparkline de `slopSeries`), dos cards de plataforma (marca de X y de YouTube, cifra y parte del total), gráfica de área de slop en el tiempo y el historial. `NumberTicker` solo si el número no es `null`. La gráfica usa el rango real de la serie (14 días que ya devuelve el API). Si no hay días, el aviso queda dentro del marco, no como un bloque vacío. “Probar backend” es un botón sólido `rounded-md` junto al theme toggle.
+- X: lista con marca de plataforma, búsqueda, orden reciente/slop y filtro claim o slop alto. El buscador (`rounded-lg`, alto `h-10`) y los dos selects comparten la línea de base (`items-end`).
+- YouTube: thumbnail (o la marca si no hay imagen), canal, título, extracto, slop, clickbait y claim. Sin título se muestra el canal o el host, no un vacío. Sin descripción de visión inventada.
+- El enlace al original es el icono de X o YouTube (`Abrir en X` / `Abrir en YouTube`), no un botón de texto.
 - Ajustes: tema, idioma y motion en una fila; providers como filas que se expanden. La key no se muestra hasta editar y el campo nace vacío.
-- Cards `bg-card`, radio `rounded-lg` en listas y `rounded-2xl` en cards de métricas, borde sutil, sombra mínima. Fondo de página `background`.
+- Cards `bg-card`, radio `rounded-xl`, borde sutil, sombra mínima. Pozos de icono y chips `rounded-lg` / `rounded-md`, nunca círculo. Fondo de página `background`.
 - Sidebar fija ≥1280px; sheet/collapsible bajo 1280 (p. ej. 1024×768).
 - Primitive local `DashboardCard` (no Tilt Card).
 

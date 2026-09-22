@@ -1,15 +1,6 @@
 import type { ProviderCapability } from "@sloplens/config/browser";
 import type { ContentHistoryItem, ContentListQuery, MetricsResponse } from "@sloplens/shared";
-import {
-  AtSign,
-  Clapperboard,
-  LayoutDashboard,
-  Menu,
-  ScanSearch,
-  Settings,
-  ShieldCheck,
-} from "lucide-react";
-import { motion } from "motion/react";
+import { AtSign, Clapperboard, LayoutDashboard, Menu, Settings } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { AnimatedBadge } from "@/components/motion/animated-badge";
 import {
@@ -42,10 +33,11 @@ import { useSlopLensTheme } from "@/theme/context";
 import type { MotionPreference, ThemePreference } from "@/theme/types";
 import { DashboardCard } from "./dashboard-card";
 import { HistoryList } from "./history-list";
+import { PlatformMark } from "./platform-mark";
 import { ProviderSettingsList } from "./provider-settings";
 import { scoreToPercent } from "./score-signal";
 import type { SettingsFormSubmitPayload } from "./settings-form";
-import { SlopTimeChart } from "./slop-chart";
+import { formatSeriesRange, SlopSparkline, SlopTimeChart } from "./slop-chart";
 import { SlopLensThemeToggleButton } from "./theme-toggle-button";
 import type { SettingsFormValues } from "./types";
 
@@ -217,7 +209,13 @@ export function SlopLensDashboardApp({
             </div>
             <div className="flex items-center gap-2">
               {section === "overview" ? (
-                <Button type="button" size="sm" variant="outline" onClick={onTestHealth}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="primary"
+                  className="rounded-md"
+                  onClick={onTestHealth}
+                >
                   {t("dashboard.testHealth")}
                 </Button>
               ) : null}
@@ -304,74 +302,63 @@ function OverviewSection({
   history: DashboardHistory;
   onLoadMore: () => void;
 }) {
-  const { t } = useSlopLensI18n();
+  const { t, locale } = useSlopLensI18n();
   const status = combinedStatus(health, metrics);
   const unavailable = status === "unavailable";
+  const series = metrics?.slopSeries ?? null;
+  const total = shareTotal(metrics);
+  const range = formatSeriesRange(series, locale);
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
-        <DashboardCard className="min-h-40">
-          <p className="text-sm text-muted-foreground">{t("dashboard.contentsAnalyzed")}</p>
-          <div className="mt-2">
-            {metrics?.counts.contentItems == null ? (
-              <p className="text-4xl font-semibold tracking-tight text-muted-foreground">
-                {t("dashboard.unavailable")}
-              </p>
-            ) : (
-              <NumberTicker
-                value={metrics.counts.contentItems}
-                startOnView={false}
-                className="text-4xl font-semibold tracking-tight"
-              />
-            )}
+    <div className="space-y-4">
+      <DashboardCard>
+        <div className="flex items-center justify-between gap-6">
+          <div className="min-w-0">
+            <IconWell>
+              <LayoutDashboard className="size-4" />
+            </IconWell>
+            <p className="mt-4 text-sm text-muted-foreground">{t("dashboard.contentsAnalyzed")}</p>
+            <div className="mt-1">
+              <StatFigure value={metrics?.counts.contentItems ?? null} />
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {statusLabel(status, t)}
+              {" · "}
+              {t("dashboard.lastActivity")}:{" "}
+              {formatActivity(metrics?.lastActivityAt, t("dashboard.none"))}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t("dashboard.verifications")} {countText(metrics?.counts.claims ?? null, t)}
+              {" · "}
+              {t("dashboard.relations")} {countText(metrics?.counts.relations ?? null, t)}
+            </p>
           </div>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {statusLabel(status, t)}
-            {" · "}
-            {t("dashboard.lastActivity")}:{" "}
-            {formatActivity(metrics?.lastActivityAt, t("dashboard.none"))}
-          </p>
-        </DashboardCard>
-        <DashboardCard title={t("dashboard.platformSplit")}>
-          <PlatformSplit
-            x={metrics?.counts.byPlatform.x ?? null}
-            youtube={metrics?.counts.byPlatform.youtube ?? null}
-          />
-          <p className="mt-4 text-sm text-muted-foreground">
-            {t("dashboard.averageSlop")}
-            {": "}
-            {metrics?.counts.averageSlop == null
-              ? t("dashboard.unavailable")
-              : `${scoreToPercent(metrics.counts.averageSlop)}%`}
-          </p>
-        </DashboardCard>
-        <DashboardCard title={t("dashboard.slopOverTime")} className="lg:col-span-2">
-          <SlopTimeChart series={metrics?.slopSeries ?? null} />
-        </DashboardCard>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          title={t("dashboard.xAnalyzed")}
+          <SlopSparkline series={series} className="hidden h-16 w-44 shrink-0 sm:block" />
+        </div>
+      </DashboardCard>
+      <div className="grid gap-4 md:grid-cols-2">
+        <PlatformStat
+          platform="x"
+          label={t("dashboard.xAnalyzed")}
           value={metrics?.counts.byPlatform.x ?? null}
-          icon={<AtSign className="size-4" />}
+          context={platformContext(metrics?.counts.byPlatform.x ?? null, total, series, "x", t)}
         />
-        <MetricCard
-          title={t("dashboard.youtubeAnalyzed")}
+        <PlatformStat
+          platform="youtube"
+          label={t("dashboard.youtubeAnalyzed")}
           value={metrics?.counts.byPlatform.youtube ?? null}
-          icon={<Clapperboard className="size-4" />}
-        />
-        <MetricCard
-          title={t("dashboard.verifications")}
-          value={metrics?.counts.claims ?? null}
-          icon={<ShieldCheck className="size-4" />}
-        />
-        <MetricCard
-          title={t("dashboard.relations")}
-          value={metrics?.counts.relations ?? null}
-          icon={<ScanSearch className="size-4" />}
+          context={platformContext(
+            metrics?.counts.byPlatform.youtube ?? null,
+            total,
+            series,
+            "youtube",
+            t,
+          )}
         />
       </div>
+      <DashboardCard title={t("dashboard.slopOverTime")} description={range ?? undefined}>
+        <SlopTimeChart series={series} />
+      </DashboardCard>
       <section className="space-y-3">
         <h2 className="text-sm font-medium">{t("dashboard.recentHistory")}</h2>
         <HistoryList
@@ -386,22 +373,28 @@ function OverviewSection({
   );
 }
 
-function PlatformSplit({ x, youtube }: { x: number | null; youtube: number | null }) {
-  const { t } = useSlopLensI18n();
-  if (x == null || youtube == null) {
-    return <p className="text-sm text-muted-foreground">{t("dashboard.unavailable")}</p>;
-  }
-  const total = x + youtube;
-  const xShare = total === 0 ? 0 : (x / total) * 100;
+function PlatformStat({
+  platform,
+  label,
+  value,
+  context,
+}: {
+  platform: "x" | "youtube";
+  label: string;
+  value: number | null;
+  context: string | null;
+}) {
   return (
-    <div data-sloplens-platform-split="true">
-      <div className="flex h-2 overflow-hidden rounded-full bg-muted">
-        <div className="h-full bg-foreground" style={{ width: `${xShare}%` }} />
+    <DashboardCard>
+      <IconWell>
+        <PlatformMark platform={platform} />
+      </IconWell>
+      <p className="mt-4 text-sm text-muted-foreground">{label}</p>
+      <div className="mt-1">
+        <StatFigure value={value} />
       </div>
-      <p className="mt-3 text-sm text-muted-foreground">
-        X {x} · YouTube {youtube}
-      </p>
-    </div>
+      {context ? <p className="mt-2 text-sm text-muted-foreground">{context}</p> : null}
+    </DashboardCard>
   );
 }
 
@@ -432,30 +425,38 @@ function PlatformSection({
   const items = history.items.filter((item) => item.platform === platform);
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_11rem_12rem]">
-        <Input label={t("history.search")} value={search} onChange={onSearch} />
-        <Select value={sort} onValueChange={(value) => onSort(value as "recent" | "slop")}>
-          <SelectTrigger aria-label={t("history.sort.recent")}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="recent">{t("history.sort.recent")}</SelectItem>
-            <SelectItem value="slop">{t("history.sort.slop")}</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
-          value={signal}
-          onValueChange={(value) => onSignal(value as "all" | "claim" | "highSlop")}
-        >
-          <SelectTrigger aria-label={t("history.signal.all")}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("history.signal.all")}</SelectItem>
-            <SelectItem value="claim">{t("history.signal.claim")}</SelectItem>
-            <SelectItem value="highSlop">{t("history.signal.highSlop")}</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex flex-col gap-3 md:flex-row md:items-end">
+        <Input
+          label={t("history.search")}
+          value={search}
+          onChange={onSearch}
+          className="min-w-0 md:flex-1"
+          classNames={{ field: "h-10 rounded-lg" }}
+        />
+        <div className="grid grid-cols-2 gap-3 md:flex md:shrink-0">
+          <Select value={sort} onValueChange={(value) => onSort(value as "recent" | "slop")}>
+            <SelectTrigger aria-label={t("history.sort.recent")} className="h-10 w-full md:w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">{t("history.sort.recent")}</SelectItem>
+              <SelectItem value="slop">{t("history.sort.slop")}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={signal}
+            onValueChange={(value) => onSignal(value as "all" | "claim" | "highSlop")}
+          >
+            <SelectTrigger aria-label={t("history.signal.all")} className="h-10 w-full md:w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("history.signal.all")}</SelectItem>
+              <SelectItem value="claim">{t("history.signal.claim")}</SelectItem>
+              <SelectItem value="highSlop">{t("history.signal.highSlop")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       <HistoryList
         items={items}
@@ -563,45 +564,74 @@ function SettingsSection({
   );
 }
 
-function MetricCard({
-  title,
-  value,
-  suffix,
-  icon,
-}: {
-  title: string;
-  value: number | null;
-  suffix?: string;
-  icon?: ReactNode;
-}) {
-  const { t } = useSlopLensI18n();
+function IconWell({ children }: { children: ReactNode }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28 }}
-    >
-      <DashboardCard title={title} className="p-5">
-        {icon ? (
-          <span className="mb-3 grid size-8 place-items-center rounded-full bg-muted text-muted-foreground">
-            {icon}
-          </span>
-        ) : null}
-        {value == null ? (
-          <p className="text-3xl font-semibold text-muted-foreground">
-            {t("dashboard.unavailable")}
-          </p>
-        ) : (
-          <NumberTicker
-            value={value}
-            suffix={suffix}
-            startOnView={false}
-            className="text-3xl font-semibold tracking-tight"
-          />
-        )}
-      </DashboardCard>
-    </motion.div>
+    <span className="grid size-9 place-items-center rounded-lg border border-border bg-muted/50 text-foreground">
+      {children}
+    </span>
   );
+}
+
+function StatFigure({ value }: { value: number | null }) {
+  const { t } = useSlopLensI18n();
+  if (value == null) {
+    return (
+      <p className="text-4xl font-semibold tracking-tight text-muted-foreground">
+        {t("dashboard.unavailable")}
+      </p>
+    );
+  }
+  return (
+    <NumberTicker
+      value={value}
+      startOnView={false}
+      className="text-4xl font-semibold tracking-tight"
+    />
+  );
+}
+
+function countText(value: number | null, t: (key: "dashboard.unavailable") => string): string {
+  return value == null ? t("dashboard.unavailable") : String(value);
+}
+
+function shareTotal(metrics: MetricsResponse | null): number | null {
+  if (metrics?.counts.contentItems != null) return metrics.counts.contentItems;
+  const x = metrics?.counts.byPlatform.x;
+  const youtube = metrics?.counts.byPlatform.youtube;
+  if (x == null || youtube == null) return null;
+  return x + youtube;
+}
+
+function platformContext(
+  count: number | null,
+  total: number | null,
+  series: MetricsResponse["slopSeries"],
+  platform: "x" | "youtube",
+  t: (
+    key: "dashboard.shareOfTotal" | "dashboard.averageSlop",
+    vars?: Record<string, string | number>,
+  ) => string,
+): string | null {
+  const parts: string[] = [];
+  if (count != null && total != null && total > 0) {
+    parts.push(t("dashboard.shareOfTotal", { count, total }));
+  }
+  const average = meanPlatformSlop(series, platform);
+  if (average != null) {
+    parts.push(`${t("dashboard.averageSlop")} ${scoreToPercent(average)}%`);
+  }
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+function meanPlatformSlop(
+  series: MetricsResponse["slopSeries"],
+  platform: "x" | "youtube",
+): number | null {
+  const values = (series ?? [])
+    .map((point) => point[platform])
+    .filter((value): value is number => value != null);
+  if (values.length === 0) return null;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function combinedStatus(

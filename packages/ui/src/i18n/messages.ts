@@ -131,7 +131,10 @@ export type MessageKey =
   | "dashboard.noSeries"
   | "history.empty"
   | "history.error"
-  | "history.openOriginal"
+  | "history.openX"
+  | "history.openYouTube"
+  | "history.untitled"
+  | "dashboard.shareOfTotal"
   | "history.search"
   | "history.sort.recent"
   | "history.sort.slop"
@@ -299,7 +302,10 @@ const en: Record<MessageKey | ErrorMessageKey, string> = {
   "dashboard.noSeries": "No analyzed days yet.",
   "history.empty": "Nothing analyzed yet.",
   "history.error": "Could not load analyzed content.",
-  "history.openOriginal": "Open original",
+  "history.openX": "Open on X",
+  "history.openYouTube": "Open on YouTube",
+  "history.untitled": "Untitled",
+  "dashboard.shareOfTotal": "{count} of {total}",
   "history.search": "Search author or text",
   "history.sort.recent": "Recent",
   "history.sort.slop": "Highest slop",
@@ -473,7 +479,10 @@ const es: Record<MessageKey | ErrorMessageKey, string> = {
   "dashboard.noSeries": "Todavía no hay días analizados.",
   "history.empty": "Todavía no hay contenido analizado.",
   "history.error": "No se pudo cargar el contenido analizado.",
-  "history.openOriginal": "Abrir original",
+  "history.openX": "Abrir en X",
+  "history.openYouTube": "Abrir en YouTube",
+  "history.untitled": "Sin título",
+  "dashboard.shareOfTotal": "{count} de {total}",
   "history.search": "Buscar autor o texto",
   "history.sort.recent": "Recientes",
   "history.sort.slop": "Mayor slop",
